@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>C 程式語言測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --track: #E5E7EB;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --track: #374151;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", Roboto, sans-serif;
+    line-height: 1.6;
+    transition: background .15s, color .15s;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; flex-wrap: wrap; padding: 8px 0 16px; border-bottom: 1px solid var(--border);
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; }
+  .btn {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px; font-size: 14px; cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--border); }
+  .btn-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn-primary:hover { opacity: .9; background: var(--accent); }
+  .progress-text { color: var(--text-secondary); font-size: 14px; margin: 16px 0 4px; }
+  .question-area { flex: 1; padding: 16px 0; opacity: 1; transition: opacity .25s; }
+  .question-area.fade { opacity: 0; }
+  .question-text { font-size: 19px; font-weight: 600; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
+    cursor: pointer; font-size: 15px; background: var(--bg); color: var(--text);
+    text-align: left; font-family: inherit; transition: background .1s;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .option:hover { background: var(--border); }
+  .option.selected { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+  .option .label { font-weight: 700; flex-shrink: 0; }
+  .nav { display: flex; justify-content: space-between; align-items: center; padding-top: 16px; }
+  .footer-bar { padding-top: 16px; }
+  .track { width: 100%; height: 8px; background: var(--track); border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: var(--accent); width: 0%; transition: width .2s; }
+  /* result */
+  .result h2 { font-size: 24px; margin-bottom: 16px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .grade { font-size: 22px; font-weight: 700; margin: 12px 0; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+  .stat {
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px;
+  }
+  .stat .k { color: var(--text-secondary); font-size: 13px; }
+  .stat .v { font-size: 20px; font-weight: 700; }
+  .percentile { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 12px 0; font-size: 16px; }
+  .review h3 { margin: 24px 0 12px; font-size: 18px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .review-line { font-size: 14px; margin: 3px 0; }
+  .mark-wrong { color: var(--wrong); font-weight: 600; }
+  .mark-correct { color: var(--correct); font-weight: 600; }
+  .review-exp { color: var(--text-secondary); font-size: 13px; margin-top: 6px; }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0; }
+  .hidden { display: none; }
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: 1fr; }
+    .title { font-size: 16px; }
+    .btn { padding: 6px 9px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">C 程式語言測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </header>
+
+  <!-- QUIZ -->
+  <div id="quizView">
+    <div class="progress-text" id="progressText">第 1 / 40 題</div>
+    <div class="question-area" id="questionArea">
+      <div class="question-text" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+    </div>
+    <div class="footer-bar">
+      <div class="track"><div class="fill" id="fill"></div></div>
+    </div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultView" class="result hidden"></div>
+</div>
+
+<script>
+const questions = [
+  {id:1,difficulty:"easy",points:10,answer:1,
+   zh:{question:"在 C 語言中，下列哪一個逸出序列代表換行？",options:["\\t（水平定位）","\\n（換行）","\\r（歸位）","\\b（退格）"],explanation:"\\n 代表換行字元。"},
+   en:{question:"In C, which escape sequence represents a newline?",options:["\\t (horizontal tab)","\\n (newline)","\\r (carriage return)","\\b (backspace)"],explanation:"\\n is the newline character."}},
+
+  {id:2,difficulty:"easy",points:10,answer:0,
+   zh:{question:"關於 C 語言的整數型別 int，下列敘述何者正確？",options:["用於儲存沒有小數部分的整數數值","只能用於儲存正整數而不能存負數","會自動把小數四捨五入後再儲存","專門用來逐一儲存字串中的字元"],explanation:"int 儲存整數值。"},
+   en:{question:"Which statement about C's int type is correct?",options:["Stores whole-number values without a fractional part","Can only hold positive integers and not negatives","Automatically rounds decimals before storing them","Is used to store characters of a string one by one"],explanation:"int stores integer values."}},
+
+  {id:3,difficulty:"medium",points:15,answer:2,
+   zh:{question:'字串 "Hello" 在記憶體中實際佔用幾個位元組（含結尾）？',options:["4 個位元組（不含任何結尾字元）","5 個位元組（剛好等於可見字元數）","6 個位元組（含結尾的空字元）","7 個位元組（前後各加一個標記）"],explanation:"字串以 '\\0' 結尾，故為 6。"},
+   en:{question:'How many bytes does the string "Hello" occupy in memory (with terminator)?',options:["4 bytes, with no terminator stored at all","5 bytes, exactly the number of visible chars","6 bytes, including the null terminator","7 bytes, with one marker added on each side"],explanation:"A string ends with '\\0', so 6."}},
+
+  {id:4,difficulty:"easy",points:10,answer:3,
+   zh:{question:"在標準 C 程式中，main 函式通常的回傳型別是？",options:["void，表示完全不回傳任何值","char，回傳程式輸出的字元","float，回傳程式的執行時間","int，回傳給作業系統的狀態碼"],explanation:"main 回傳 int 狀態碼。"},
+   en:{question:"In a standard C program, what does main usually return?",options:["void, meaning it returns no value at all","char, returning a character the program prints","float, returning the program's running time","int, returning a status code to the OS"],explanation:"main returns an int status code."}},
+
+  {id:5,difficulty:"medium",points:15,answer:0,
+   zh:{question:"運算式 7 / 2 與 7 % 2 在 C 中的結果分別是？",options:["3 與 1","3.5 與 1","3 與 3.5","3.5 與 0"],explanation:"整數除法取商與餘數。"},
+   en:{question:"In C, what are the results of 7 / 2 and 7 % 2?",options:["3 and 1","3.5 and 1","3 and 3.5","3.5 and 0"],explanation:"Integer division gives quotient and remainder."}},
+
+  {id:6,difficulty:"easy",points:10,answer:2,
+   zh:{question:"下列哪一個格式指定子用於以十進位印出整數？",options:["%c，用於印出單一字元","%f，用於印出浮點數值","%d，用於印出十進位整數","%s，用於印出字串內容"],explanation:"%d 印十進位整數。"},
+   en:{question:"Which format specifier prints an integer in decimal?",options:["%c, prints a single character","%f, prints a floating value","%d, prints a decimal integer","%s, prints a string of text"],explanation:"%d prints a decimal integer."}},
+
+  {id:7,difficulty:"medium",points:15,answer:1,
+   zh:{question:"關於 C 語言的陣列索引，下列敘述何者正確？",options:["第一個元素索引是 1，最後是長度值","第一個元素索引是 0，最後是長度減一","索引必須從 1 開始，但可自訂起始值","索引由編譯器隨機決定，無固定規則"],explanation:"索引從 0 到 n-1。"},
+   en:{question:"Which statement about C array indexing is correct?",options:["First element is index 1, last is the length","First element is index 0, last is length minus 1","Indexing starts at 1 but the base is configurable","Indices are chosen randomly by the compiler"],explanation:"Indices run 0 to n-1."}},
+
+  {id:8,difficulty:"trap",points:19,answer:3,
+   zh:{question:"在標準 C（非 C++）中，sizeof('A') 的結果通常是？",options:["1，因為字元只佔一個位元組","2，因為包含字元與結尾字元","0，因為字元常數沒有大小","4，因為字元常數的型別是 int"],explanation:"C 中字元常數型別為 int。"},
+   en:{question:"In standard C (not C++), sizeof('A') usually equals?",options:["1, since a character takes one byte","2, since it includes a terminator char","0, since char constants have no size","4, since a char constant has type int"],explanation:"Char constants are int in C."}},
+
+  {id:9,difficulty:"easy",points:10,answer:0,
+   zh:{question:"下列哪一個運算子用於判斷兩個值是否相等？",options:["==（相等比較運算子）","=（指定運算子）","->（成員存取運算子）",">=（大於或等於運算子）"],explanation:"== 比較相等，= 是指定。"},
+   en:{question:"Which operator tests whether two values are equal?",options:["== (equality comparison operator)","= (assignment operator)","-> (member access operator)",">= (greater-or-equal operator)"],explanation:"== compares; = assigns."}},
+
+  {id:10,difficulty:"medium",points:15,answer:2,
+   zh:{question:'執行 int i=5; printf("%d", i++); 後，印出值與 i 的新值分別為？',options:["6 與 6","6 與 5","5 與 6","5 與 5"],explanation:"後置遞增先用值再加一。"},
+   en:{question:'After int i=5; printf("%d", i++); what is printed and i\'s new value?',options:["6 and 6","6 and 5","5 and 6","5 and 5"],explanation:"Post-increment uses then adds."}},
+
+  {id:11,difficulty:"hard",points:25,answer:3,
+   zh:{question:"已知 int a=10, *p=&a, **pp=&p; 則 **pp 的值是？",options:["a 的記憶體位址","p 的記憶體位址","未定義，無法取得","10，即 a 的值"],explanation:"兩次解參考取得 a 的值。"},
+   en:{question:"Given int a=10, *p=&a, **pp=&p; what is the value of **pp?",options:["The memory address of a","The memory address of p","Undefined and unobtainable","10, the value of a"],explanation:"Two dereferences yield a's value."}},
+
+  {id:12,difficulty:"easy",points:10,answer:1,
+   zh:{question:"下列哪一個是 C 語言的單行註解語法？",options:["# 這是一行註解","// 這是一行註解","<!-- 這是註解 -->","** 這是一行註解 **"],explanation:"// 為單行註解。"},
+   en:{question:"Which is the single-line comment syntax in C?",options:["# this is a comment","// this is a comment","<!-- a comment -->","** this is a comment **"],explanation:"// is a single-line comment."}},
+
+  {id:13,difficulty:"medium",points:15,answer:0,
+   zh:{question:'對於字元陣列 char s[] = "Hi"; sizeof(s) 的結果是？',options:["3，包含兩個字元與結尾空字元","2，僅計算兩個可見字元","1，因為陣列名稱退化為指標","8，因為等於一個指標的大小"],explanation:"含 '\\0' 共 3 位元組。"},
+   en:{question:'For char s[] = "Hi"; what is sizeof(s)?',options:["3, two characters plus the null terminator","2, counting only the two visible chars","1, since the array name decays to a pointer","8, since it equals the size of a pointer"],explanation:"Includes '\\0', so 3 bytes."}},
+
+  {id:14,difficulty:"hard",points:25,answer:2,
+   zh:{question:"巨集 #define SQ(x) x*x 之後，SQ(2+3) 展開計算為？",options:["25，符合平方的預期結果","10，等於兩數相加後乘二","11，因為展開為 2+3*2+3","13，因為運算順序由左至右"],explanation:"巨集無括號導致 2+3*2+3=11。"},
+   en:{question:"With #define SQ(x) x*x, SQ(2+3) expands and evaluates to?",options:["25, the expected squared result","10, the sum doubled once","11, since it expands to 2+3*2+3","13, evaluated strictly left to right"],explanation:"No parentheses: 2+3*2+3=11."}},
+
+  {id:15,difficulty:"medium",points:15,answer:3,
+   zh:{question:"在 if (a > 0 && b++ > 0) 中，若 a > 0 為假，則 b++ 會？",options:["仍會執行，b 一定會加一","執行兩次，因為短路求值","視編譯器而定，結果不確定","不會執行，因為邏輯短路"],explanation:"&& 左為假即短路，右不執行。"},
+   en:{question:"In if (a > 0 && b++ > 0), if a > 0 is false, b++ will?",options:["Still run, so b is incremented","Run twice due to short-circuit","Depend on the compiler, undefined","Not run due to short-circuiting"],explanation:"&& short-circuits; right side skipped."}},
+
+  {id:16,difficulty:"easy",points:10,answer:1,
+   zh:{question:"下列哪一個關鍵字用於建立在迴圈中重複執行的結構？",options:["if，用於條件分支判斷","while，用於條件式重複執行","return，用於回傳函式結果","struct，用於定義資料結構"],explanation:"while 為迴圈關鍵字。"},
+   en:{question:"Which keyword creates a loop that repeats execution?",options:["if, for conditional branching","while, for conditional repetition","return, for returning a result","struct, for defining a record"],explanation:"while is a loop keyword."}},
+
+  {id:17,difficulty:"hard",points:25,answer:0,
+   zh:{question:"函式內的 static int c = 0; 區域變數，其特性為？",options:["只初始化一次，並在多次呼叫間保留值","每次呼叫都重新初始化為零值","可被其他原始檔以名稱直接存取","存放於堆疊，函式結束即被釋放"],explanation:"static 區域變數壽命為整個程式。"},
+   en:{question:"A function's static int c = 0; local variable is characterized by?",options:["Initialized once and keeps its value across calls","Re-initialized to zero on every single call","Accessible by name from other source files","Stored on the stack and freed on return"],explanation:"static locals live for the whole program."}},
+
+  {id:18,difficulty:"medium",points:15,answer:2,
+   zh:{question:"將陣列當作引數傳入函式時，函式實際接收到的是？",options:["整個陣列的完整複本","陣列的長度與型別資訊","指向陣列第一個元素的指標","陣列內容的唯讀快照"],explanation:"陣列傳參會退化為指標。"},
+   en:{question:"When an array is passed to a function, the function receives?",options:["A full copy of the entire array","The array's length and type info","A pointer to the array's first element","A read-only snapshot of the contents"],explanation:"Arrays decay to pointers when passed."}},
+
+  {id:19,difficulty:"trap",points:19,answer:3,
+   zh:{question:"條件式 if (x = 5) 在語法正確的情況下，其行為是？",options:["比較 x 是否等於 5 後再判斷","造成編譯錯誤，無法通過編譯","只有當 x 原本為 5 時才為真","將 5 指定給 x，條件恆為真"],explanation:"= 為指定，結果非零恆真。"},
+   en:{question:"When syntactically valid, what does if (x = 5) do?",options:["Compares whether x equals 5 first","Causes a compile error and fails to build","True only if x was already 5","Assigns 5 to x, condition always true"],explanation:"= assigns; nonzero is always true."}},
+
+  {id:20,difficulty:"medium",points:15,answer:1,
+   zh:{question:"運算式 5 & 3（位元 AND）的結果是？",options:["8，等於兩數相加的結果","1，逐位元做 AND 的結果","7，等於兩數做 OR 的結果","2，等於兩數相減的結果"],explanation:"101 & 011 = 001 = 1。"},
+   en:{question:"What is the result of 5 & 3 (bitwise AND)?",options:["8, equal to adding the two","1, the bitwise-AND result","7, equal to their bitwise OR","2, equal to their difference"],explanation:"101 & 011 = 001 = 1."}},
+
+  {id:21,difficulty:"easy",points:10,answer:0,
+   zh:{question:"在 C 語言中，字元常數（如 A）必須使用哪一種符號括住？",options:["單引號，例如 'A'","雙引號，例如 \"A\"","反引號，例如 `A`","角括號，例如 <A>"],explanation:"字元用單引號，字串用雙引號。"},
+   en:{question:"In C, a character constant must be enclosed in which symbol?",options:["Single quotes, e.g. 'A'","Double quotes, e.g. \"A\"","Backticks, e.g. `A`","Angle brackets, e.g. <A>"],explanation:"Chars use single quotes; strings double."}},
+
+  {id:22,difficulty:"hard",points:25,answer:2,
+   zh:{question:"對於 int arr[5]; 與函式參數 int *p; 下列何者正確？（int 為 4 位元組）",options:["兩者的 sizeof 結果必定完全相同","arr 可被重新指向另一個陣列位址","sizeof(arr) 為 20，sizeof(p) 為指標大小","p 能透過 sizeof 取得陣列總長度"],explanation:"陣列名非指標，sizeof 不同。"},
+   en:{question:"For int arr[5]; and parameter int *p; which is correct? (int is 4 bytes)",options:["Both yield exactly the same sizeof result","arr can be reassigned to another address","sizeof(arr) is 20; sizeof(p) is a pointer size","p can recover the array length via sizeof"],explanation:"An array name is not a pointer."}},
+
+  {id:23,difficulty:"medium",points:15,answer:3,
+   zh:{question:"三元運算式 (a > b) ? a : b 的作用是？",options:["判斷 a 是否大於 b 並印出結果","交換 a 與 b 兩個變數的值","計算 a 與 b 兩數的平均值","回傳 a 與 b 之中較大的那個值"],explanation:"取兩者中較大值。"},
+   en:{question:"What does the ternary (a > b) ? a : b do?",options:["Checks if a > b and prints the result","Swaps the values of a and b","Computes the average of a and b","Returns the larger of a and b"],explanation:"Returns the larger value."}},
+
+  {id:24,difficulty:"hard",points:25,answer:1,
+   zh:{question:"呼叫 malloc 配置記憶體後，下列哪個做法最為正確？",options:["配置後可立即使用，無須檢查回傳值","檢查回傳是否為 NULL，用完再以 free 釋放","使用完畢後將指標設為任意非零值即可","重複呼叫 free 兩次以確保完全釋放"],explanation:"應檢查 NULL 並避免重複 free。"},
+   en:{question:"After calling malloc, which practice is most correct?",options:["Use it right away without checking the result","Check for NULL, then free it when done","Set the pointer to any nonzero value after use","Call free twice to ensure full release"],explanation:"Check NULL; avoid double free."}},
+
+  {id:25,difficulty:"medium",points:15,answer:0,
+   zh:{question:"結構變數 struct Point pt; 要存取其成員 x，正確寫法是？",options:["pt.x，以點運算子存取成員","pt->x，以點運算子存取成員","pt@x，以位址運算子存取成員","pt::x，以範圍運算子存取成員"],explanation:"結構變數用 . ，指標用 ->。"},
+   en:{question:"For struct Point pt; how do you correctly access member x?",options:["pt.x, using the dot operator","pt->x, using the dot operator","pt@x, using the address operator","pt::x, using the scope operator"],explanation:"Use . for a struct, -> for a pointer."}},
+
+  {id:26,difficulty:"trap",points:19,answer:2,
+   zh:{question:"關於 C 語言中 char 型別是否帶正負號，下列敘述何者正確？",options:["標準規定 char 一定是有號型別","標準規定 char 一定是無號型別","由實作定義，可能有號或無號","char 不是整數型別，無正負之分"],explanation:"char 正負號由實作決定。"},
+   en:{question:"Regarding whether char is signed in C, which statement is correct?",options:["The standard mandates char is always signed","The standard mandates char is always unsigned","It is implementation-defined, signed or unsigned","char is not integral, so it has no sign"],explanation:"char signedness is implementation-defined."}},
+
+  {id:27,difficulty:"hard",points:25,answer:3,
+   zh:{question:"在標準 C 中，運算式 i = i++; 的行為被歸類為？",options:["良好定義，i 必定增加一","良好定義，i 的值維持不變","編譯錯誤，無法通過編譯器","未定義行為，結果不可依賴"],explanation:"同一序列點內多次修改 i 為 UB。"},
+   en:{question:"In standard C, the expression i = i++; is classified as?",options:["Well-defined; i always increases by one","Well-defined; i keeps its same value","A compile error rejected by the compiler","Undefined behavior; the result is unreliable"],explanation:"Multiple modifications of i is UB."}},
+
+  {id:28,difficulty:"medium",points:15,answer:1,
+   zh:{question:"下列哪一個正確宣告一個指向「接收 int、回傳 int」函式的指標？",options:["int fp(int);","int (*fp)(int);","int *fp(int);","(int)*fp(int);"],explanation:"括號讓 *fp 結合成指標。"},
+   en:{question:"Which correctly declares a pointer to a function taking int and returning int?",options:["int fp(int);","int (*fp)(int);","int *fp(int);","(int)*fp(int);"],explanation:"Parentheses bind *fp as a pointer."}},
+
+  {id:29,difficulty:"easy",points:10,answer:0,
+   zh:{question:"for (int i = 0; i < 3; i++) 這個迴圈會執行幾次？",options:["3 次，i 依序為 0、1、2","4 次，i 依序為 0 到 3","2 次，i 依序為 0 與 1","無限次，因為條件永遠成立"],explanation:"i 從 0 到 2 共三次。"},
+   en:{question:"How many times does for (int i = 0; i < 3; i++) run?",options:["3 times, i is 0, 1, 2","4 times, i is 0 through 3","2 times, i is 0 and 1","Infinitely, the condition never fails"],explanation:"i goes 0 to 2, three times."}},
+
+  {id:30,difficulty:"hard",points:25,answer:2,
+   zh:{question:'char *s = "hi"; s[0] = \'H\'; 這段程式碼的問題在於？',options:["語法錯誤，字串無法以指標承接","邏輯正確，可安全修改字串內容","修改字串字面值為未定義行為","編譯期錯誤，編譯器會直接拒絕"],explanation:"字串字面值唯讀，修改為 UB。"},
+   en:{question:'What is wrong with: char *s = "hi"; s[0] = \'H\';',options:["Syntax error; a string can't bind to a pointer","Correct; the contents can be safely modified","Modifying a string literal is undefined behavior","A compile-time error the compiler rejects"],explanation:"String literals are read-only; UB."}},
+
+  {id:31,difficulty:"medium",points:15,answer:3,
+   zh:{question:"運算式 2 + 3 * 4 - 1 在 C 中的計算結果是？",options:["19，由左至右依序運算","20，先做所有加減運算","16，先做減法再做其他","13，先乘後加減的結果"],explanation:"乘法優先於加減：2+12-1=13。"},
+   en:{question:"What is the result of 2 + 3 * 4 - 1 in C?",options:["19, evaluated strictly left to right","20, doing all additions first","16, doing subtraction first","13, multiply before add/subtract"],explanation:"Multiply first: 2+12-1=13."}},
+
+  {id:32,difficulty:"hard",points:25,answer:1,
+   zh:{question:"呼叫 free(p) 後，若未設 NULL 就再次使用 p，稱為？",options:["記憶體洩漏，配置的空間無法回收","懸置指標，存取已釋放的記憶體","堆疊溢位，超出可用堆疊範圍","緩衝區不足，需要重新配置空間"],explanation:"指向已釋放記憶體即懸置指標。"},
+   en:{question:"Using p again after free(p) without setting it to NULL is called?",options:["Memory leak; the space can't be reclaimed","Dangling pointer; accessing freed memory","Stack overflow; exceeding the stack space","Buffer shortage; needing reallocation"],explanation:"It points to freed memory: dangling."}},
+
+  {id:33,difficulty:"trap",points:19,answer:0,
+   zh:{question:"在 C 中，運算式 (0.1 + 0.2 == 0.3) 的結果通常是？",options:["為假，因浮點數有捨入誤差","為真，兩邊數值完全相等","造成除以零的執行期錯誤","由編譯器隨機決定真或假"],explanation:"浮點誤差使其不完全相等。"},
+   en:{question:"In C, the expression (0.1 + 0.2 == 0.3) usually evaluates to?",options:["False, due to floating-point rounding error","True, both sides are exactly equal","Causes a divide-by-zero runtime error","Randomly chosen true or false by compiler"],explanation:"Float rounding makes them unequal."}},
+
+  {id:34,difficulty:"medium",points:15,answer:2,
+   zh:{question:"運算式 1 << 4（左移）的結果是？",options:["5，等於兩數相加的結果","8，等於 1 乘以 8","16，等於 1 乘以 2 的 4 次方","32，等於 1 乘以 2 的 5 次方"],explanation:"左移 n 位等於乘以 2 的 n 次方。"},
+   en:{question:"What is the result of 1 << 4 (left shift)?",options:["5, equal to adding the two","8, one times eight","16, one times 2 to the 4th","32, one times 2 to the 5th"],explanation:"Shift left n equals times 2^n."}},
+
+  {id:35,difficulty:"hard",points:25,answer:3,
+   zh:{question:"在 32 位元有號 int 中，將其最大值再加一通常會導致？",options:["自動轉型為更大的整數型別","結果飽和停留在最大值不變","編譯器在編譯期報錯並停止","有號溢位，屬於未定義行為"],explanation:"有號整數溢位為未定義行為。"},
+   en:{question:"Adding one to the maximum 32-bit signed int usually causes?",options:["Automatic promotion to a larger integer type","Saturation, staying at the maximum value","A compile-time error halting the build","Signed overflow, which is undefined behavior"],explanation:"Signed overflow is undefined behavior."}},
+
+  {id:36,difficulty:"trap",points:19,answer:1,
+   zh:{question:"在 C 中，字元常數 '0' 與整數常數 0 的關係是？",options:["完全相同，兩者皆代表數值零","'0' 的值為 48，並非整數零","'0' 無法用於任何數值運算","整數 0 會自動轉換為字元 '0'"],explanation:"'0' 的 ASCII 值為 48。"},
+   en:{question:"In C, how do the char constant '0' and integer 0 relate?",options:["Identical; both represent the value zero","'0' has value 48, not integer zero","'0' cannot be used in any arithmetic","Integer 0 auto-converts to char '0'"],explanation:"'0' has ASCII value 48."}},
+
+  {id:37,difficulty:"easy",points:10,answer:0,
+   zh:{question:"要使用 printf 函式，通常需要引入哪一個標頭檔？",options:["stdio.h，標準輸入輸出函式庫","stdlib.h，標準工具函式庫","string.h，字串處理函式庫","math.h，數學運算函式庫"],explanation:"printf 定義於 stdio.h。"},
+   en:{question:"To use printf, which header is typically included?",options:["stdio.h, the standard I/O library","stdlib.h, the standard utility library","string.h, the string-handling library","math.h, the math functions library"],explanation:"printf is declared in stdio.h."}},
+
+  {id:38,difficulty:"medium",points:15,answer:2,
+   zh:{question:"關於 ++i 與 i++ 兩者，下列敘述何者正確？",options:["兩者在所有情況下行為完全相同","++i 先回傳舊值後才將其加一","++i 先加再回傳，i++ 則相反","i++ 比 ++i 多做一次加法運算"],explanation:"前置先加再用，後置先用再加。"},
+   en:{question:"Which statement about ++i and i++ is correct?",options:["Both behave the same in every situation","++i returns the old value, then adds one","++i adds then returns; i++ is the reverse","i++ does one more addition than ++i"],explanation:"Pre adds first; post uses first."}},
+
+  {id:39,difficulty:"hard",points:25,answer:3,
+   zh:{question:"char c = 200; 在 char 為有號 8 位元的實作上，c 的值會？",options:["保持為 200，正常儲存無誤","觸發編譯錯誤，數值超出範圍","自動提升為 int 以容納該值","因溢位環繞為負值（如 -56）"],explanation:"有號 char 範圍 -128~127，會環繞。"},
+   en:{question:"With char c = 200; on a signed 8-bit char, the value of c will?",options:["Stay 200, stored without any problem","Trigger a compile error for being out of range","Be promoted to int to hold the value","Wrap around to a negative value (e.g. -56)"],explanation:"Signed char is -128..127, so it wraps."}},
+
+  {id:40,difficulty:"medium",points:15,answer:1,
+   zh:{question:"switch 敘述中，若某個 case 結尾沒有寫 break，會發生什麼？",options:["自動跳出 switch，不影響其他 case","繼續執行下一個 case（貫穿現象）","造成編譯錯誤，程式無法執行","回到 switch 開頭重新比對一次"],explanation:"缺少 break 會貫穿執行後續 case。"},
+   en:{question:"In a switch, what happens if a case has no break at its end?",options:["Auto-exits the switch with no side effects","Falls through into the next case","Causes a compile error and won't run","Jumps back to re-check the switch start"],explanation:"Without break it falls through."}}
+];
+
+const i18n = {
+  zh: { title:"C 程式語言測驗", lang:"English", dark:"🌙 深色", light:"☀️ 淺色",
+    progress:(c,t)=>`第 ${c} / ${t} 題`, prev:"上一題", submit:"提交測驗",
+    resultTitle:"測驗結果", totalScore:"總分", correctCount:"正確題數", wrongCount:"錯誤題數",
+    byDiff:"各難度正確率", easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱",
+    percentile:(p)=>`你的成績超越了約 ${p}% 的測試者`,
+    grade:"等級評定", review:"錯題回顧", yourAns:"你的選擇", correctAns:"正確答案",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！", noWrong:"太厲害了，全部答對！",
+    summary:(s,c)=>`我在 C 程式語言測驗中得到 ${s} / 670 分，答對 ${c} / 40 題！` },
+  en: { title:"C Programming Quiz", lang:"中文", dark:"🌙 Dark", light:"☀️ Light",
+    progress:(c,t)=>`Question ${c} / ${t}`, prev:"Previous", submit:"Submit Quiz",
+    resultTitle:"Your Results", totalScore:"Total Score", correctCount:"Correct", wrongCount:"Wrong",
+    byDiff:"Accuracy by Difficulty", easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap",
+    percentile:(p)=>`You scored higher than about ${p}% of test-takers`,
+    grade:"Grade", review:"Review of Wrong Answers", yourAns:"Your choice", correctAns:"Correct answer",
+    retry:"Retry", copy:"Copy Results", copied:"Copied!", noWrong:"Perfect — all correct!",
+    summary:(s,c)=>`I scored ${s} / 670 on the C Programming Quiz, ${c} / 40 correct!` }
+};
+
+const grades = [
+  {min:600, zh:"🏆 頂尖專家", en:"🏆 Top Expert"},
+  {min:500, zh:"⭐ 進階掌握", en:"⭐ Advanced"},
+  {min:380, zh:"📘 中等水準", en:"📘 Intermediate"},
+  {min:250, zh:"📗 基礎尚可", en:"📗 Basic"},
+  {min:0,   zh:"📕 需要加強", en:"📕 Needs Improvement"}
+];
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const LETTERS = ["A","B","C","D"];
+
+// theme init
+(function initTheme(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+})();
+
+const $ = id => document.getElementById(id);
+
+function applyStaticText(){
+  const t = i18n[lang];
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  $("appTitle").textContent = t.title;
+  $("langBtn").textContent = t.lang;
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  $("themeBtn").textContent = isDark ? t.light : t.dark;
+  $("prevBtn").textContent = t.prev;
+  $("submitBtn").textContent = t.submit;
+}
+
+function renderQuestion(){
+  const t = i18n[lang];
+  const q = questions[current];
+  const data = q[lang];
+  $("progressText").textContent = t.progress(current+1, questions.length);
+  $("questionText").textContent = data.question;
+  const box = $("optionsBox");
+  box.innerHTML = "";
+  data.options.forEach((opt, idx) => {
+    const el = document.createElement("button");
+    el.className = "option" + (answers[current] === idx ? " selected" : "");
+    el.innerHTML = `<span class="label">${LETTERS[idx]}</span><span>${escapeHtml(opt)}</span>`;
+    el.addEventListener("click", () => selectOption(idx));
+    box.appendChild(el);
+  });
+  $("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
+  const lastAndAnswered = current === questions.length - 1 && answers[current] !== null;
+  $("submitBtn").classList.toggle("hidden", !lastAndAnswered);
+  $("fill").style.width = ((current+1)/questions.length*100) + "%";
+}
+
+function selectOption(idx){
+  answers[current] = idx;
+  // show selected state
+  const opts = $("optionsBox").children;
+  for (let i=0;i<opts.length;i++) opts[i].classList.toggle("selected", i===idx);
+
+  if (current === questions.length - 1){
+    // last question: show submit button, no auto-advance
+    $("submitBtn").classList.remove("hidden");
+    return;
+  }
+  // brief highlight then auto-advance
+  setTimeout(()=>{
+    const area = $("questionArea");
+    area.classList.add("fade");
+    setTimeout(()=>{
+      current++;
+      renderQuestion();
+      area.classList.remove("fade");
+    }, 250);
+  }, 400);
+}
+
+function goPrev(){
+  if (current === 0) return;
+  const area = $("questionArea");
+  area.classList.add("fade");
+  setTimeout(()=>{
+    current--;
+    renderQuestion();
+    area.classList.remove("fade");
+  }, 250);
+}
+
+// normal CDF via erf approximation
+function normalCdf(x, mean, sd){
+  const z = (x - mean) / (sd * Math.SQRT2);
+  return 0.5 * (1 + erf(z));
+}
+function erf(x){
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function computeResults(){
+  let score=0, correct=0;
+  const diff = {easy:{c:0,n:0},medium:{c:0,n:0},hard:{c:0,n:0},trap:{c:0,n:0}};
+  const wrong = [];
+  questions.forEach((q,i)=>{
+    diff[q.difficulty].n++;
+    if (answers[i] === q.answer){ score += q.points; correct++; diff[q.difficulty].c++; }
+    else { wrong.push({q, chosen: answers[i]}); }
+  });
+  const mean = 670*0.45, sd = 670*0.15;
+  const pct = Math.round(normalCdf(score, mean, sd)*100);
+  return {score, correct, wrong:wrong, diff, pct: Math.max(0,Math.min(99,pct))};
+}
+
+function showResults(){
+  const t = i18n[lang];
+  const r = computeResults();
+  const grade = grades.find(g => r.score >= g.min);
+  $("quizView").classList.add("hidden");
+  const v = $("resultView");
+  v.classList.remove("hidden");
+
+  let html = `<h2>${t.resultTitle}</h2>`;
+  html += `<div class="score-big">${r.score} / 670</div>`;
+  html += `<div class="grade">${grade[lang]}</div>`;
+  html += `<div class="stat-grid">
+    <div class="stat"><div class="k">${t.correctCount}</div><div class="v">${r.correct} / 40</div></div>
+    <div class="stat"><div class="k">${t.wrongCount}</div><div class="v">${40-r.correct} / 40</div></div>
+  </div>`;
+  html += `<div class="stat-grid">
+    <div class="stat"><div class="k">${t.easy}</div><div class="v">${r.diff.easy.c} / ${r.diff.easy.n}</div></div>
+    <div class="stat"><div class="k">${t.medium}</div><div class="v">${r.diff.medium.c} / ${r.diff.medium.n}</div></div>
+    <div class="stat"><div class="k">${t.hard}</div><div class="v">${r.diff.hard.c} / ${r.diff.hard.n}</div></div>
+    <div class="stat"><div class="k">${t.trap}</div><div class="v">${r.diff.trap.c} / ${r.diff.trap.n}</div></div>
+  </div>`;
+  html += `<div class="percentile">${t.percentile(r.pct)}</div>`;
+
+  html += `<div class="result-actions">
+    <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+    <button class="btn" id="copyBtn">${t.copy}</button>
+  </div>`;
+
+  html += `<div class="review"><h3>${t.review}</h3>`;
+  if (r.wrong.length === 0){
+    html += `<div class="review-item">${t.noWrong}</div>`;
+  } else {
+    r.wrong.forEach(w => {
+      const d = w.q[lang];
+      const chosenTxt = w.chosen === null ? "—" : `${LETTERS[w.chosen]}. ${escapeHtml(d.options[w.chosen])}`;
+      const correctTxt = `${LETTERS[w.q.answer]}. ${escapeHtml(d.options[w.q.answer])}`;
+      html += `<div class="review-item">
+        <div class="review-q">${escapeHtml(d.question)}</div>
+        <div class="review-line"><span class="mark-wrong">${t.yourAns}:</span> ${chosenTxt}</div>
+        <div class="review-line"><span class="mark-correct">${t.correctAns}:</span> ${correctTxt}</div>
+        <div class="review-exp">${escapeHtml(d.explanation)}</div>
+      </div>`;
+    });
+  }
+  html += `</div>`;
+  v.innerHTML = html;
+
+  $("retryBtn").addEventListener("click", retry);
+  $("copyBtn").addEventListener("click", ()=>{
+    const text = t.summary(r.score, r.correct);
+    navigator.clipboard.writeText(text).then(()=>{
+      $("copyBtn").textContent = t.copied;
+      setTimeout(()=>{ $("copyBtn").textContent = t.copy; }, 1500);
+    }).catch(()=>{
+      $("copyBtn").textContent = t.copied;
+    });
+  });
+}
+
+function retry(){
+  current = 0;
+  for (let i=0;i<answers.length;i++) answers[i]=null;
+  $("resultView").classList.add("hidden");
+  $("quizView").classList.remove("hidden");
+  renderQuestion();
+}
+
+function escapeHtml(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+// events
+$("langBtn").addEventListener("click", ()=>{
+  lang = lang === "zh" ? "en" : "zh";
+  applyStaticText();
+  if ($("resultView").classList.contains("hidden")) renderQuestion();
+  else showResults();
+});
+$("themeBtn").addEventListener("click", ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  applyStaticText();
+});
+$("prevBtn").addEventListener("click", goPrev);
+$("submitBtn").addEventListener("click", showResults);
+
+// init
+applyStaticText();
+renderQuestion();
+</script>
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>普通物理 互動測驗 | General Physics Quiz</title>
+<style>
+:root{--bg:#FFFFFF;--bg2:#F9FAFB;--text:#1A1A1A;--text2:#6B7280;--border:#E5E7EB;--accent:#2563EB;--accent-text:#FFFFFF;--hover:#EFF6FF;--correct:#16A34A;--wrong:#DC2626;--progress-bg:#E5E7EB;--btn:#1A1A1A;--btn-text:#FFFFFF;--btn2:#F3F4F6;--btn2-text:#1A1A1A;}
+[data-theme="dark"]{--bg:#111111;--bg2:#1F2937;--text:#E5E7EB;--text2:#9CA3AF;--border:#374151;--accent:#60A5FA;--accent-text:#111111;--hover:#1E3A5F;--correct:#4ADE80;--wrong:#F87171;--progress-bg:#374151;--btn:#E5E7EB;--btn-text:#111111;--btn2:#374151;--btn2-text:#E5E7EB;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s;}
+#app{max-width:720px;margin:0 auto;padding:16px;}
+.header{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:24px;flex-wrap:wrap;gap:8px;}
+.header-title{font-size:15px;font-weight:600;}
+.header-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.btn-sm{padding:5px 12px;border:1px solid var(--border);border-radius:6px;background:var(--btn2);color:var(--btn2-text);cursor:pointer;font-size:13px;font-weight:500;transition:background .15s;}
+.btn-sm:hover{background:var(--hover);}
+.progress-text{font-size:13px;color:var(--text2);}
+.progress-bar-wrap{margin-bottom:24px;}
+.progress-bar-bg{height:5px;background:var(--progress-bg);border-radius:3px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width .3s;}
+.question-card{opacity:1;transition:opacity .2s;}
+.question-card.fade{opacity:0;}
+.question-num{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;}
+.question-text{font-size:17px;font-weight:500;line-height:1.6;margin-bottom:24px;}
+.options{display:flex;flex-direction:column;gap:10px;}
+.option{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:background .15s,border-color .15s;background:var(--bg);}
+.option:hover{background:var(--hover);border-color:var(--accent);}
+.option.selected{background:var(--hover);border-color:var(--accent);}
+.option-letter{width:24px;height:24px;min-width:24px;border-radius:50%;border:1.5px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--text2);}
+.option.selected .option-letter{background:var(--accent);border-color:var(--accent);color:var(--accent-text);}
+.option-text{font-size:15px;line-height:1.5;padding-top:2px;}
+.nav{display:flex;justify-content:space-between;align-items:center;margin-top:28px;}
+.btn-primary{padding:10px 24px;background:var(--btn);color:var(--btn-text);border:none;border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;transition:opacity .15s;}
+.btn-primary:hover{opacity:.85;}
+.btn-prev{padding:10px 20px;background:var(--btn2);color:var(--btn2-text);border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:500;cursor:pointer;transition:background .15s;}
+.btn-prev:hover{background:var(--hover);}
+.btn-prev:disabled{opacity:.35;cursor:default;}
+#result-screen{display:none;}
+.result-header{text-align:center;padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px;}
+.result-score{font-size:48px;font-weight:700;color:var(--accent);line-height:1;}
+.result-label{font-size:15px;color:var(--text2);margin-top:6px;}
+.result-grade{font-size:22px;font-weight:600;margin-top:14px;}
+.result-percentile{font-size:14px;color:var(--text2);margin-top:6px;}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px;}
+.stat-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;}
+.stat-num{font-size:26px;font-weight:700;}
+.stat-lbl{font-size:12px;color:var(--text2);margin-top:4px;}
+.diff-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:28px;}
+.diff-box{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.diff-title{font-size:12px;color:var(--text2);margin-bottom:4px;}
+.diff-score{font-size:18px;font-weight:600;}
+.section-title{font-size:14px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:14px;}
+.wrong-item{border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:12px;background:var(--bg2);}
+.wrong-q-num{font-size:11px;color:var(--text2);margin-bottom:6px;font-weight:600;}
+.wrong-q-text{font-size:14px;font-weight:500;margin-bottom:12px;line-height:1.5;}
+.wrong-answer-row{font-size:13px;margin-bottom:4px;}
+.wrong-answer-row span{font-weight:600;}
+.wrong-yours{color:var(--wrong);}
+.wrong-correct{color:var(--correct);}
+.wrong-explain{margin-top:10px;font-size:13px;color:var(--text2);padding-top:10px;border-top:1px solid var(--border);line-height:1.5;}
+.result-btns{display:flex;gap:10px;margin-top:28px;flex-wrap:wrap;}
+.result-btns button{flex:1;min-width:120px;padding:12px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:none;}
+.btn-restart{background:var(--btn);color:var(--btn-text);}
+.btn-copy{background:var(--btn2);color:var(--btn2-text);border:1px solid var(--border)!important;}
+.btn-copy:hover{background:var(--hover);}
+@media(max-width:480px){.question-text{font-size:16px;}.result-score{font-size:40px;}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-title" id="header-title">普通物理測驗</div>
+    <div class="header-right">
+      <span class="progress-text" id="progress-text">第 1 / 40 題</span>
+      <button class="btn-sm" id="lang-btn" onclick="toggleLang()">English</button>
+      <button class="btn-sm" id="theme-btn" onclick="toggleTheme()">🌙 深色</button>
+    </div>
+  </div>
+  <div id="quiz-screen">
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progress-fill" style="width:2.5%"></div></div>
+    </div>
+    <div class="question-card" id="question-card">
+      <div class="question-num" id="q-num"></div>
+      <div class="question-text" id="q-text"></div>
+      <div class="options" id="options-container"></div>
+    </div>
+    <div class="nav">
+      <button class="btn-prev" id="prev-btn" onclick="prevQuestion()" disabled><span id="prev-label">← 上一題</span></button>
+      <button class="btn-primary" id="submit-btn" onclick="submitQuiz()" style="display:none"><span id="submit-label">提交測驗 →</span></button>
+    </div>
+  </div>
+  <div id="result-screen">
+    <div class="result-header">
+      <div class="result-score" id="res-score">0</div>
+      <div class="result-label" id="res-score-label">/ 670 分</div>
+      <div class="result-grade" id="res-grade"></div>
+      <div class="result-percentile" id="res-percentile"></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-box"><div class="stat-num" id="res-correct">0</div><div class="stat-lbl" id="res-correct-lbl">答對 / 40</div></div>
+      <div class="stat-box"><div class="stat-num" id="res-wrong">0</div><div class="stat-lbl" id="res-wrong-lbl">答錯 / 40</div></div>
+    </div>
+    <div class="section-title" id="diff-title">各難度成績</div>
+    <div class="diff-grid">
+      <div class="diff-box"><div class="diff-title" id="d-easy-lbl">簡單 Easy</div><div class="diff-score" id="d-easy">0 / 10</div></div>
+      <div class="diff-box"><div class="diff-title" id="d-med-lbl">中等 Med</div><div class="diff-score" id="d-med">0 / 15</div></div>
+      <div class="diff-box"><div class="diff-title" id="d-hard-lbl">困難 Hard</div><div class="diff-score" id="d-hard">0 / 10</div></div>
+      <div class="diff-box"><div class="diff-title" id="d-trap-lbl">陷阱 Trap</div><div class="diff-score" id="d-trap">0 / 5</div></div>
+    </div>
+    <div class="section-title" id="review-title">錯題回顧</div>
+    <div id="wrong-list"></div>
+    <div class="result-btns">
+      <button class="btn-restart" onclick="restartQuiz()"><span id="restart-label">重新測驗</span></button>
+      <button class="btn-copy" onclick="copyResult()"><span id="copy-label">複製結果</span></button>
+    </div>
+  </div>
+</div>
+<script>
+var lang='zh';
+var theme=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';
+document.documentElement.setAttribute('data-theme',theme);
+
+var questions=[
+{id:1,difficulty:"easy",points:10,
+zh:{question:"國際單位制（SI）中，力的單位是什麼？",options:["焦耳（Joule），能量與功的單位","牛頓（Newton），等於 1 kg·m/s²","帕斯卡（Pascal），壓力的單位","瓦特（Watt），功率的單位"],explanation:"牛頓是SI力的基本單位，1 N = 1 kg·m/s²"},
+en:{question:"What is the SI unit of force?",options:["Joule (J), the unit of energy and work","Newton (N), equal to 1 kg·m/s²","Pascal (Pa), the unit of pressure","Watt (W), the unit of power"],explanation:"Newton is the SI base unit of force; 1 N = 1 kg·m/s²"},answer:1},
+
+{id:2,difficulty:"medium",points:15,
+zh:{question:"水平拋體運動中，忽略空氣阻力，下列何者正確？",options:["水平速度隨時間增大，垂直速度維持不變","水平速度維持不變，垂直速度隨時間均勻增大","水平與垂直方向速度均隨時間等量增大","水平與垂直方向速度在整個過程中均保持不變"],explanation:"水平方向無外力故速度不變；垂直方向受重力加速"},
+en:{question:"For projectile motion (ignoring air resistance), which statement is correct?",options:["Horizontal speed increases with time; vertical speed remains constant","Horizontal speed is constant; vertical speed increases uniformly with time","Both horizontal and vertical speeds increase equally with time","Both horizontal and vertical speeds remain constant throughout"],explanation:"No horizontal force → constant horizontal speed; gravity uniformly accelerates vertical speed"},answer:1},
+
+{id:3,difficulty:"hard",points:25,
+zh:{question:"海森堡測不準原理指出，位置不確定量 Δx 與動量不確定量 Δp 滿足何關係？",options:["ΔxΔp ≥ ℏ/2，兩者乘積具有最小下限","ΔxΔp ≤ ℏ/2，兩者乘積具有最大上限","ΔxΔp = ℏ，兩者乘積為固定常數值","ΔxΔp ≥ ℏ，以 ℏ 整數倍作為下限"],explanation:"測不準原理正確形式為 ΔxΔp ≥ ℏ/2（ℏ = h/2π）"},
+en:{question:"The Heisenberg Uncertainty Principle states that position uncertainty Δx and momentum uncertainty Δp satisfy:",options:["ΔxΔp ≥ ℏ/2; the product has a minimum lower bound","ΔxΔp ≤ ℏ/2; the product has a maximum upper bound","ΔxΔp = ℏ; the product equals a fixed constant always","ΔxΔp ≥ ℏ; the lower bound equals the full value of ℏ"],explanation:"Correct form: ΔxΔp ≥ ℏ/2 (ℏ = h/2π, the reduced Planck constant)"},answer:0},
+
+{id:4,difficulty:"trap",points:19,
+zh:{question:"在真空中（忽略空氣阻力），同時從同一高度靜止釋放 1 kg 與 10 kg 的鐵球，結果為何？",options:["兩球以相同加速度 g 下落，同時抵達地面","10 kg 球加速度是 1 kg 球的 10 倍，因此更快落地","1 kg 球受力相對小，加速度反而較大而先落地","兩球加速度相同，但 10 kg 球因慣性大而落地較慢"],explanation:"自由落體加速度 g 與質量無關，兩球同時落地（伽利略結論）"},
+en:{question:"In a vacuum (no air resistance), a 1 kg and a 10 kg iron ball are released from rest at the same height. What happens?",options:["Both balls fall with the same acceleration g and reach the ground simultaneously","The 10 kg ball has 10× the acceleration and therefore lands first","The 1 kg ball experiences relatively less force, so has higher acceleration and lands first","Both have the same acceleration, but the 10 kg ball lands later due to greater inertia"],explanation:"Free-fall acceleration g is independent of mass; both land simultaneously (Galileo's conclusion)"},answer:0},
+
+{id:5,difficulty:"easy",points:10,
+zh:{question:"質量為 m、速率為 v 的物體，其動能公式為何？",options:["KE = ½mv²，質量乘速率平方再除以二","KE = mv，質量與速率的乘積","KE = ½mv，質量乘速率再除以二","KE = mv²，質量乘速率的平方"],explanation:"動能公式 KE = ½mv²，由功能定理推導而來"},
+en:{question:"What is the kinetic energy formula for an object with mass m and speed v?",options:["KE = ½mv²; half of mass times speed squared","KE = mv; the product of mass and speed","KE = ½mv; half of mass times speed","KE = mv²; mass times speed squared"],explanation:"Kinetic energy: KE = ½mv², derived from the work-energy theorem"},answer:0},
+
+{id:6,difficulty:"medium",points:15,
+zh:{question:"兩物體碰撞，若系統不受外力，下列哪個物理量必然守恆？",options:["系統的總動量必然守恆，無論碰撞類型","系統的總動能必然守恆，無論碰撞類型","系統的總機械能必然守恆，無論碰撞類型","各物體的速度大小均保持碰撞前後相同"],explanation:"無外力時動量守恆；動能僅在完全彈性碰撞中才守恆"},
+en:{question:"During a collision with no external forces on the system, which quantity is necessarily conserved?",options:["Total momentum of the system, regardless of collision type","Total kinetic energy of the system, regardless of collision type","Total mechanical energy of the system, regardless of collision type","The speed of each object remains the same before and after the collision"],explanation:"Momentum conserved with no external force; kinetic energy only conserved in perfectly elastic collisions"},answer:0},
+
+{id:7,difficulty:"hard",points:25,
+zh:{question:"兩列同頻率、等振幅的波發生干涉，若相位差恰好為 π（路徑差半波長），干涉結果為？",options:["完全相消干涉，疊加後合振幅為零","建設性干涉，合振幅為原振幅的兩倍","建設性干涉，合振幅為原振幅的 √2 倍","部分相消，合振幅介於零與原振幅之間"],explanation:"相位差 π = 半波長路徑差，導致完全相消，振幅歸零"},
+en:{question:"Two waves of the same frequency and equal amplitude interfere with phase difference π (path difference = half wavelength). The result is?",options:["Completely destructive interference; the resultant amplitude is zero","Constructive interference; the resultant amplitude is twice the original","Constructive interference; the resultant amplitude is √2 times the original","Partial cancellation; amplitude falls between zero and the original"],explanation:"Phase difference π = half-wavelength path difference → complete cancellation, zero amplitude"},answer:0},
+
+{id:8,difficulty:"medium",points:15,
+zh:{question:"根據虎克定律，彈簧在彈性限度內，彈力 F 與形變量 x 的關係為？",options:["F = kx，彈力與形變量成正比，k 為彈簧常數","F = kx²，彈力與形變量平方成正比","F = k/x，彈力與形變量成反比關係","F = √(kx)，彈力與形變量的平方根成正比"],explanation:"虎克定律：F = kx，彈力與形變量成線性正比"},
+en:{question:"According to Hooke's Law, within the elastic limit, spring force F and displacement x satisfy?",options:["F = kx; force is proportional to displacement, k is the spring constant","F = kx²; force is proportional to the square of displacement","F = k/x; force is inversely proportional to displacement","F = √(kx); force is proportional to the square root of displacement"],explanation:"Hooke's Law: F = kx — force and displacement are linearly proportional"},answer:0},
+
+{id:9,difficulty:"trap",points:19,
+zh:{question:"牛頓第三定律中，下列哪對力才是正確的「作用力—反作用力」？",options:["地球對書本的重力（下）↔ 書本對地球的重力（上）","地球對書本的重力（下）↔ 桌面對書本的正向力（上）","書本對桌面的壓力（下）↔ 地球對書本的重力（下）","桌面的正向力（上）↔ 地球重力加上書本壓力的合力"],explanation:"作用力-反作用力須同種力、作用在不同物體；地球-書本重力對符合"},
+en:{question:"Newton's Third Law: which pair correctly identifies an action-reaction pair?",options:["Earth's gravity on book (down) ↔ book's gravity on Earth (up)","Earth's gravity on book (down) ↔ table's normal force on book (up)","Book's force on table (down) ↔ Earth's gravity on book (down)","Table's normal force (up) ↔ combined Earth gravity plus book pressure"],explanation:"Action-reaction: same type of force, between two objects — Earth-book gravity pair qualifies"},answer:0},
+
+{id:10,difficulty:"easy",points:10,
+zh:{question:"地球表面的標準重力加速度（g）約為多少？",options:["6.67 × 10⁻¹¹ m/s²，萬有引力常數 G 的數值","9.8 m/s²，地球表面的標準重力加速度","3.0 × 10⁸ m/s²，真空中光速的數值","1.6 m/s²，月球表面的重力加速度"],explanation:"地球表面標準 g ≈ 9.8 m/s²；6.67×10⁻¹¹ 是引力常數 G，非 g"},
+en:{question:"What is the standard gravitational acceleration (g) at Earth's surface?",options:["6.67 × 10⁻¹¹ m/s², which is the gravitational constant G","9.8 m/s², the standard gravitational acceleration at Earth's surface","3.0 × 10⁸ m/s², which is the speed of light in vacuum","1.6 m/s², the gravitational acceleration at the Moon's surface"],explanation:"Standard g ≈ 9.8 m/s² at Earth's surface; 6.67×10⁻¹¹ is G, not g"},answer:1},
+
+{id:11,difficulty:"medium",points:15,
+zh:{question:"功能定理（Work-Energy Theorem）的正確敘述為？",options:["合外力對物體所做的功，等於物體動能的變化量","任意單一力對物體做的功，等於物體位能的變化量","合外力對物體所做的功，等於物體位能的變化量","保守力對物體做的功，等於物體動能的變化量"],explanation:"功能定理：W_net = ΔKE，合外力做功等於動能變化量"},
+en:{question:"Which correctly states the Work-Energy Theorem?",options:["Net work done on an object equals the change in its kinetic energy","Work done by any single force equals the change in potential energy","Net work done on an object equals the change in its potential energy","Work done by conservative forces equals the change in kinetic energy"],explanation:"Work-Energy Theorem: W_net = ΔKE — net work equals kinetic energy change"},answer:0},
+
+{id:12,difficulty:"hard",points:25,
+zh:{question:"光電效應實驗中，何者的改變會使逸出光電子的最大動能增大？",options:["僅增大入射光的頻率，使光子能量超過功函數更多","僅增大入射光的強度，使每秒逸出更多光電子","同時增大入射光的強度與照射時間以累積能量","同時增大入射光的強度與波長以提供更多光子"],explanation:"光電子最大動能 KE = hf−φ，只取決於頻率，與強度無關"},
+en:{question:"In the photoelectric effect, which change increases the maximum kinetic energy of emitted photoelectrons?",options:["Increasing only the frequency of incident light, giving photons more energy above work function","Increasing only the intensity of incident light, releasing more electrons per second","Increasing both intensity and exposure time to accumulate more total energy","Increasing both the intensity and wavelength to provide more photons overall"],explanation:"Max KE = hf − φ; depends only on frequency, not on light intensity"},answer:0},
+
+{id:13,difficulty:"easy",points:10,
+zh:{question:"下列關於速率與速度的敘述，何者正確？",options:["速率與速度均為向量，均需指定方向","速率與速度均為純量，均無方向性","速率是速度的大小，速度是向量而速率是純量","速度是速率的大小，速率是向量而速度是純量"],explanation:"速度是向量（有大小與方向），速率是速度的大小（純量）"},
+en:{question:"Which statement about speed and velocity is correct?",options:["Both speed and velocity are vectors and require a specified direction","Both speed and velocity are scalars with no directional component","Speed is the magnitude of velocity; velocity is a vector while speed is a scalar","Velocity is the magnitude of speed; speed is a vector while velocity is a scalar"],explanation:"Velocity is a vector (magnitude + direction); speed is its scalar magnitude"},answer:2},
+
+{id:14,difficulty:"medium",points:15,
+zh:{question:"在固定溫差下，哪種熱傳方式不需要傳熱介質即可進行？",options:["傳導與對流均不需要，輻射則需要介質","熱傳導與熱對流需要介質，熱輻射不需要","僅熱對流需要介質，傳導與輻射均不需要","傳導、對流與輻射三者均需要傳熱介質"],explanation:"輻射以電磁波傳遞，不需介質；傳導和對流均需物質介質"},
+en:{question:"Under a fixed temperature difference, which heat transfer mode does NOT require a medium?",options:["Both conduction and convection need no medium; radiation requires a medium","Conduction and convection require a medium; thermal radiation does not need one","Only convection requires a medium; conduction and radiation need no medium","Conduction, convection, and radiation all require a physical medium"],explanation:"Radiation uses electromagnetic waves and needs no medium; conduction and convection require matter"},answer:1},
+
+{id:15,difficulty:"hard",points:25,
+zh:{question:"根據狹義相對論，靜止質量為 m₀ 的粒子，其靜止能量正確表達式為？",options:["E₀ = m₀c²，靜止能量等於靜止質量乘以光速平方","E₀ = m₀c，靜止能量等於靜止質量乘以光速","E₀ = ½m₀c²，靜止能量等於靜止質量乘光速平方之半","E₀ = m₀c²/γ，靜止能量除以勞倫茲因子 γ"],explanation:"愛因斯坦質能等效：E₀ = m₀c²（不含 ½ 係數）"},
+en:{question:"According to special relativity, the rest energy of a particle with rest mass m₀ is?",options:["E₀ = m₀c²; rest energy equals rest mass times the speed of light squared","E₀ = m₀c; rest energy equals rest mass times the speed of light","E₀ = ½m₀c²; rest energy equals half of rest mass times light speed squared","E₀ = m₀c²/γ; rest energy divided by the Lorentz factor γ"],explanation:"Einstein's mass-energy equivalence: E₀ = m₀c² (no ½ factor for rest energy)"},answer:0},
+
+{id:16,difficulty:"trap",points:19,
+zh:{question:"關於「離心力」，下列何者正確？",options:["離心力是真實存在的力，大小等於向心力，方向相反指向外側","離心力由萬有引力產生，在所有旋轉系統的慣性系中均存在","離心力源自物體慣性，在慣性參考系中可被儀器直接測量","離心力是慣性力（虛擬力），僅在非慣性旋轉系中出現"],explanation:"離心力是非慣性系中的虛擬力；在慣性系中不存在，真實力是向心力"},
+en:{question:"Regarding 'centrifugal force,' which statement is correct?",options:["Centrifugal force is real, equal to centripetal force in magnitude but directed outward","Centrifugal force arises from gravity and exists in all rotating inertial reference frames","Centrifugal force comes from inertia and is directly measurable in inertial reference frames","Centrifugal force is a fictitious force that appears only in non-inertial rotating frames"],explanation:"Centrifugal force is a pseudo-force existing only in non-inertial frames; the real force is centripetal"},answer:3},
+
+{id:17,difficulty:"medium",points:15,
+zh:{question:"光從折射率 n₁ 射入折射率 n₂ 的介質（n₂ > n₁），依司乃耳定律，光線如何偏折？",options:["光線不偏折，維持原方向直線前進","光線遠離法線方向偏折，折射角大於入射角","光線靠近法線方向偏折，折射角小於入射角","光線平行於介面傳播，無法進入第二介質"],explanation:"由疏至密（n₂>n₁），光線靠近法線，折射角 < 入射角"},
+en:{question:"Light travels from medium n₁ into medium n₂ (n₂ > n₁). By Snell's Law, how does the light refract?",options:["Light travels straight through without any bending at all","Light bends away from the normal; refraction angle exceeds incidence angle","Light bends toward the normal; refraction angle is less than incidence angle","Light propagates along the interface and cannot enter the second medium"],explanation:"Going from less to more dense (n₂>n₁), light bends toward the normal; θ_r < θ_i"},answer:2},
+
+{id:18,difficulty:"easy",points:10,
+zh:{question:"下列哪個說法最符合能量守恆定律的核心描述？",options:["封閉系統中，能量形式可轉換，但總量保持不變","封閉系統中，動能恆保持不變，不可轉換為其他形式","封閉系統中，位能恆保持不變，不可轉換為其他形式","封閉系統中，熱能總是單向轉換為動能，過程不可逆"],explanation:"能量守恆：封閉系統總能量不變，各形式間互相轉換"},
+en:{question:"Which statement best describes the core idea of the Law of Conservation of Energy?",options:["In a closed system, energy changes form freely, but total energy remains constant","In a closed system, kinetic energy is always constant and cannot convert to other forms","In a closed system, potential energy is always constant and cannot convert to other forms","In a closed system, thermal energy always converts one-way into kinetic energy irreversibly"],explanation:"Energy conservation: total energy in a closed system is constant; only its form changes"},answer:0},
+
+{id:19,difficulty:"medium",points:15,
+zh:{question:"質量 m 的物體做半徑 r 的等速圓周運動，速率為 v，所需向心力大小為？",options:["F = mvr，質量乘速率乘半徑","F = mv²r，質量乘速率平方乘半徑","F = mr/v²，質量乘半徑除以速率平方","F = mv²/r，質量乘速率平方除以半徑"],explanation:"向心力公式 F = mv²/r，方向恆指向圓心"},
+en:{question:"An object of mass m moves in uniform circular motion at radius r and speed v. The centripetal force magnitude is?",options:["F = mvr; mass times speed times radius","F = mv²r; mass times speed squared times radius","F = mr/v²; mass times radius divided by speed squared","F = mv²/r; mass times speed squared divided by radius"],explanation:"Centripetal force: F = mv²/r, always directed toward the center"},answer:3},
+
+{id:20,difficulty:"hard",points:25,
+zh:{question:"1 mol 理想氣體在等溫過程中，體積由 V₁ 膨脹至 V₂，系統對外做的功為？",options:["W = nRT ln(V₂/V₁)，等溫膨脹功含自然對數","W = nRT(V₂−V₁)，功等於物質量乘溫度乘體積差","W = nR(T₂−T₁)，功與溫度差成正比","W = P(V₂−V₁)，恆壓下的做功公式"],explanation:"等溫過程 W = nRT ln(V₂/V₁)，由 ∫P dV = ∫(nRT/V)dV 積分推出"},
+en:{question:"For 1 mol of ideal gas in an isothermal expansion from V₁ to V₂, the work done by the system is?",options:["W = nRT ln(V₂/V₁); isothermal work involves a natural logarithm","W = nRT(V₂−V₁); work equals moles times temperature times volume difference","W = nR(T₂−T₁); work is proportional to the temperature difference","W = P(V₂−V₁); the formula for work at constant pressure"],explanation:"Isothermal: W = nRT ln(V₂/V₁), from integrating ∫P dV = ∫(nRT/V)dV"},answer:0},
+
+{id:21,difficulty:"medium",points:15,
+zh:{question:"簡諧運動中，位移為振幅 A 的一半時，動能（KE）與位能（PE）之比為？",options:["KE：PE = 1：3，動能為位能的三分之一","KE：PE = 3：1，動能為位能的三倍大","KE：PE = 1：1，動能與位能大小相等","KE：PE = 1：2，動能為位能的二分之一"],explanation:"x=A/2時PE=(1/4)E_total，KE=(3/4)E_total，故KE:PE=3:1"},
+en:{question:"In simple harmonic motion, when displacement equals half the amplitude A, the ratio KE:PE is?",options:["KE:PE = 1:3; kinetic energy is one-third of potential energy","KE:PE = 3:1; kinetic energy is three times the potential energy","KE:PE = 1:1; kinetic and potential energy are equal in magnitude","KE:PE = 1:2; kinetic energy is half the potential energy"],explanation:"At x=A/2: PE=(1/4)E_total, KE=(3/4)E_total, so KE:PE = 3:1"},answer:1},
+
+{id:22,difficulty:"easy",points:10,
+zh:{question:"波速（v）、頻率（f）與波長（λ）三者之間的關係式為何？",options:["v = f / λ，波速等於頻率除以波長","v = λ / f，波速等於波長除以頻率","v = f × λ，波速等於頻率乘以波長","v = f² × λ，波速等於頻率平方乘波長"],explanation:"基本波動關係：v = fλ（波速 = 頻率 × 波長）"},
+en:{question:"What is the relationship between wave speed (v), frequency (f), and wavelength (λ)?",options:["v = f/λ; wave speed equals frequency divided by wavelength","v = λ/f; wave speed equals wavelength divided by frequency","v = f × λ; wave speed equals frequency times wavelength","v = f² × λ; wave speed equals frequency squared times wavelength"],explanation:"Fundamental wave relation: v = fλ (wave speed = frequency × wavelength)"},answer:2},
+
+{id:23,difficulty:"medium",points:15,
+zh:{question:"熱力學第二定律對孤立系統的描述，何者正確？",options:["孤立系統的熵恆保持不變，因能量守恆而無損失","孤立系統的熵不會自發減少，不可逆過程使熵增加","孤立系統的熵可自發增大或減少，取決於系統溫度","孤立系統的熵隨時間線性增大，最終趨向無限大"],explanation:"熵增原理：孤立系統熵不減，不可逆過程使熵增大（ΔS ≥ 0）"},
+en:{question:"Which correctly states the Second Law of Thermodynamics for an isolated system?",options:["The system's entropy stays constant because energy is conserved with no losses","The system's entropy cannot spontaneously decrease; irreversible processes increase entropy","The system's entropy can spontaneously increase or decrease depending on temperature","The system's entropy increases linearly with time and eventually approaches infinity"],explanation:"Entropy principle: entropy of an isolated system never decreases; ΔS ≥ 0"},answer:1},
+
+{id:24,difficulty:"hard",points:25,
+zh:{question:"某物體繞固定軸轉動，轉動慣量為 I，角速度為 ω，轉動動能的正確公式為？",options:["KE_rot = Iω，轉動慣量乘以角速度","KE_rot = ½Iω，轉動慣量乘以角速度除以二","KE_rot = Iω²，轉動慣量乘以角速度的平方","KE_rot = ½Iω²，轉動慣量乘以角速度平方除以二"],explanation:"轉動動能 KE_rot = ½Iω²，類比平動動能 ½mv²"},
+en:{question:"An object rotates about a fixed axis with moment of inertia I and angular velocity ω. Its rotational kinetic energy is?",options:["KE_rot = Iω; moment of inertia times angular velocity","KE_rot = ½Iω; moment of inertia times angular velocity divided by two","KE_rot = Iω²; moment of inertia times angular velocity squared","KE_rot = ½Iω²; moment of inertia times angular velocity squared divided by two"],explanation:"Rotational KE: KE_rot = ½Iω², analogous to translational KE = ½mv²"},answer:3},
+
+{id:25,difficulty:"medium",points:15,
+zh:{question:"楞次定律（Lenz's Law）的正確描述為？",options:["感應電流的方向總是與引起感應的磁通量變化方向相同","感應電流產生的磁場，總是抵抗引起感應的磁通量變化","感應電流大小正比於迴路面積與磁場強度的乘積","感應電動勢大小正比於迴路電阻與感應電流的乘積"],explanation:"楞次定律：感應電流的磁場方向阻礙原磁通量的變化"},
+en:{question:"Which correctly describes Lenz's Law?",options:["The induced current always flows in the same direction as the changing magnetic flux","The magnetic field from the induced current always opposes the change in magnetic flux","The induced current magnitude is proportional to loop area times external field strength","The induced EMF magnitude is proportional to loop resistance times induced current"],explanation:"Lenz's Law: the field from induced current opposes the change in flux (energy conservation)"},answer:1},
+
+{id:26,difficulty:"trap",points:19,
+zh:{question:"靜止在地面上的物體，關於其重力位能的敘述，何者正確？",options:["靜止物體不含任何能量，動能與位能均確定為零","物體具有重力位能，其數值取決於所選的參考基準面","靜止物體的位能必定為零，因速度為零故無任何能量","靜止物體僅含動能，因地球重力持續對其施力做功"],explanation:"重力位能 mgh 取決於參考基準，並非絕對為零；靜止則動能為零"},
+en:{question:"For an object at rest on the ground, which statement about its gravitational potential energy is correct?",options:["A stationary object has no energy; both kinetic and potential energy are definitively zero","The object has gravitational PE whose value depends on the chosen reference level","The object's PE must be zero because its velocity is zero and it has no energy","The stationary object only has kinetic energy because Earth's gravity continuously acts on it"],explanation:"Gravitational PE = mgh depends on the reference level chosen; it is not absolutely zero. KE = 0 at rest"},answer:1},
+
+{id:27,difficulty:"medium",points:15,
+zh:{question:"帶電量 q 的粒子以速率 v 在磁場 B 中運動，與磁場夾角 θ，所受洛倫茲磁力大小為？",options:["F = qvB / sinθ，磁力等於 qvB 除以 sinθ","F = qv / (B sinθ)，磁力等於 qv 除以 B 與 sinθ 之積","F = qvB sinθ，磁力等於電荷量、速率、磁場與 sinθ 之積","F = qB / (v sinθ)，磁力等於 qB 除以 v 與 sinθ 之積"],explanation:"洛倫茲磁力：F = qvBsinθ，θ 為速度與磁場夾角"},
+en:{question:"A particle with charge q moves at speed v in magnetic field B, with angle θ between them. The Lorentz magnetic force magnitude is?",options:["F = qvB/sinθ; force equals qvB divided by sinθ","F = qv/(B sinθ); force equals qv divided by the product B sinθ","F = qvBsinθ; force equals charge times speed times field times sinθ","F = qB/(v sinθ); force equals qB divided by the product v sinθ"],explanation:"Lorentz magnetic force: F = qvBsinθ, where θ is the angle between velocity and field"},answer:2},
+
+{id:28,difficulty:"hard",points:25,
+zh:{question:"RC 串聯電路中，電容器充電時，時間常數 τ 的正確公式及物理意義為？",options:["τ = RC，充電至終值電壓約 63.2% 所需的時間","τ = RC，充電至終值電壓約 36.8% 所需的時間","τ = R/C，充電至終值電壓約 63.2% 所需的時間","τ = R/C，充電至終值電壓約 50% 所需的時間"],explanation:"τ = RC；充電電壓 V(t) = V₀(1−e^(−t/τ))，t = τ 時達終值的 63.2%"},
+en:{question:"In an RC series circuit during charging, the time constant τ has which formula and meaning?",options:["τ = RC; the time to charge to approximately 63.2% of the final voltage","τ = RC; the time to charge to approximately 36.8% of the final voltage","τ = R/C; the time to charge to approximately 63.2% of the final voltage","τ = R/C; the time to charge to approximately 50% of the final voltage"],explanation:"τ = RC; charging: V(t) = V₀(1−e^(−t/τ)), reaching 63.2% of V₀ at t = τ"},answer:0},
+
+{id:29,difficulty:"easy",points:10,
+zh:{question:"歐姆定律中，電壓（V）、電流（I）與電阻（R）之間的正確關係式為？",options:["V = I² × R，電壓等於電流平方乘以電阻","V = I / R，電壓等於電流除以電阻","V = R / I，電壓等於電阻除以電流","V = I × R，電壓等於電流乘以電阻"],explanation:"歐姆定律：V = IR（電壓 = 電流 × 電阻）"},
+en:{question:"Ohm's Law relates voltage (V), current (I), and resistance (R). Which expression is correct?",options:["V = I² × R; voltage equals current squared times resistance","V = I / R; voltage equals current divided by resistance","V = R / I; voltage equals resistance divided by current","V = I × R; voltage equals current times resistance"],explanation:"Ohm's Law: V = IR (voltage = current × resistance)"},answer:3},
+
+{id:30,difficulty:"medium",points:15,
+zh:{question:"真空中兩點電荷 q₁、q₂ 相距 r，庫侖定律給出靜電力大小為（k 為庫侖常數）？",options:["F = kq₁q₂r，靜電力正比於電荷積及距離","F = kq₁q₂/r，靜電力正比於電荷積反比於距離","F = kq₁q₂/r²，靜電力正比於電荷積反比於距離平方","F = k(q₁+q₂)/r²，靜電力正比於電荷和反比於距離平方"],explanation:"庫侖定律：F = kq₁q₂/r²，靜電力與距離平方成反比"},
+en:{question:"Two point charges q₁ and q₂ are separated by distance r in vacuum. Coulomb's Law gives the electrostatic force as (k = Coulomb's constant)?",options:["F = kq₁q₂r; force proportional to product of charges and distance","F = kq₁q₂/r; force proportional to charge product, inversely to distance","F = kq₁q₂/r²; force proportional to charge product, inversely to distance squared","F = k(q₁+q₂)/r²; force proportional to sum of charges, inversely to distance squared"],explanation:"Coulomb's Law: F = kq₁q₂/r², following the inverse-square law"},answer:2},
+
+{id:31,difficulty:"hard",points:25,
+zh:{question:"馬克士威方程組中，法拉第感應定律積分形式（∮E·dl = −dΦ_B/dt）描述什麼現象？",options:["時變電場產生感應磁場（安培-馬克士威定律的描述）","磁場線封閉且無磁單極子存在（高斯磁定律的描述）","時變磁通量在迴路中感應出電動勢即電場","電場線由正電荷出發終止於負電荷（高斯電定律）"],explanation:"法拉第定律：∮E·dl = −dΦ_B/dt，描述磁通量變化感應電動勢（電場）"},
+en:{question:"In Maxwell's equations, Faraday's law ∮E·dl = −dΦ_B/dt describes which phenomenon?",options:["A time-varying electric field generates an induced magnetic field (Ampere-Maxwell law)","Magnetic field lines are closed loops with no magnetic monopoles (Gauss's law for magnetism)","A time-varying magnetic flux induces an electromotive force (electric field) in a loop","Electric field lines originate at positive and terminate at negative charges (Gauss's law)"],explanation:"Faraday's law: ∮E·dl = −dΦ_B/dt — changing magnetic flux induces EMF/electric field in the loop"},answer:2},
+
+{id:32,difficulty:"easy",points:10,
+zh:{question:"電阻（Resistance）的 SI 單位為何？",options:["歐姆（Ω），定義為每安培電流對應一伏特電壓","安培（A），電流的國際單位基本量","法拉（F），電容量大小的 SI 單位","西門子（S），電導（Conductance）的 SI 單位"],explanation:"電阻單位是歐姆（Ω）；1Ω = 1V/A，由歐姆定律 R = V/I 定義"},
+en:{question:"What is the SI unit of electrical resistance?",options:["Ohm (Ω), defined as one volt per ampere of current","Ampere (A), the SI base unit of electric current","Farad (F), the SI unit of electrical capacitance","Siemens (S), the SI unit of electrical conductance"],explanation:"Resistance unit: ohm (Ω); 1Ω = 1V/A, defined by Ohm's Law R = V/I"},answer:0},
+
+{id:33,difficulty:"medium",points:15,
+zh:{question:"電容量為 C 的電容器儲存電荷量 Q 時，其儲存的電位能為？",options:["U = Q²/(2C)，電荷量平方除以電容量的兩倍","U = QC，電荷量直接乘以電容量數值","U = Q²C，電荷量平方乘以電容量數值","U = QC/2，電荷量乘以電容量再除以二"],explanation:"電容儲能 U = Q²/(2C) = CV²/2，由 U = ∫(Q/C)dQ 積分推出"},
+en:{question:"A capacitor with capacitance C stores charge Q. Its stored electric potential energy is?",options:["U = Q²/(2C); charge squared divided by twice the capacitance","U = QC; charge multiplied directly by the capacitance value","U = Q²C; charge squared multiplied by the capacitance value","U = QC/2; charge times capacitance divided by two"],explanation:"Capacitor energy: U = Q²/(2C) = CV²/2, derived by integrating U = ∫(Q/C)dQ"},answer:0},
+
+{id:34,difficulty:"hard",points:25,
+zh:{question:"救護車以速度 v_s 靠近靜止觀察者，發出頻率 f₀ 的聲音（聲速 v_w），觀察者聽到的頻率為？",options:["f = f₀×(v_w−v_s)/v_w，聲源靠近時觀察頻率降低","f = f₀×v_w/(v_w−v_s)，聲源靠近時觀察頻率升高","f = f₀×(v_w+v_s)/v_w，聲源靠近時觀察頻率升高","f = f₀×v_w/(v_w+v_s)，聲源遠離時觀察頻率升高"],explanation:"聲源靠近靜止觀察者：f = f₀×v_w/(v_w−v_s)，頻率上升（音調升高）"},
+en:{question:"An ambulance approaches a stationary observer at speed v_s, emitting frequency f₀ (sound speed v_w). The observed frequency (Doppler effect) is?",options:["f = f₀×(v_w−v_s)/v_w; frequency decreases as source approaches","f = f₀×v_w/(v_w−v_s); frequency increases as source approaches","f = f₀×(v_w+v_s)/v_w; frequency increases as source approaches","f = f₀×v_w/(v_w+v_s); frequency increases as source moves away"],explanation:"Source approaching stationary observer: f = f₀×v_w/(v_w−v_s); pitch rises"},answer:1},
+
+{id:35,difficulty:"medium",points:15,
+zh:{question:"點電荷 Q 在距離 r 處產生的電場強度大小為（k 為庫侖常數）？",options:["E = kQ/r²，電場強度反比於距離的平方","E = kQ/r，電場強度反比於距離本身","E = kQ²/r²，電場強度正比於電荷量的平方","E = kQ²/r，電場強度正比於電荷平方反比距離"],explanation:"點電荷電場 E = kQ/r²，遵守平方反比定律"},
+en:{question:"What is the electric field magnitude at distance r from a point charge Q (k = Coulomb's constant)?",options:["E = kQ/r²; field inversely proportional to distance squared","E = kQ/r; field inversely proportional to distance itself","E = kQ²/r²; field proportional to charge squared","E = kQ²/r; field proportional to charge squared, inversely to distance"],explanation:"Point charge field: E = kQ/r², following the inverse-square law"},answer:0},
+
+{id:36,difficulty:"easy",points:10,
+zh:{question:"壓力（Pressure）的物理定義為何？",options:["單位面積所受的垂直法向力，P = F/A","單位時間內所施加的力大小，P = F/t","單位質量所受到的合外力，P = F/m","單位速度變化所對應的力大小，P = F/Δv"],explanation:"壓力定義：P = F/A，單位面積受到的垂直力，SI 單位為帕斯卡（Pa）"},
+en:{question:"How is pressure (P) physically defined?",options:["Normal force per unit area: P = F/A","Force applied per unit time: P = F/t","Net force per unit mass: P = F/m","Force per unit velocity change: P = F/Δv"],explanation:"Pressure: P = F/A — normal force per unit area; SI unit is Pascal (Pa)"},answer:0},
+
+{id:37,difficulty:"medium",points:15,
+zh:{question:"伯努利原理描述理想流體（忽略黏性、不可壓縮、穩定流）的哪種特性？",options:["流體速度增大時，靜壓力降低，沿流線的速度與壓力之和趨於定值","流體速度增大時，靜壓力也增大，沿流線兩者之差趨於定值","流體密度增大時，流速降低，密度與速度之積沿流線保持不變","流體溫度升高時，流速降低，溫度與壓力之積沿流線保持不變"],explanation:"伯努利：½ρv² + P + ρgh = 常數，速度增大則靜壓降低"},
+en:{question:"Bernoulli's principle describes which property of an ideal fluid (inviscid, incompressible, steady flow)?",options:["As speed increases, static pressure decreases; their weighted sum along a streamline is constant","As speed increases, static pressure also increases; their difference along a streamline is constant","As density increases, speed decreases; the product of density and speed is constant along streamlines","As temperature rises, speed decreases; the product of temperature and pressure stays constant"],explanation:"Bernoulli: ½ρv² + P + ρgh = constant; higher speed means lower static pressure"},answer:0},
+
+{id:38,difficulty:"hard",points:25,
+zh:{question:"核子結合能（Binding Energy）與質量虧損 Δm 的正確關係為？",options:["E_B = Δm × c（非平方），結合能等於質量虧損乘以光速","E_B = Δm × c²，結合能來自電磁排斥力的儲存能量","E_B = Δm × c / 2，結合能等於質量虧損乘光速除以二","E_B = Δm × c²，結合能等於核子分開所需能量（質能等效）"],explanation:"結合能 E_B = Δm·c²（質量虧損乘光速平方），來自強核力"},
+en:{question:"What is the correct relationship between nuclear binding energy and mass defect Δm?",options:["E_B = Δm × c (not squared); binding energy equals mass defect times speed of light","E_B = Δm × c²; binding energy comes from stored electromagnetic repulsion energy","E_B = Δm × c/2; binding energy equals mass defect times light speed divided by two","E_B = Δm × c²; binding energy equals energy to separate all nucleons (mass-energy equivalence)"],explanation:"Binding energy: E_B = Δm·c² (mass defect × c²); originates from the strong nuclear force"},answer:3},
+
+{id:39,difficulty:"trap",points:19,
+zh:{question:"光在折射率 n = 1.5 的玻璃中傳播時，與真空中相比，何者正確？",options:["頻率不變，波長縮短為 1/n 倍，速度減慢為真空光速的 1/n 倍","頻率降低為 1/n 倍，波長不變，速度減慢為真空光速的 1/n 倍","頻率不變，波長增大為 n 倍，速度減慢為真空光速的 1/n 倍","頻率與波長均降低為 1/n 倍，速度與真空中相同（仍為 c）"],explanation:"光進入介質頻率不變（由源決定），波長縮短、速度降為 c/n"},
+en:{question:"When light travels through glass (n = 1.5) compared to vacuum, which is correct?",options:["Frequency unchanged; wavelength shortens to 1/n; speed slows to c/n of vacuum speed","Frequency decreases to 1/n; wavelength unchanged; speed slows to 1/n of vacuum speed","Frequency unchanged; wavelength increases by factor n; speed slows to 1/n of vacuum speed","Both frequency and wavelength decrease to 1/n; speed remains the same as in vacuum (c)"],explanation:"In a medium, frequency is set by the source (unchanged); wavelength shortens and speed becomes c/n"},answer:0},
+
+{id:40,difficulty:"easy",points:10,
+zh:{question:"電荷量的 SI 單位為何？",options:["安培（A），電流的基本單位而非電荷量單位","伏特（V），電位差的 SI 單位","庫侖（C），定義為 1 A·s（一安培秒）","歐姆（Ω），電阻的 SI 單位"],explanation:"電荷量單位為庫侖（C）；1C = 1A·s，安培是電流單位"},
+en:{question:"What is the SI unit of electric charge?",options:["Ampere (A), which is the base unit of electric current, not charge","Volt (V), the SI unit of electric potential difference","Coulomb (C), defined as 1 A·s (one ampere-second)","Ohm (Ω), the SI unit of electrical resistance"],explanation:"Charge unit: Coulomb (C); 1 C = 1 A·s. Ampere measures current, not charge"},answer:2}
+];
+
+var current=0,answers=new Array(40).fill(null),quizDone=false;
+
+var T={
+zh:{title:'普通物理測驗',
+progress:function(c,t){return '第 '+c+' / '+t+' 題';},
+qNum:function(n,d,p){var dm={easy:'簡單',medium:'中等',hard:'困難',trap:'陷阱'};return '第 '+n+' 題 · '+dm[d]+' · '+p+' 分';},
+prev:'← 上一題',submit:'提交測驗 →',scoreLabel:'/ 670 分',
+correctLbl:'答對 / 40',wrongLbl:'答錯 / 40',
+diffTitle:'各難度成績',reviewTitle:'錯題回顧',
+yourAns:'你的答案：',correctAns:'正確答案：',explain:'解析：',
+restart:'重新測驗',copy:'複製結果',
+percentile:function(p){return '你的成績超越了約 '+p+'% 的測試者';},
+grades:['📕 需要加強（Needs Improvement）','📗 基礎尚可（Basic）','📘 中等水準（Intermediate）','⭐ 進階掌握（Advanced）','🏆 頂尖專家（Top Expert）'],
+copied:'已複製！',noAns:'（未作答）',
+d_easy:'簡單 Easy',d_med:'中等 Med',d_hard:'困難 Hard',d_trap:'陷阱 Trap',
+tdark:'🌙 深色',tlight:'☀️ 淺色'},
+en:{title:'General Physics Quiz',
+progress:function(c,t){return 'Q '+c+' / '+t;},
+qNum:function(n,d,p){var dm={easy:'Easy',medium:'Medium',hard:'Hard',trap:'Trap'};return 'Q'+n+' · '+dm[d]+' · '+p+' pts';},
+prev:'← Prev',submit:'Submit Quiz →',scoreLabel:'/ 670 pts',
+correctLbl:'Correct / 40',wrongLbl:'Incorrect / 40',
+diffTitle:'Score by Difficulty',reviewTitle:'Review Incorrect Answers',
+yourAns:'Your answer: ',correctAns:'Correct answer: ',explain:'Explanation: ',
+restart:'Restart Quiz',copy:'Copy Results',
+percentile:function(p){return 'Your score beats approximately '+p+'% of test-takers';},
+grades:['📕 Needs Improvement','📗 Basic','📘 Intermediate','⭐ Advanced','🏆 Top Expert'],
+copied:'Copied!',noAns:'(Not answered)',
+d_easy:'Easy',d_med:'Medium',d_hard:'Hard',d_trap:'Trap',
+tdark:'🌙 Dark',tlight:'☀️ Light'}};
+
+function tx(){return T[lang];}
+var LETTERS=['A','B','C','D'];
+
+function renderQuestion(idx){
+  var q=questions[idx];
+  var d=lang==='zh'?q.zh:q.en;
+  var card=document.getElementById('question-card');
+  card.classList.add('fade');
+  setTimeout(function(){
+    document.getElementById('q-num').textContent=tx().qNum(idx+1,q.difficulty,q.points);
+    document.getElementById('q-text').textContent=d.question;
+    var cont=document.getElementById('options-container');
+    cont.innerHTML='';
+    d.options.forEach(function(opt,i){
+      var div=document.createElement('div');
+      var isSel=answers[idx]===i;
+      div.className='option'+(isSel?' selected':'');
+      var ls=isSel?'background:var(--accent);border-color:var(--accent);color:var(--accent-text);':'';
+      div.innerHTML='<div class="option-letter" style="'+ls+'">'+LETTERS[i]+'</div><div class="option-text">'+opt+'</div>';
+      (function(oi){div.onclick=function(){selectOption(idx,oi);};})(i);
+      cont.appendChild(div);
+    });
+    document.getElementById('prev-btn').disabled=idx===0;
+    document.getElementById('submit-btn').style.display=idx===questions.length-1?'block':'none';
+    updateHeaderText();
+    card.classList.remove('fade');
+  },200);
+}
+
+function selectOption(idx,optIdx){
+  if(quizDone)return;
+  answers[idx]=optIdx;
+  var opts=document.querySelectorAll('.option');
+  opts.forEach(function(o,i){
+    var sel=i===optIdx;
+    o.classList.toggle('selected',sel);
+    var l=o.querySelector('.option-letter');
+    l.style.background=sel?'var(--accent)':'';
+    l.style.borderColor=sel?'var(--accent)':'';
+    l.style.color=sel?'var(--accent-text)':'';
+  });
+  if(idx<questions.length-1){
+    setTimeout(function(){current=idx+1;renderQuestion(current);},400);
+  } else {
+    document.getElementById('submit-btn').style.display='block';
+  }
+}
+
+function prevQuestion(){if(current>0){current--;renderQuestion(current);}}
+
+function updateHeaderText(){
+  document.getElementById('header-title').textContent=tx().title;
+  document.getElementById('progress-text').textContent=tx().progress(current+1,questions.length);
+  document.getElementById('prev-label').textContent=tx().prev;
+  document.getElementById('submit-label').textContent=tx().submit;
+  document.getElementById('theme-btn').textContent=theme==='dark'?tx().tlight:tx().tdark;
+  var pct=((current+1)/questions.length)*100;
+  document.getElementById('progress-fill').style.width=pct+'%';
+}
+
+function normalCDF(x,mean,std){
+  var z=(x-mean)/(std*Math.SQRT2);
+  var az=Math.abs(z);
+  var t=1/(1+0.3275911*az);
+  var p=t*(0.254829592+t*(-0.284496736+t*(1.421413741+t*(-1.453152027+t*1.061405429))));
+  var erf=1-p*Math.exp(-az*az);
+  return z>=0?(1+erf)/2:(1-erf)/2;
+}
+
+function calcStats(){
+  var score=0,correct=0;
+  var dc={easy:{c:0,t:10},medium:{c:0,t:15},hard:{c:0,t:10},trap:{c:0,t:5}};
+  questions.forEach(function(q,i){
+    if(answers[i]===q.answer){score+=q.points;correct++;dc[q.difficulty].c++;}
+  });
+  return{score:score,correct:correct,wrong:40-correct,dc:dc};
+}
+
+function getGrade(score){
+  var g=tx().grades;
+  if(score>=600)return g[4];if(score>=500)return g[3];if(score>=380)return g[2];if(score>=250)return g[1];return g[0];
+}
+
+function submitQuiz(){
+  quizDone=true;
+  document.getElementById('quiz-screen').style.display='none';
+  document.getElementById('result-screen').style.display='block';
+  showResults();
+}
+
+function showResults(){
+  var s=calcStats();
+  var pct=Math.round(normalCDF(s.score,301.5,100.5)*100);
+  var t=tx();
+  document.getElementById('res-score').textContent=s.score;
+  document.getElementById('res-score-label').textContent=t.scoreLabel;
+  document.getElementById('res-grade').textContent=getGrade(s.score);
+  document.getElementById('res-percentile').textContent=t.percentile(pct);
+  document.getElementById('res-correct').textContent=s.correct;
+  document.getElementById('res-correct-lbl').textContent=t.correctLbl;
+  document.getElementById('res-wrong').textContent=s.wrong;
+  document.getElementById('res-wrong-lbl').textContent=t.wrongLbl;
+  document.getElementById('diff-title').textContent=t.diffTitle;
+  document.getElementById('d-easy-lbl').textContent=t.d_easy;
+  document.getElementById('d-med-lbl').textContent=t.d_med;
+  document.getElementById('d-hard-lbl').textContent=t.d_hard;
+  document.getElementById('d-trap-lbl').textContent=t.d_trap;
+  document.getElementById('d-easy').textContent=s.dc.easy.c+' / '+s.dc.easy.t;
+  document.getElementById('d-med').textContent=s.dc.medium.c+' / '+s.dc.medium.t;
+  document.getElementById('d-hard').textContent=s.dc.hard.c+' / '+s.dc.hard.t;
+  document.getElementById('d-trap').textContent=s.dc.trap.c+' / '+s.dc.trap.t;
+  document.getElementById('review-title').textContent=t.reviewTitle;
+  document.getElementById('restart-label').textContent=t.restart;
+  document.getElementById('copy-label').textContent=t.copy;
+  document.getElementById('header-title').textContent=t.title;
+  document.getElementById('theme-btn').textContent=theme==='dark'?t.tlight:t.tdark;
+  document.getElementById('progress-text').textContent='';
+  document.getElementById('progress-fill').style.width='100%';
+
+  var wl=document.getElementById('wrong-list');
+  wl.innerHTML='';
+  if(s.wrong===0){
+    wl.innerHTML='<div style="color:var(--correct);font-weight:600;padding:16px 0;">'+(lang==='zh'?'🎉 全部答對！':'🎉 Perfect Score!')+'</div>';
+    return;
+  }
+  questions.forEach(function(q,i){
+    if(answers[i]!==q.answer){
+      var d=lang==='zh'?q.zh:q.en;
+      var ua=answers[i]!==null?LETTERS[answers[i]]+'. '+d.options[answers[i]]:t.noAns;
+      var ca=LETTERS[q.answer]+'. '+d.options[q.answer];
+      var div=document.createElement('div');
+      div.className='wrong-item';
+      div.innerHTML='<div class="wrong-q-num">Q'+(i+1)+'</div>'
+        +'<div class="wrong-q-text">'+d.question+'</div>'
+        +'<div class="wrong-answer-row wrong-yours"><span>'+t.yourAns+'</span>'+ua+'</div>'
+        +'<div class="wrong-answer-row wrong-correct"><span>'+t.correctAns+'</span>'+ca+'</div>'
+        +'<div class="wrong-explain"><strong>'+t.explain+'</strong>'+d.explanation+'</div>';
+      wl.appendChild(div);
+    }
+  });
+}
+
+function restartQuiz(){
+  quizDone=false;current=0;answers=new Array(40).fill(null);
+  document.getElementById('result-screen').style.display='none';
+  document.getElementById('quiz-screen').style.display='block';
+  renderQuestion(0);
+}
+
+function copyResult(){
+  var s=calcStats();
+  var pct=Math.round(normalCDF(s.score,301.5,100.5)*100);
+  var text=lang==='zh'
+    ?'📊 普通物理測驗成績\n總分：'+s.score+' / 670\n答對：'+s.correct+' / 40\n等級：'+getGrade(s.score)+'\n超越約 '+pct+'% 測試者\n簡單：'+s.dc.easy.c+'/10｜中等：'+s.dc.medium.c+'/15｜困難：'+s.dc.hard.c+'/10｜陷阱：'+s.dc.trap.c+'/5'
+    :'📊 General Physics Quiz\nScore: '+s.score+' / 670\nCorrect: '+s.correct+' / 40\nGrade: '+getGrade(s.score)+'\nBeats ~'+pct+'% of test-takers\nEasy: '+s.dc.easy.c+'/10 | Med: '+s.dc.medium.c+'/15 | Hard: '+s.dc.hard.c+'/10 | Trap: '+s.dc.trap.c+'/5';
+  navigator.clipboard.writeText(text).then(function(){
+    var el=document.querySelector('.btn-copy span');
+    el.textContent=tx().copied;
+    setTimeout(function(){el.textContent=tx().copy;},2000);
+  });
+}
+
+function updateUI(){quizDone?showResults():renderQuestion(current);}
+function toggleLang(){lang=lang==='zh'?'en':'zh';document.documentElement.lang=lang==='zh'?'zh-TW':'en';document.getElementById('lang-btn').textContent=lang==='zh'?'English':'中文';updateUI();}
+function toggleTheme(){theme=theme==='light'?'dark':'light';document.documentElement.setAttribute('data-theme',theme);document.getElementById('theme-btn').textContent=theme==='dark'?tx().tlight:tx().tdark;}
+
+renderQuestion(0);
+</script>
+</body>
+</html>

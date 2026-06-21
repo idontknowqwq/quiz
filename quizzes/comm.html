@@ -1,0 +1,1682 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>通訊系統 互動測驗 | Communication Systems Quiz</title>
+  <style>
+    :root {
+      --bg: #FFFFFF;
+      --text-primary: #1A1A1A;
+      --text-secondary: #6B7280;
+      --option-border: #E5E7EB;
+      --accent: #2563EB;
+      --option-hover-bg: #EFF6FF;
+      --option-selected-bg: #DBEAFE;
+      --option-selected-border: #2563EB;
+      --progress-bg: #E5E7EB;
+      --card-bg: #F9FAFB;
+      --btn-sec-bg: #F3F4F6;
+      --btn-sec-text: #374151;
+      --separator: #E5E7EB;
+      --correct-bg: #D1FAE5;
+      --correct-text: #065F46;
+      --wrong-bg: #FEE2E2;
+      --wrong-text: #991B1B;
+      --header-bg: #FFFFFF;
+    }
+    [data-theme="dark"] {
+      --bg: #111111;
+      --text-primary: #E5E7EB;
+      --text-secondary: #9CA3AF;
+      --option-border: #374151;
+      --accent: #60A5FA;
+      --option-hover-bg: #1E3A5F;
+      --option-selected-bg: #1E3A5F;
+      --option-selected-border: #60A5FA;
+      --progress-bg: #374151;
+      --card-bg: #1F2937;
+      --btn-sec-bg: #374151;
+      --btn-sec-text: #E5E7EB;
+      --separator: #374151;
+      --correct-bg: #064E3B;
+      --correct-text: #6EE7B7;
+      --wrong-bg: #7F1D1D;
+      --wrong-text: #FCA5A5;
+      --header-bg: #111111;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans TC', 'PingFang TC', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      transition: background 0.2s, color 0.2s;
+      line-height: 1.6;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--header-bg);
+      border-bottom: 1px solid var(--separator);
+      padding: 10px 20px 8px;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .header-title {
+      font-size: 0.97rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      flex: 1;
+      min-width: 120px;
+    }
+    .header-controls { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+    .btn-ctrl {
+      padding: 5px 12px;
+      border: 1.5px solid var(--option-border);
+      border-radius: 6px;
+      background: var(--btn-sec-bg);
+      color: var(--btn-sec-text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+    }
+    .btn-ctrl:hover { opacity: 0.75; }
+    .progress-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+    .progress-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-variant-numeric: tabular-nums;
+    }
+    .progress-bar-wrap {
+      margin-top: 6px;
+      height: 3px;
+      background: var(--progress-bg);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.35s ease;
+    }
+
+    /* ── MAIN ── */
+    .main { max-width: 740px; margin: 0 auto; padding: 28px 20px 80px; }
+
+    /* ── QUESTION CARD ── */
+    .q-card { transition: opacity 0.22s ease; }
+    .q-card.fade { opacity: 0; }
+
+    .q-meta {
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+    .q-text {
+      font-size: 1.06rem;
+      font-weight: 500;
+      line-height: 1.75;
+      color: var(--text-primary);
+      margin-bottom: 22px;
+    }
+
+    /* ── OPTIONS ── */
+    .opts { display: flex; flex-direction: column; gap: 9px; margin-bottom: 24px; }
+    .opt-btn {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 13px 15px;
+      border: 1.5px solid var(--option-border);
+      border-radius: 8px;
+      background: var(--bg);
+      color: var(--text-primary);
+      font-size: 0.93rem;
+      line-height: 1.55;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .opt-btn:hover { background: var(--option-hover-bg); border-color: var(--accent); }
+    .opt-btn.selected {
+      background: var(--option-selected-bg);
+      border-color: var(--option-selected-border);
+    }
+    .opt-label {
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ── NAV BUTTONS ── */
+    .nav-row { display: flex; gap: 10px; align-items: center; }
+    .btn-primary {
+      padding: 10px 22px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.93rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary {
+      padding: 10px 18px;
+      background: var(--btn-sec-bg);
+      color: var(--btn-sec-text);
+      border: 1.5px solid var(--option-border);
+      border-radius: 8px;
+      font-size: 0.93rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .btn-secondary:hover { opacity: 0.75; }
+
+    /* ── RESULTS ── */
+    #resultsPage { display: none; }
+    #resultsPage.show { display: block; }
+
+    .score-hero {
+      background: var(--card-bg);
+      border: 1px solid var(--separator);
+      border-radius: 12px;
+      padding: 28px 20px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .score-num {
+      font-size: 3.2rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .score-denom { font-size: 1.1rem; color: var(--text-secondary); margin-top: 2px; }
+    .grade-text { font-size: 1.25rem; font-weight: 700; margin-top: 14px; }
+    .pct-text { font-size: 0.88rem; color: var(--text-secondary); margin-top: 6px; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--separator);
+      border-radius: 10px;
+      padding: 16px;
+    }
+    .stat-label { font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 4px; }
+    .stat-val { font-size: 1.5rem; font-weight: 800; color: var(--text-primary); }
+
+    .diff-box {
+      background: var(--card-bg);
+      border: 1px solid var(--separator);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+    }
+    .diff-box-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 12px; }
+    .diff-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.87rem;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--separator);
+    }
+    .diff-row:last-of-type { border-bottom: none; }
+    .diff-mini-bar {
+      height: 5px;
+      background: var(--progress-bg);
+      border-radius: 3px;
+      margin: 2px 0 6px;
+      overflow: hidden;
+    }
+    .diff-mini-fill { height: 100%; background: var(--accent); }
+
+    .results-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+
+    .review-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; }
+    .review-item {
+      background: var(--card-bg);
+      border: 1px solid var(--separator);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .review-q { font-size: 0.88rem; font-weight: 600; line-height: 1.6; margin-bottom: 10px; }
+    .review-opt {
+      font-size: 0.84rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      margin-bottom: 5px;
+      line-height: 1.5;
+    }
+    .review-opt.wrong { background: var(--wrong-bg); color: var(--wrong-text); }
+    .review-opt.correct { background: var(--correct-bg); color: var(--correct-text); }
+    .review-exp {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid var(--separator);
+      line-height: 1.6;
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 500px) {
+      .score-num { font-size: 2.6rem; }
+      .q-text { font-size: 0.97rem; }
+      .opt-btn { font-size: 0.88rem; padding: 11px 12px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-row">
+    <div class="header-title" id="hTitle">通訊系統 互動測驗</div>
+    <div class="header-controls">
+      <button class="btn-ctrl" id="langBtn" onclick="toggleLang()">English</button>
+      <button class="btn-ctrl" id="themeBtn" onclick="toggleTheme()">🌙 深色</button>
+    </div>
+  </div>
+  <div class="progress-row">
+    <span class="progress-label" id="progressLabel">第 1 / 40 題</span>
+  </div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- QUIZ PAGE -->
+  <div id="quizPage">
+    <div class="q-card" id="qCard">
+      <div class="q-meta" id="qMeta">第 1 題</div>
+      <div class="q-text" id="qText"></div>
+      <div class="opts" id="opts"></div>
+      <div class="nav-row">
+        <button class="btn-secondary" id="prevBtn" onclick="prevQ()" style="display:none">← 上一題</button>
+        <button class="btn-primary" id="submitBtn" onclick="submitQuiz()" style="display:none">提交測驗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS PAGE -->
+  <div id="resultsPage"></div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════
+// QUESTION DATA  (40 題)
+// difficulty: easy/medium/hard/trap
+// answer: 0=A 1=B 2=C 3=D
+// ═══════════════════════════════════
+const Q = [
+  // ── 1 ── Easy  answer A(0)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"根據 Shannon-Hartley 定理，若通道頻寬為 B Hz、信號雜訊比為 SNR，則通道最大傳輸速率 C 為何？",
+      options:[
+        "C = B × log₂(1 + SNR)",
+        "C = B × log₂(SNR)",
+        "C = B² × log₂(1 + SNR)",
+        "C = 2B × log₂(1 + SNR)"
+      ],
+      explanation:"Shannon-Hartley 定理：C = B log₂(1+SNR)，是有雜訊通道傳輸速率的理論極限。"
+    },
+    en:{
+      question:"According to the Shannon-Hartley theorem, if the channel bandwidth is B Hz and the SNR is as given, what is the maximum channel capacity C?",
+      options:[
+        "C = B × log₂(1 + SNR)",
+        "C = B × log₂(SNR)",
+        "C = B² × log₂(1 + SNR)",
+        "C = 2B × log₂(1 + SNR)"
+      ],
+      explanation:"The Shannon-Hartley theorem states C = B log₂(1+SNR), the theoretical upper bound for a noisy channel."
+    },
+    answer:0
+  },
+
+  // ── 2 ── Medium  answer C(2)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"在 8-PSK（8 相位移鍵控）調變系統中，每個符元（symbol）可攜帶幾個位元，且相鄰星座點之間的相位間隔為何？",
+      options:[
+        "每符元 4 位元，相位間隔 90°",
+        "每符元 2 位元，相位間隔 45°",
+        "每符元 3 位元，相位間隔 45°",
+        "每符元 3 位元，相位間隔 60°"
+      ],
+      explanation:"8-PSK 有 8 個相位點，每符元攜帶 log₂8 = 3 位元，相位均分 360°/8 = 45°。"
+    },
+    en:{
+      question:"In an 8-PSK (8-ary Phase Shift Keying) modulation system, how many bits does each symbol carry, and what is the phase spacing between adjacent constellation points?",
+      options:[
+        "4 bits per symbol, phase spacing 90°",
+        "2 bits per symbol, phase spacing 45°",
+        "3 bits per symbol, phase spacing 45°",
+        "3 bits per symbol, phase spacing 60°"
+      ],
+      explanation:"8-PSK has 8 phase points, carrying log₂8 = 3 bits/symbol, equally spaced at 360°/8 = 45°."
+    },
+    answer:2
+  },
+
+  // ── 3 ── Hard  answer C(2)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在數位通訊系統中，若頻譜效率（spectral efficiency）為 η bit/s/Hz，則每位元能量與雜訊功率頻譜密度之比（Eb/N₀）與信號雜訊比（SNR）的關係式為何？",
+      options:[
+        "Eb/N₀ = SNR × η",
+        "Eb/N₀ = SNR + 10log₁₀(η)",
+        "Eb/N₀ = SNR / η",
+        "Eb/N₀ = SNR × η²"
+      ],
+      explanation:"SNR = (Eb × R)/(N₀ × B) = Eb/N₀ × η，因此 Eb/N₀ = SNR / η。頻譜效率越高，同等SNR下Eb/N₀反而更低。"
+    },
+    en:{
+      question:"In a digital communication system with spectral efficiency η bit/s/Hz, what is the relationship between Eb/N₀ (energy per bit to noise power spectral density) and SNR?",
+      options:[
+        "Eb/N₀ = SNR × η",
+        "Eb/N₀ = SNR + 10log₁₀(η)",
+        "Eb/N₀ = SNR / η",
+        "Eb/N₀ = SNR × η²"
+      ],
+      explanation:"Since SNR = (Eb/N₀) × (R/B) = (Eb/N₀) × η, it follows that Eb/N₀ = SNR / η."
+    },
+    answer:2
+  },
+
+  // ── 4 ── Trap  answer B(1)
+  {
+    difficulty:"trap", points:19,
+    zh:{
+      question:"根據 Carson 法則（Carson's Rule），若調頻（FM）信號的最大頻率偏移為 Δf、基頻信號最高頻率為 f_m，則已調 FM 信號的近似頻寬 BW 為何？",
+      options:[
+        "BW = 2 × Δf（僅考慮最大頻偏）",
+        "BW = 2(Δf + f_m)（同時考慮頻偏與基頻頻率）",
+        "BW = 2 × f_m（僅考慮基頻最高頻率）",
+        "BW = 2 × Δf × f_m（頻偏與基頻頻率之乘積）"
+      ],
+      explanation:"Carson 法則：BW ≈ 2(Δf + f_m)。常見錯誤是只計算 2Δf（忽略了基頻頻率項 f_m）。"
+    },
+    en:{
+      question:"According to Carson's Rule, if an FM signal has a maximum frequency deviation Δf and the highest baseband frequency is f_m, what is the approximate FM signal bandwidth BW?",
+      options:[
+        "BW = 2 × Δf (considering only the maximum frequency deviation)",
+        "BW = 2(Δf + f_m) (considering both the deviation and baseband frequency)",
+        "BW = 2 × f_m (considering only the highest baseband frequency)",
+        "BW = 2 × Δf × f_m (the product of deviation and baseband frequency)"
+      ],
+      explanation:"Carson's Rule: BW ≈ 2(Δf + f_m). A common mistake is to use only 2Δf, omitting the baseband frequency term f_m."
+    },
+    answer:1
+  },
+
+  // ── 5 ── Easy  answer B(1)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"奈奎斯特取樣定理指出，為避免混疊（aliasing）效應，對最高頻率為 f_m 的類比信號取樣時，取樣頻率 f_s 必須滿足何條件？",
+      options:[
+        "f_s ≥ f_m（等於信號最高頻率）",
+        "f_s ≥ 2f_m（至少為信號最高頻率的兩倍）",
+        "f_s ≥ 4f_m（至少為信號最高頻率的四倍）",
+        "f_s ≥ f_m / 2（為信號最高頻率的一半）"
+      ],
+      explanation:"奈奎斯特定理：取樣頻率必須至少為信號最高頻率的兩倍（f_s ≥ 2f_m），才能無失真地還原原始信號。"
+    },
+    en:{
+      question:"The Nyquist sampling theorem states that to avoid aliasing, the sampling frequency f_s for a signal with highest frequency f_m must satisfy which condition?",
+      options:[
+        "f_s ≥ f_m (equal to the signal's highest frequency)",
+        "f_s ≥ 2f_m (at least twice the signal's highest frequency)",
+        "f_s ≥ 4f_m (at least four times the signal's highest frequency)",
+        "f_s ≥ f_m / 2 (half the signal's highest frequency)"
+      ],
+      explanation:"Nyquist theorem: sampling frequency must be at least twice the signal's highest frequency (f_s ≥ 2f_m) to reconstruct the original signal without distortion."
+    },
+    answer:1
+  },
+
+  // ── 6 ── Medium  answer D(3)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"正交分頻多工（OFDM）相較於傳統單載波系統的主要優勢為何？",
+      options:[
+        "每個子載波的功率利用率較低，特別適合功率受限的物聯網環境",
+        "OFDM 符元週期較短，因此對無線通道的延遲擴散更不敏感",
+        "OFDM 不需要保護區間（guard interval），可節省所有頻寬開銷",
+        "各子載波相互正交，可在同一頻帶同時傳多路信號而互不干擾"
+      ],
+      explanation:"OFDM 的核心優勢是子載波正交性，允許頻譜高效重疊；保護區間則用來對抗多徑延遲，並非不需要。"
+    },
+    en:{
+      question:"What is the primary advantage of OFDM (Orthogonal Frequency Division Multiplexing) over traditional single-carrier systems?",
+      options:[
+        "Each subcarrier has lower power utilization, ideal for power-constrained IoT environments",
+        "OFDM symbol periods are shorter, making them less sensitive to channel delay spread",
+        "OFDM eliminates the need for a guard interval, saving all bandwidth overhead",
+        "Orthogonal subcarriers allow multiple streams to be transmitted simultaneously in the same band without interfering with each other"
+      ],
+      explanation:"OFDM's core advantage is subcarrier orthogonality, enabling spectrally efficient overlap. Guard intervals are still required to combat multipath delay spread."
+    },
+    answer:3
+  },
+
+  // ── 7 ── Hard  answer D(3)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在 AWGN 通道中，接收端使用匹配濾波器（matched filter）的最主要目的是什麼？",
+      options:[
+        "最大化接收信號的頻寬，以縮短符元識別所需的時間",
+        "消除信號中的所有諧波成分，實現理想的帶通濾波效果",
+        "最小化接收端的均方誤差（MSE），降低符元間失真程度",
+        "最大化取樣時刻的輸出信號雜訊比（SNR），實現最佳符元偵測性能"
+      ],
+      explanation:"匹配濾波器的設計原則是最大化取樣瞬間的 SNR，其脈衝響應等於發送脈波的時反（time-reversed）共軛，由此達到最優偵測性能。"
+    },
+    en:{
+      question:"In an AWGN channel, what is the primary purpose of using a matched filter at the receiver?",
+      options:[
+        "Maximize the received signal bandwidth to speed up symbol identification",
+        "Eliminate all harmonic components from the signal for ideal bandpass filtering",
+        "Minimize the mean squared error (MSE) at the receiver to reduce inter-symbol distortion",
+        "Maximize the output SNR at the sampling instant to achieve optimal symbol detection performance"
+      ],
+      explanation:"The matched filter maximizes the SNR at the sampling instant. Its impulse response equals the time-reversed conjugate of the transmitted pulse, yielding optimal detection."
+    },
+    answer:3
+  },
+
+  // ── 8 ── Trap  answer C(2)
+  {
+    difficulty:"trap", points:19,
+    zh:{
+      question:"一個類比音頻信號包含三個頻率成分：DC（0 Hz）、500 Hz 及 950 Hz。依據奈奎斯特取樣定理，下列哪個取樣頻率「恰好足夠」完整重建此信號？",
+      options:[
+        "950 Hz（等於信號的最高頻率成分）",
+        "1000 Hz（500 Hz 最高週期性分量的兩倍）",
+        "1900 Hz（等於最高頻率 950 Hz 的兩倍）",
+        "2000 Hz（取整至最近的千赫茲整數）"
+      ],
+      explanation:"奈奎斯特頻率須為信號最高頻率的兩倍：2 × 950 = 1900 Hz。選 1000 Hz 是常見錯誤，誤將 500 Hz 視為最高頻率。"
+    },
+    en:{
+      question:"An analog audio signal contains three frequency components: DC (0 Hz), 500 Hz, and 950 Hz. According to the Nyquist sampling theorem, which sampling frequency is 'just sufficient' to perfectly reconstruct this signal?",
+      options:[
+        "950 Hz (equal to the signal's highest frequency component)",
+        "1000 Hz (twice the highest periodic component of 500 Hz)",
+        "1900 Hz (twice the highest frequency of 950 Hz)",
+        "2000 Hz (rounded to the nearest integer kilohertz)"
+      ],
+      explanation:"Nyquist rate = 2 × highest frequency = 2 × 950 = 1900 Hz. Choosing 1000 Hz is a common error — mistaking 500 Hz for the highest frequency."
+    },
+    answer:2
+  },
+
+  // ── 9 ── Easy  answer C(2)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"在雙邊帶調幅（DSB-AM）中，若基頻信號的頻寬為 W Hz，則已調 AM 信號所佔用的頻寬為何？",
+      options:[
+        "W/2 Hz（為基頻信號頻寬的一半）",
+        "W Hz（等於基頻信號頻寬）",
+        "2W Hz（為基頻信號頻寬的兩倍）",
+        "4W Hz（為基頻信號頻寬的四倍）"
+      ],
+      explanation:"DSB-AM 產生上下兩個邊帶，各佔 W Hz，因此總頻寬為 2W Hz。"
+    },
+    en:{
+      question:"In Double-Sideband Amplitude Modulation (DSB-AM), if the baseband signal has bandwidth W Hz, what bandwidth does the modulated AM signal occupy?",
+      options:[
+        "W/2 Hz (half the baseband signal bandwidth)",
+        "W Hz (equal to the baseband signal bandwidth)",
+        "2W Hz (twice the baseband signal bandwidth)",
+        "4W Hz (four times the baseband signal bandwidth)"
+      ],
+      explanation:"DSB-AM produces two sidebands (upper and lower), each of width W Hz, so the total bandwidth is 2W Hz."
+    },
+    answer:2
+  },
+
+  // ── 10 ── Medium  answer A(0)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"16-QAM 的星座圖包含多少個信號點，且在相同符元速率下，其位元速率是 QPSK 的幾倍？",
+      options:[
+        "16 個信號點，位元速率是 QPSK 的 2 倍",
+        "16 個信號點，位元速率是 QPSK 的 4 倍",
+        "8 個信號點，位元速率是 QPSK 的 2 倍",
+        "16 個信號點，位元速率是 QPSK 的 1.5 倍"
+      ],
+      explanation:"16-QAM：log₂16=4 bits/symbol；QPSK：log₂4=2 bits/symbol。相同符元速率下，16-QAM 的位元速率恰為 QPSK 的 4/2 = 2 倍。"
+    },
+    en:{
+      question:"How many signal points does a 16-QAM constellation have, and how many times higher is its bit rate compared to QPSK at the same symbol rate?",
+      options:[
+        "16 signal points, bit rate is 2× that of QPSK",
+        "16 signal points, bit rate is 4× that of QPSK",
+        "8 signal points, bit rate is 2× that of QPSK",
+        "16 signal points, bit rate is 1.5× that of QPSK"
+      ],
+      explanation:"16-QAM: log₂16=4 bits/symbol; QPSK: log₂4=2 bits/symbol. At the same symbol rate, 16-QAM's bit rate is 4/2 = 2× that of QPSK."
+    },
+    answer:0
+  },
+
+  // ── 11 ── Hard  answer A(0)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"維特比演算法（Viterbi Algorithm）在通訊系統中最主要的應用是什麼？",
+      options:[
+        "在格狀碼或卷積碼中，找出最大似然（maximum likelihood）的解碼路徑",
+        "計算 OFDM 系統中各子載波的最佳功率配置，以最大化系統吞吐量",
+        "在 CDMA 系統中生成最佳的正交展頻碼序列，降低多用戶干擾",
+        "動態調整 PLL 迴路濾波器參數，使鎖相時間最短並減少相位抖動"
+      ],
+      explanation:"維特比演算法是一種動態規劃方法，用於在格狀圖（trellis）上高效搜尋最大似然路徑，廣泛應用於卷積碼與格狀碼的解碼。"
+    },
+    en:{
+      question:"What is the primary application of the Viterbi Algorithm in communication systems?",
+      options:[
+        "Finding the maximum-likelihood decoding path in trellis codes or convolutional codes",
+        "Calculating optimal power allocation across OFDM subcarriers to maximize system throughput",
+        "Generating optimal orthogonal spreading code sequences in CDMA to reduce multi-user interference",
+        "Dynamically adjusting PLL loop filter parameters to minimize lock time and phase jitter"
+      ],
+      explanation:"The Viterbi algorithm is a dynamic programming method that efficiently searches for the maximum-likelihood path through a trellis, widely used in decoding convolutional and trellis codes."
+    },
+    answer:0
+  },
+
+  // ── 12 ── Trap  answer D(3)
+  {
+    difficulty:"trap", points:19,
+    zh:{
+      question:"在 IEEE 802.3 乙太網路標準中，Manchester 編碼對位元「1」的定義是？",
+      options:[
+        "整個位元週期維持高電位，位元「0」則維持低電位",
+        "位元週期前半為低電位、後半為高電位（上升緣）表示「1」",
+        "位元「1」在週期中點有一次電壓轉變，具體方向由前一位元決定",
+        "位元週期前半為高電位、後半為低電位（下降緣）表示「1」"
+      ],
+      explanation:"IEEE 802.3 定義：「1」= 高→低（下降緣）；「0」= 低→高（上升緣）。常見錯誤是與 G.E. Thomas 慣例（「1」= 上升緣）混淆。"
+    },
+    en:{
+      question:"In the IEEE 802.3 Ethernet standard, how is bit '1' defined in Manchester encoding?",
+      options:[
+        "The entire bit period stays at high level; bit '0' stays at low level throughout",
+        "The first half of the bit period is low, the second half is high (rising edge) represents '1'",
+        "Bit '1' has one voltage transition at the midpoint; the direction is determined by the preceding bit",
+        "The first half of the bit period is high, the second half is low (falling edge) represents '1'"
+      ],
+      explanation:"IEEE 802.3 defines '1' as high-to-low (falling edge) and '0' as low-to-high (rising edge). A common confusion is with the G.E. Thomas convention, where '1' is a rising edge."
+    },
+    answer:3
+  },
+
+  // ── 13 ── Easy  answer D(3)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"相較於調幅（AM）系統，調頻（FM）系統的主要優點之一是什麼？",
+      options:[
+        "FM 系統所需的傳輸功率比 AM 系統低得多",
+        "FM 信號所佔用的頻道頻寬比 AM 信號更窄",
+        "FM 接收機的解調電路比 AM 接收機更加簡單",
+        "FM 系統抵抗通道雜訊與外來干擾的能力優於 AM"
+      ],
+      explanation:"FM 的主要優點是抗雜訊性能，利用頻率偏移攜帶資訊，振幅雜訊對解調影響很小；代價是需要更寬的頻寬。"
+    },
+    en:{
+      question:"Compared to Amplitude Modulation (AM), what is one key advantage of Frequency Modulation (FM)?",
+      options:[
+        "FM systems require significantly less transmission power than AM systems",
+        "FM signals occupy a narrower channel bandwidth than AM signals",
+        "FM receiver demodulation circuits are simpler than those of AM receivers",
+        "FM systems have superior immunity to channel noise and external interference"
+      ],
+      explanation:"FM's key advantage is noise immunity. Information is carried in the frequency, so amplitude noise has minimal effect on demodulation, at the cost of wider bandwidth."
+    },
+    answer:3
+  },
+
+  // ── 14 ── Medium  answer B(1)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"鎖相迴路（PLL, Phase-Locked Loop）在通訊系統中最常見的應用是什麼？",
+      options:[
+        "將類比信號轉換為數位信號，同時提高量化解析度與精度",
+        "載波同步與頻率合成，使接收端振盪器與發射端保持相同的頻率與相位",
+        "增強信號功率以克服長距離傳輸的路徑損耗",
+        "將多路信號進行分時多工，提升單一通道的傳輸容量"
+      ],
+      explanation:"PLL 主要用於頻率合成（產生精確頻率）與載波同步（接收端追蹤發射端相位），是解調器與頻率合成器的核心元件。"
+    },
+    en:{
+      question:"What is the most common application of a Phase-Locked Loop (PLL) in communication systems?",
+      options:[
+        "Converting analog signals to digital signals while improving quantization resolution and accuracy",
+        "Carrier synchronization and frequency synthesis, keeping the receiver oscillator phase-locked to the transmitter",
+        "Boosting signal power to overcome path loss in long-distance transmission links",
+        "Time-division multiplexing of multiple signals to increase capacity on a single channel"
+      ],
+      explanation:"PLLs are primarily used for frequency synthesis (generating precise frequencies) and carrier synchronization (receiver tracking the transmitter's phase), core components in demodulators and synthesizers."
+    },
+    answer:1
+  },
+
+  // ── 15 ── Hard  answer B(1)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在基頻數位傳輸中，奈奎斯特第一準則（Nyquist's First Criterion for Zero ISI）要求脈波成形濾波器具備何種特性？",
+      options:[
+        "濾波器在整個傳輸頻帶內的頻率響應必須完全平坦，形成理想矩形特性",
+        "傳送、通道、接收三端濾波器的整體響應，在每個符元取樣瞬間對其他符元的貢獻必須為零",
+        "濾波器在全頻帶的群延遲（group delay）必須為常數，消除所有非線性相位失真",
+        "濾波器的帶寬必須精確等於符元速率的一半，以達到最大頻譜效率"
+      ],
+      explanation:"奈奎斯特第一準則：整體頻率響應 H(f) 需滿足 Nyquist condition，即相鄰符元取樣點相互不干擾（ISI=0）。升餘弦濾波器是最常見的實現。"
+    },
+    en:{
+      question:"In baseband digital transmission, what does Nyquist's First Criterion for Zero ISI require of the pulse shaping filter?",
+      options:[
+        "The filter's frequency response must be perfectly flat across the entire transmission band, forming an ideal rectangular characteristic",
+        "The combined response of transmit, channel, and receive filters must contribute zero inter-symbol interference at each symbol sampling instant",
+        "The filter's group delay must be constant across all frequencies to eliminate all non-linear phase distortion",
+        "The filter's bandwidth must be exactly equal to half the symbol rate to achieve maximum spectral efficiency"
+      ],
+      explanation:"Nyquist's first criterion: the overall frequency response H(f) must satisfy the Nyquist condition, meaning adjacent symbol samples do not interfere (ISI=0). The raised cosine filter is the most common implementation."
+    },
+    answer:1
+  },
+
+  // ── 16 ── Trap  answer A(0)
+  {
+    difficulty:"trap", points:19,
+    zh:{
+      question:"在 CDMA 系統中，若展頻增益（processing gain）為 G，則系統理論上可支援多少用戶？",
+      options:[
+        "理論上可支援 G 個用戶，但實際受多用戶干擾（MAI）限制，有效容量遠低於此值",
+        "恰好 G 個用戶，展頻碼完全正交故與干擾無關，不受通道條件影響",
+        "固定為 G/2 個用戶，由於所有展頻碼之間不可避免地有約 50% 的碼間互相關",
+        "用戶數沒有理論上限，因為每個用戶分配到唯一的展頻碼且頻率互不重疊"
+      ],
+      explanation:"CDMA 為干擾受限系統：理論展頻增益 G 是上限，但多用戶干擾（MAI）使實際容量通常遠低於 G。此外非同步 CDMA 的碼並非完全正交。"
+    },
+    en:{
+      question:"In a CDMA system with processing gain G, how many users can the system theoretically support?",
+      options:[
+        "Theoretically up to G users, but multiple access interference (MAI) limits the effective capacity to far below this value",
+        "Exactly G users regardless of interference, because spreading codes are perfectly orthogonal and immune to channel conditions",
+        "Fixed at G/2 users, because all spreading codes inevitably share about 50% cross-correlation with each other",
+        "No theoretical upper limit, because each user has a unique spreading code with non-overlapping frequencies"
+      ],
+      explanation:"CDMA is interference-limited: the processing gain G is the theoretical upper bound, but MAI typically reduces actual capacity far below G. Asynchronous CDMA codes are also not perfectly orthogonal."
+    },
+    answer:0
+  },
+
+  // ── 17 ── Easy  answer A(0)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"振幅移鍵控（ASK, Amplitude Shift Keying）是藉由改變載波的哪個參數來傳遞數位資訊？",
+      options:[
+        "載波的振幅（依資料位元改變強度）",
+        "載波的頻率（依資料位元改變頻率）",
+        "載波的相位（依資料位元改變相位）",
+        "載波的頻寬（依資料位元擴展或壓縮頻帶）"
+      ],
+      explanation:"ASK 透過改變載波振幅來代表不同的資料符元（如 0V 表示「0」，A V 表示「1」），頻率與相位保持不變。"
+    },
+    en:{
+      question:"Amplitude Shift Keying (ASK) transmits digital information by modifying which parameter of the carrier wave?",
+      options:[
+        "The carrier amplitude (varying signal strength according to data bits)",
+        "The carrier frequency (varying frequency according to data bits)",
+        "The carrier phase (varying phase according to data bits)",
+        "The carrier bandwidth (expanding or compressing the frequency band per data bit)"
+      ],
+      explanation:"ASK modulates the carrier's amplitude to represent data symbols (e.g., 0V for '0', A V for '1'), while frequency and phase remain constant."
+    },
+    answer:0
+  },
+
+  // ── 18 ── Medium  answer C(2)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"下列哪項「不是」直接序列展頻（DSSS）系統的主要特性？",
+      options:[
+        "傳輸信號頻寬遠大於原始資料信號的頻寬",
+        "使用偽隨機碼（PN code）與原始信號相乘達到展頻效果",
+        "對頻率選擇性衰落完全免疫，無需任何均衡或補償機制",
+        "對窄頻帶干擾（narrowband interference）具有抑制能力"
+      ],
+      explanation:"DSSS 可抗窄頻干擾，但並非對頻率選擇性衰落免疫；實際系統（如 WCDMA）仍需 RAKE 接收機等機制補償多徑衰落。"
+    },
+    en:{
+      question:"Which of the following is NOT a primary characteristic of Direct Sequence Spread Spectrum (DSSS)?",
+      options:[
+        "The transmitted signal bandwidth is much wider than the original data signal bandwidth",
+        "A pseudo-random noise (PN) code is multiplied with the original signal to achieve spreading",
+        "Complete immunity to frequency-selective fading without any equalization or compensation mechanism",
+        "Ability to suppress narrowband interference signals"
+      ],
+      explanation:"DSSS is not immune to frequency-selective fading — real systems (e.g., WCDMA) still require RAKE receivers and other techniques to handle multipath fading."
+    },
+    answer:2
+  },
+
+  // ── 19 ── Hard  answer C(2)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在 MIMO 通訊系統中，發射端有 M 根天線、接收端有 N 根天線，且通道矩陣為滿秩（full rank），則最大空間多工增益（spatial multiplexing gain）為幾個獨立資料流？",
+      options:[
+        "M × N 個獨立資料流（收發天線數的乘積）",
+        "M + N 個獨立資料流（收發天線數的總和）",
+        "min(M, N) 個獨立資料流（取收發天線數的較小值）",
+        "max(M, N) 個獨立資料流（取收發天線數的較大值）"
+      ],
+      explanation:"滿秩 MIMO 通道的奇異值個數為 min(M,N)，因此最大空間多工增益（獨立資料流數）為 min(M,N)。秩不足時受限於通道秩 r < min(M,N)。"
+    },
+    en:{
+      question:"In a MIMO communication system with M transmit antennas, N receive antennas, and a full-rank channel matrix, what is the maximum spatial multiplexing gain in terms of independent data streams?",
+      options:[
+        "M × N independent data streams (product of transmit and receive antenna counts)",
+        "M + N independent data streams (sum of transmit and receive antenna counts)",
+        "min(M, N) independent data streams (the smaller of the two antenna counts)",
+        "max(M, N) independent data streams (the larger of the two antenna counts)"
+      ],
+      explanation:"A full-rank MIMO channel has min(M,N) singular values, so the maximum spatial multiplexing gain is min(M,N) independent streams. With rank r < min(M,N), the gain is limited to r."
+    },
+    answer:2
+  },
+
+  // ── 20 ── Trap  answer D(3)
+  {
+    difficulty:"trap", points:19,
+    zh:{
+      question:"奈奎斯特無雜訊通道的最大資料速率公式為 C = 2B log₂M（B 為頻寬，M 為電位數）。理論上增加 M 可無限提高速率，實際上為何不這樣做？",
+      options:[
+        "增加 M 不會提高速率，因為 log₂M 的成長速度極慢，幾乎毫無實際效益",
+        "增加 M 違反奈奎斯特取樣定理，導致信號在取樣時產生嚴重的混疊效應",
+        "增加 M 會使信號的傳輸頻寬等比例增加，完全抵消速率的提升效果",
+        "增加 M 使相鄰電位間距縮小，在有雜訊的真實通道中無法可靠區分各電位"
+      ],
+      explanation:"奈奎斯特公式假設無雜訊。實際通道存在雜訊，M 過大時相鄰電位太接近而無法識別；Shannon 定理才正確描述了雜訊對通道容量的根本限制。"
+    },
+    en:{
+      question:"The Nyquist noiseless channel formula is C = 2B log₂M (B = bandwidth, M = signal levels). Theoretically, increasing M can boost the rate indefinitely. Why is this not done in practice?",
+      options:[
+        "Increasing M does not improve the rate because log₂M grows too slowly to have any practical benefit",
+        "Increasing M violates the Nyquist sampling theorem, causing severe aliasing during signal sampling",
+        "Increasing M proportionally widens the signal bandwidth, completely cancelling the rate improvement",
+        "Increasing M shrinks the spacing between adjacent levels, making them indistinguishable in a noisy real-world channel"
+      ],
+      explanation:"The Nyquist formula assumes no noise. In real channels, noise exists, and excessive M makes adjacent levels too close to distinguish reliably. Shannon's theorem properly accounts for noise as the fundamental capacity limit."
+    },
+    answer:3
+  },
+
+  // ── 21 ── Easy  answer B(1)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"脈波碼調變（PCM, Pulse Code Modulation）將類比信號轉換為數位信號的步驟，正確順序為何？",
+      options:[
+        "量化（Quantization）→ 取樣（Sampling）→ 編碼（Encoding）",
+        "取樣（Sampling）→ 量化（Quantization）→ 編碼（Encoding）",
+        "編碼（Encoding）→ 取樣（Sampling）→ 量化（Quantization）",
+        "取樣（Sampling）→ 編碼（Encoding）→ 量化（Quantization）"
+      ],
+      explanation:"PCM 三步驟：①取樣（在時間上離散化）→②量化（在振幅上離散化）→③編碼（轉為二進制位元串）。"
+    },
+    en:{
+      question:"In Pulse Code Modulation (PCM), what is the correct sequence of steps to convert an analog signal to digital?",
+      options:[
+        "Quantization → Sampling → Encoding",
+        "Sampling → Quantization → Encoding",
+        "Encoding → Sampling → Quantization",
+        "Sampling → Encoding → Quantization"
+      ],
+      explanation:"PCM three steps: ① Sampling (time discretization) → ② Quantization (amplitude discretization) → ③ Encoding (convert to binary bit stream)."
+    },
+    answer:1
+  },
+
+  // ── 22 ── Medium  answer D(3)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"漢明碼（7,4）的最小漢明距離（minimum Hamming distance）為 3，根據此性質，該碼能做到的最強錯誤控制能力是？",
+      options:[
+        "偵測並更正任意 2 個位元的錯誤",
+        "偵測 3 個位元錯誤，並更正任意 2 個位元錯誤",
+        "偵測並更正任意 1 個或 2 個位元的錯誤",
+        "偵測最多 2 個位元錯誤，並更正最多 1 個位元錯誤"
+      ],
+      explanation:"最小漢明距離 d=3：可偵測 d-1=2 個錯誤位元，可更正 ⌊(d-1)/2⌋=1 個錯誤位元。這是兩種能力的正確組合。"
+    },
+    en:{
+      question:"The Hamming(7,4) code has a minimum Hamming distance of 3. Based on this property, what is the strongest error control capability this code can achieve?",
+      options:[
+        "Detect and correct any 2-bit errors simultaneously",
+        "Detect up to 3-bit errors and correct any 2-bit errors simultaneously",
+        "Detect and correct any 1-bit or 2-bit errors simultaneously",
+        "Detect up to 2-bit errors and correct up to 1-bit errors"
+      ],
+      explanation:"With minimum Hamming distance d=3: detectable errors = d-1=2, correctable errors = ⌊(d-1)/2⌋=1. This is the correct combined capability."
+    },
+    answer:3
+  },
+
+  // ── 23 ── Hard  answer D(3)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"低密度奇偶校驗碼（LDPC）在 5G、Wi-Fi 6 等現代標準廣泛採用，其性能接近 Shannon 極限的主要原因是什麼？",
+      options:[
+        "LDPC 碼的解碼複雜度為 O(1)，可在任意通道條件下即時完成解碼",
+        "LDPC 碼採用硬決策（hard-decision）解碼，比其他碼的軟決策更為精確",
+        "LDPC 碼的奇偶校驗矩陣為完全隨機，故可抵抗任何已知形式的通道錯誤",
+        "LDPC 碼透過稀疏的奇偶校驗矩陣與迭代信念傳播（belief propagation）解碼，充分利用軟資訊逼近最優解"
+      ],
+      explanation:"LDPC 的關鍵在於：稀疏矩陣使迭代信念傳播（BP）解碼在複雜度與性能間取得平衡，且軟資訊（soft information）的充分利用使其逼近 Shannon 極限。"
+    },
+    en:{
+      question:"LDPC (Low-Density Parity-Check) codes are widely used in 5G and Wi-Fi 6. What is the primary reason their performance approaches the Shannon limit?",
+      options:[
+        "LDPC decoding has O(1) complexity, enabling real-time decoding under any channel condition",
+        "LDPC uses hard-decision decoding, which is more accurate than the soft-decision decoding used by other codes",
+        "LDPC parity-check matrices are completely random, allowing them to counter any known form of channel error",
+        "LDPC's sparse parity-check matrices enable iterative belief propagation decoding that fully exploits soft information to approach optimal decoding"
+      ],
+      explanation:"LDPC's key strengths are: sparse matrices make iterative belief propagation (BP) decoding efficient, and fully exploiting soft information allows performance to approach the Shannon limit."
+    },
+    answer:3
+  },
+
+  // ── 24 ── Easy  answer C(2)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"分頻多工（FDM, Frequency Division Multiplexing）的核心原理是什麼？",
+      options:[
+        "將所有用戶的信號分配到相同頻帶，但在各自的不同時間槽中輪流傳送",
+        "為每個用戶分配唯一的正交展頻碼，允許所有用戶同時在同一頻帶傳送",
+        "將可用頻帶分成多個不重疊的子頻帶，各用戶獨佔一個子頻帶同時傳送",
+        "將資料封包切割後交錯傳送，接收端依序列號重新排列恢復原始資料"
+      ],
+      explanation:"FDM 在頻域上劃分資源，每個用戶佔用不同的頻率子帶，各路信號同時傳送互不重疊，類比電話交換機的頻率分隔技術。"
+    },
+    en:{
+      question:"What is the core principle of Frequency Division Multiplexing (FDM)?",
+      options:[
+        "All users share the same frequency band but transmit in separate, non-overlapping time slots",
+        "Each user is assigned a unique orthogonal spreading code, allowing simultaneous transmission in the same band",
+        "The available frequency band is divided into non-overlapping sub-bands, with each user exclusively occupying one sub-band",
+        "Data packets are segmented, interleaved during transmission, and reassembled at the receiver by sequence number"
+      ],
+      explanation:"FDM partitions resources in the frequency domain. Each user occupies a different frequency sub-band and transmits simultaneously without overlap, analogous to analog telephone frequency separation."
+    },
+    answer:2
+  },
+
+  // ── 25 ── Medium  answer A(0)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"半波偶極天線（half-wave dipole antenna）相對於等向性天線（isotropic antenna）的增益約為多少 dBi？",
+      options:[
+        "約 2.15 dBi（偶極天線的標準增益值）",
+        "約 0 dBi（與等向性天線相同，無方向性增益）",
+        "約 6.0 dBi（相當於八木天線的基本增益）",
+        "約 10 dBi（對應功率為等向性天線的 10 倍）"
+      ],
+      explanation:"半波偶極天線的輻射方向圖具有方向性，其峰值增益相對等向性天線為 1.64 倍線性值，即 10 log₁₀(1.64) ≈ 2.15 dBi。"
+    },
+    en:{
+      question:"What is the gain of a half-wave dipole antenna relative to an isotropic antenna (in dBi)?",
+      options:[
+        "Approximately 2.15 dBi (the standard gain of a dipole antenna)",
+        "Approximately 0 dBi (same as the isotropic antenna, no directional gain)",
+        "Approximately 6.0 dBi (equivalent to the basic gain of a Yagi antenna)",
+        "Approximately 10 dBi (corresponding to 10 times the power of an isotropic antenna)"
+      ],
+      explanation:"A half-wave dipole has a directional radiation pattern with a peak gain of 1.64× linear over isotropic, which equals 10 log₁₀(1.64) ≈ 2.15 dBi."
+    },
+    answer:0
+  },
+
+  // ── 26 ── Hard  answer A(0)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在 OFDM 系統中，插入導引符元（pilot symbols）的主要目的是什麼？",
+      options:[
+        "提供已知參考信號，使接收端能估測頻率選擇性衰落通道的頻率響應，支援同調偵測",
+        "在相鄰 OFDM 符元之間插入保護區間，防止符元間干擾（ISI）的累積",
+        "作為子載波間距的頻率校準基準，確保所有子載波嚴格保持整數倍間距",
+        "降低 OFDM 的峰均功率比（PAPR），減輕功率放大器的非線性失真問題"
+      ],
+      explanation:"導引符元是接收端已知的符元，置於特定時頻格點（time-frequency grid），使接收端可估測各子載波的通道增益與相位，進而對收到信號做同調偵測補償。"
+    },
+    en:{
+      question:"What is the primary purpose of inserting pilot symbols in an OFDM system?",
+      options:[
+        "To provide known reference signals so the receiver can estimate the frequency response of frequency-selective fading channels, enabling coherent detection",
+        "To insert guard intervals between adjacent OFDM symbols to prevent inter-symbol interference (ISI) accumulation",
+        "To serve as a frequency calibration reference for subcarrier spacing, ensuring all subcarriers maintain strict integer-multiple spacing",
+        "To reduce OFDM's peak-to-average power ratio (PAPR) and mitigate nonlinear distortion in power amplifiers"
+      ],
+      explanation:"Pilot symbols are known symbols placed at specific time-frequency grid positions, allowing the receiver to estimate each subcarrier's channel gain and phase for coherent detection compensation."
+    },
+    answer:0
+  },
+
+  // ── 27 ── Easy  answer D(3)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"在 OSI 七層模型中，哪一層負責節點到節點（node-to-node）的資料幀傳輸、錯誤偵測與流量控制？",
+      options:[
+        "網路層（Network Layer）：負責端對端路由與 IP 定址",
+        "傳輸層（Transport Layer）：提供端對端可靠傳輸與分段重組",
+        "實體層（Physical Layer）：負責位元的物理信號傳輸",
+        "資料鏈結層（Data Link Layer）：負責相鄰節點間的幀傳遞與媒介存取"
+      ],
+      explanation:"資料鏈結層（第 2 層）負責將網路層資料封裝成幀，並在直接相連的節點間進行可靠傳輸，包含 MAC 子層與 LLC 子層。"
+    },
+    en:{
+      question:"In the OSI 7-layer model, which layer is responsible for node-to-node data frame transmission, error detection, and flow control?",
+      options:[
+        "Network Layer: responsible for end-to-end routing and IP addressing",
+        "Transport Layer: provides end-to-end reliable transmission and segmentation/reassembly",
+        "Physical Layer: responsible for physical signal transmission of bits",
+        "Data Link Layer: responsible for frame delivery and media access between adjacent nodes"
+      ],
+      explanation:"The Data Link Layer (Layer 2) encapsulates network layer data into frames and handles reliable transmission between directly connected nodes, comprising the MAC and LLC sublayers."
+    },
+    answer:3
+  },
+
+  // ── 28 ── Medium  answer B(1)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"在無線通訊中，瑞利衰落（Rayleigh fading）通常適用於描述何種環境的信號傳播特性？",
+      options:[
+        "存在強烈視線路徑（LOS）且周圍散射體極少的空曠戶外環境",
+        "無主導性視線路徑、信號由大量散射波隨機疊加所形成的城市或室內環境",
+        "僅有單一傳播路徑、幾乎無反射與散射的自由空間傳播環境",
+        "信號在高壓架空電纜中受地表影響時的特定衰落行為"
+      ],
+      explanation:"瑞利衰落描述無視線路徑（NLOS）環境，信號由多個獨立散射波疊加，符合中心極限定理，幅度服從瑞利分布。有 LOS 時應使用萊斯（Rician）衰落模型。"
+    },
+    en:{
+      question:"In wireless communications, Rayleigh fading is typically used to describe signal propagation characteristics in which environment?",
+      options:[
+        "An open outdoor environment with a strong line-of-sight (LOS) path and very few surrounding scatterers",
+        "An urban or indoor environment with no dominant LOS path, where the signal is formed by random superposition of many scattered waves",
+        "A free-space propagation environment with only a single propagation path and virtually no reflections or scattering",
+        "Specific fading behavior of signals in high-voltage overhead cables influenced by the ground surface"
+      ],
+      explanation:"Rayleigh fading describes NLOS environments where signals from many independent scatterers superpose, satisfying the central limit theorem with Rayleigh-distributed amplitude. The Rician model applies when a LOS path exists."
+    },
+    answer:1
+  },
+
+  // ── 29 ── Hard  answer B(1)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在 AWGN 通道中，BPSK 調變的位元錯誤率（BER）公式為 P_b = Q(√(2Eb/N₀))，其中 Q 函數的數學意義為何？",
+      options:[
+        "高斯概率密度函數（PDF）在 x 點的函數值，即 Q(x) = (1/√2π)e^(-x²/2)",
+        "標準常態分布的互補累積分布函數（CCDF），即 Q(x) = P(Z > x)，Z 為標準常態隨機變數",
+        "信號能量與雜訊能量之比的自然對數函數，Q(x) = ln(x/√2π)",
+        "符元間干擾（ISI）在相位空間中幾何距離的正規化函數"
+      ],
+      explanation:"Q 函數定義：Q(x) = P(Z > x) = ∫_x^∞ (1/√2π)e^(-t²/2)dt，是標準正態分布的互補 CDF（CCDF），代表超過閾值的概率，即符元判斷錯誤的概率。"
+    },
+    en:{
+      question:"In an AWGN channel, the BER formula for BPSK is P_b = Q(√(2Eb/N₀)). What is the mathematical meaning of the Q function?",
+      options:[
+        "The value of the Gaussian probability density function (PDF) at point x, i.e., Q(x) = (1/√2π)e^(-x²/2)",
+        "The complementary cumulative distribution function (CCDF) of the standard normal distribution, i.e., Q(x) = P(Z > x) where Z is a standard normal random variable",
+        "The natural logarithm of the ratio of signal energy to noise energy: Q(x) = ln(x/√2π)",
+        "A normalized function of geometric distance in phase space for inter-symbol interference (ISI)"
+      ],
+      explanation:"Q function: Q(x) = P(Z > x) = ∫_x^∞ (1/√2π)e^(-t²/2)dt — the complementary CDF of the standard normal distribution, representing the probability of exceeding a threshold, i.e., the probability of a symbol decision error."
+    },
+    answer:1
+  },
+
+  // ── 30 ── Easy  answer A(0)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"若某數位調變系統每個符元（symbol）可攜帶 4 個位元，且符元速率（symbol rate）為 1000 Baud（鮑），則位元速率（bit rate）為何？",
+      options:[
+        "4000 bps（符元速率乘以每符元位元數）",
+        "1000 bps（等於符元速率，未考慮每符元位元數）",
+        "2000 bps（符元速率的兩倍）",
+        "250 bps（符元速率除以每符元位元數）"
+      ],
+      explanation:"位元速率 = 符元速率 × 每符元位元數 = 1000 × 4 = 4000 bps。例如 16-QAM（4 bits/symbol）在 1000 Baud 下的位元速率為 4000 bps。"
+    },
+    en:{
+      question:"If a digital modulation system carries 4 bits per symbol and the symbol rate is 1000 Baud, what is the bit rate?",
+      options:[
+        "4000 bps (symbol rate multiplied by bits per symbol)",
+        "1000 bps (equal to symbol rate, ignoring bits per symbol)",
+        "2000 bps (twice the symbol rate)",
+        "250 bps (symbol rate divided by bits per symbol)"
+      ],
+      explanation:"Bit rate = symbol rate × bits per symbol = 1000 × 4 = 4000 bps. For example, 16-QAM (4 bits/symbol) at 1000 Baud yields 4000 bps."
+    },
+    answer:0
+  },
+
+  // ── 31 ── Medium  answer C(2)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"碼率（code rate）為 1/2 的卷積碼（convolutional code）意味著什麼？",
+      options:[
+        "每輸入 1 個位元輸出 1 個位元，且每個輸出位元的錯誤更正能力提升 2 倍",
+        "傳輸速率是未編碼系統的 2 倍，因此可節省 50% 的頻帶資源",
+        "每輸入 1 個位元輸出 2 個位元，頻寬需求約為未編碼系統的 2 倍",
+        "每輸入 2 個位元輸出 1 個位元，因此頻寬節省約 50%"
+      ],
+      explanation:"碼率 1/2 = 輸入位元數/輸出位元數 = 1/2，即輸入 1 位元產生 2 位元輸出（1 個資訊位 + 1 個冗餘位），頻寬需求增加為原來的 2 倍。"
+    },
+    en:{
+      question:"What does a convolutional code with code rate 1/2 mean?",
+      options:[
+        "For every 1 input bit, 1 output bit is produced, and error correction capability doubles for each output bit",
+        "The transmission rate is doubled compared to uncoded systems, saving 50% of bandwidth resources",
+        "For every 1 input bit, 2 output bits are produced, requiring approximately twice the bandwidth of an uncoded system",
+        "For every 2 input bits, 1 output bit is produced, saving approximately 50% bandwidth"
+      ],
+      explanation:"Code rate 1/2 = input bits / output bits = 1/2, meaning 1 input bit produces 2 output bits (1 information bit + 1 redundancy bit), requiring approximately twice the bandwidth."
+    },
+    answer:2
+  },
+
+  // ── 32 ── Hard  answer C(2)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在 LTE/4G 上行鏈路（uplink）中，採用 SC-FDMA（Single Carrier FDMA）而非 OFDMA 的主要技術原因是什麼？",
+      options:[
+        "SC-FDMA 的解碼複雜度遠低於 OFDMA，大幅節省手機處理器的運算能耗",
+        "SC-FDMA 可支援更多的子載波數量，使基站能同時服務更多的並行用戶",
+        "SC-FDMA 具有較低的峰均功率比（PAPR），可延長手持設備電池的使用時間",
+        "SC-FDMA 對頻率選擇性衰落的敏感度高於 OFDMA，能在衰落通道中得到更優的分集增益"
+      ],
+      explanation:"OFDMA 信號的 PAPR 很高（多個子載波疊加），會加速手機電池消耗並增加線性功率放大器要求；SC-FDMA 保留單載波特性，PAPR 更低，因此選用於上行鏈路。"
+    },
+    en:{
+      question:"What is the primary technical reason LTE/4G uplink uses SC-FDMA (Single Carrier FDMA) instead of OFDMA?",
+      options:[
+        "SC-FDMA has far lower decoding complexity than OFDMA, significantly reducing the mobile processor's computational power consumption",
+        "SC-FDMA supports more subcarriers, allowing base stations to serve more concurrent users simultaneously",
+        "SC-FDMA has a lower peak-to-average power ratio (PAPR), extending battery life of mobile handsets",
+        "SC-FDMA is more sensitive to frequency-selective fading than OFDMA, yielding better diversity gain in fading channels"
+      ],
+      explanation:"OFDMA signals have high PAPR (from superimposed subcarriers), draining batteries faster and requiring more linear power amplifiers. SC-FDMA preserves single-carrier characteristics with lower PAPR, making it preferred for the uplink."
+    },
+    answer:2
+  },
+
+  // ── 33 ── Easy  answer B(1)
+  {
+    difficulty:"easy", points:10,
+    zh:{
+      question:"在通訊系統中，若一個放大器的輸出功率為輸入功率的 100 倍，則此功率增益以分貝（dB）表示為何？",
+      options:[
+        "10 dB（功率比為 10 倍時的分貝值）",
+        "20 dB（功率比為 100 倍時的分貝值）",
+        "100 dB（直接等於功率比的數值）",
+        "40 dB（功率比為 10000 倍時的分貝值）"
+      ],
+      explanation:"功率增益（dB）= 10 log₁₀(P_out/P_in) = 10 log₁₀(100) = 10 × 2 = 20 dB。"
+    },
+    en:{
+      question:"In a communication system, if an amplifier's output power is 100 times its input power, what is this power gain expressed in decibels (dB)?",
+      options:[
+        "10 dB (the decibel value for a power ratio of 10×)",
+        "20 dB (the decibel value for a power ratio of 100×)",
+        "100 dB (directly equal to the numerical value of the power ratio)",
+        "40 dB (the decibel value for a power ratio of 10,000×)"
+      ],
+      explanation:"Power gain (dB) = 10 log₁₀(P_out/P_in) = 10 log₁₀(100) = 10 × 2 = 20 dB."
+    },
+    answer:1
+  },
+
+  // ── 34 ── Medium  answer D(3)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"碼分多址（CDMA）允許多個用戶同時在同一頻帶傳輸，其核心機制是什麼？",
+      options:[
+        "為每個用戶分配互不重疊的時間槽，確保各用戶的傳輸在時間上完全分離",
+        "為每個用戶分配互不重疊的頻率子帶，讓各用戶在頻域上各自獨佔資源",
+        "採用時間壓縮技術將多個用戶信號壓縮至不同的超短時間段後同時傳送",
+        "為每個用戶分配唯一的正交展頻碼，接收端以相同的碼解調出目標用戶的信號"
+      ],
+      explanation:"CDMA 利用正交（或偽正交）展頻碼區分用戶：發送端將信號與展頻碼相乘，接收端用匹配的碼做相關運算，提取目標信號並抑制其他用戶的干擾。"
+    },
+    en:{
+      question:"CDMA (Code Division Multiple Access) allows multiple users to transmit simultaneously in the same frequency band. What is its core mechanism?",
+      options:[
+        "Assigning each user a non-overlapping time slot to ensure each user's transmission is completely separated in time",
+        "Assigning each user a non-overlapping frequency sub-band so that each user exclusively occupies resources in the frequency domain",
+        "Using time compression to compress multiple users' signals into different ultra-short time segments before simultaneous transmission",
+        "Assigning each user a unique orthogonal spreading code; the receiver uses the same code to demodulate the target user's signal"
+      ],
+      explanation:"CDMA uses orthogonal (or pseudo-orthogonal) spreading codes to distinguish users: the transmitter multiplies the signal by the spreading code, and the receiver performs correlation with the matching code to extract the target signal while suppressing other users' interference."
+    },
+    answer:3
+  },
+
+  // ── 35 ── Hard  answer A(0)
+  {
+    difficulty:"hard", points:25,
+    zh:{
+      question:"在資訊理論中，通道容量 C 與互資訊（mutual information）I(X;Y) 的正確關係是什麼？",
+      options:[
+        "C = max_{p(x)} I(X;Y)，即對所有可能的輸入分布最佳化後的最大互資訊",
+        "C = I(X;Y) / H(X)，即互資訊除以輸入熵的商，代表相對資訊效率",
+        "C = H(Y) - H(X)，即輸出熵與輸入熵的差值",
+        "C = I(X;Y) × B，其中 B 為通道頻寬，代表頻寬加權的互資訊"
+      ],
+      explanation:"根據 Shannon 資訊理論，通道容量 C = max_{p(x)} I(X;Y)：對輸入分布最佳化，使互資訊最大化。此最大值即為可靠傳輸的理論上限速率。"
+    },
+    en:{
+      question:"In information theory, what is the correct relationship between channel capacity C and mutual information I(X;Y)?",
+      options:[
+        "C = max_{p(x)} I(X;Y): the maximum mutual information optimized over all possible input distributions",
+        "C = I(X;Y) / H(X): mutual information divided by input entropy, representing relative information efficiency",
+        "C = H(Y) - H(X): the difference between output entropy and input entropy",
+        "C = I(X;Y) × B, where B is the channel bandwidth, representing bandwidth-weighted mutual information"
+      ],
+      explanation:"According to Shannon's information theory, C = max_{p(x)} I(X;Y): optimizing the input distribution to maximize mutual information. This maximum value is the theoretical upper bound for reliable transmission rate."
+    },
+    answer:0
+  },
+
+  // ── 36 ── Medium  answer A(0)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"在基頻數位傳輸中，不歸零制（NRZ, Non-Return-to-Zero）編碼的主要缺點之一是什麼？",
+      options:[
+        "連續傳送相同位元時無電壓轉換，接收端難以從信號中提取時脈同步資訊",
+        "每個位元需要兩次電壓轉換，導致頻寬需求比 Manchester 編碼增加一倍",
+        "NRZ 對雜訊的免疫力明顯低於 Manchester 編碼，位元錯誤率顯著偏高",
+        "NRZ 信號的直流分量始終為零，無法應用於含直流偏壓的傳輸系統"
+      ],
+      explanation:"NRZ 的主要缺點是缺乏自同步能力：長串連續相同位元時，信號電平無變化，接收端難以恢復時脈，可能造成位元邊界錯誤。"
+    },
+    en:{
+      question:"What is one of the main disadvantages of Non-Return-to-Zero (NRZ) encoding in baseband digital transmission?",
+      options:[
+        "When identical bits are transmitted consecutively, there are no voltage transitions, making it difficult for the receiver to extract clock synchronization from the signal",
+        "Each bit requires two voltage transitions, doubling the bandwidth requirement compared to Manchester encoding",
+        "NRZ has significantly lower noise immunity than Manchester encoding, resulting in a notably higher bit error rate",
+        "NRZ signals always have a zero DC component, making them unsuitable for transmission systems with DC bias"
+      ],
+      explanation:"NRZ's main drawback is lack of self-synchronization: long runs of identical bits produce no voltage transitions, preventing the receiver from recovering the clock, potentially causing bit boundary errors."
+    },
+    answer:0
+  },
+
+  // ── 37 ── Medium  answer B(1)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"在光纖通訊中，單模光纖（single-mode fiber）相較於多模光纖（multi-mode fiber）的主要優點是什麼？",
+      options:[
+        "單模光纖纖芯直徑較大，與光源耦合時所需的對準精度較低",
+        "單模光纖模態色散（modal dispersion）極小，可支援更長距離與更高頻寬的傳輸",
+        "單模光纖的生產成本更低，特別適合作為區域網路的短距離室內佈線",
+        "單模光纖可同時傳播多個模態，因此每個模態的載波能量更高"
+      ],
+      explanation:"單模光纖的纖芯細小（約 9 μm），只允許一個傳播模態，完全消除模態色散，因此能支援數十公里以上的高速傳輸（如 100 Gbps 長途幹線）。"
+    },
+    en:{
+      question:"In fiber optic communications, what is the primary advantage of single-mode fiber (SMF) compared to multi-mode fiber (MMF)?",
+      options:[
+        "Single-mode fiber has a larger core diameter, requiring less alignment precision when coupling with light sources",
+        "Single-mode fiber has negligible modal dispersion, supporting longer distances and higher bandwidth transmission",
+        "Single-mode fiber has lower manufacturing costs, making it especially suitable for short-distance indoor LAN cabling",
+        "Single-mode fiber can propagate multiple modes simultaneously, so each mode carries more optical power"
+      ],
+      explanation:"Single-mode fiber has a small core (~9 μm) that permits only one propagation mode, completely eliminating modal dispersion, enabling high-speed transmission over tens of kilometers (e.g., 100 Gbps long-haul backbone)."
+    },
+    answer:1
+  },
+
+  // ── 38 ── Medium  answer C(2)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"加性白高斯雜訊（AWGN）通道模型中，「白（white）」這個形容詞代表什麼意思？",
+      options:[
+        "雜訊信號的振幅服從均勻分布，在所有頻率具有相同的最大可能振幅值",
+        "雜訊對所有調變方式都有相同的干擾效果，其影響與傳輸的信號波形完全無關",
+        "雜訊的功率頻譜密度（PSD）在所有頻率上均勻分布，為一個常數值",
+        "這種雜訊只在白天（日光條件）的時段內對無線信號產生干擾作用"
+      ],
+      explanation:"「白」源自白光包含所有頻率的類比：AWGN 的功率頻譜密度 N₀/2 在整個頻帶內為常數，代表雜訊功率均勻分散在所有頻率上。"
+    },
+    en:{
+      question:"In the Additive White Gaussian Noise (AWGN) channel model, what does the adjective 'white' signify?",
+      options:[
+        "The noise signal amplitude follows a uniform distribution, with equal maximum amplitude across all frequencies",
+        "The noise has the same interfering effect on all modulation schemes, completely independent of the transmitted signal waveform",
+        "The noise power spectral density (PSD) is uniformly distributed across all frequencies, remaining a constant value",
+        "This type of noise only interferes with wireless signals during daylight (sunlit) conditions"
+      ],
+      explanation:"'White' is analogous to white light containing all frequencies: AWGN has a constant power spectral density N₀/2 across the entire frequency band, meaning noise power is evenly distributed at all frequencies."
+    },
+    answer:2
+  },
+
+  // ── 39 ── Medium  answer D(3)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"在相同傳輸頻寬的條件下，下列哪種調變方式可提供最高的頻譜效率（bits/s/Hz）？",
+      options:[
+        "BPSK（Binary PSK）：每符元 1 位元，頻譜效率最基礎",
+        "QPSK（Quadrature PSK）：每符元 2 位元，常用於衛星與無線通訊",
+        "8-PSK（8-ary PSK）：每符元 3 位元，在 PSK 族中頻譜效率較高",
+        "64-QAM（64-ary QAM）：每符元 6 位元，頻譜效率最高但需要較高的信噪比"
+      ],
+      explanation:"64-QAM 有 64 個星座點，每符元攜帶 log₂64 = 6 個位元，是四個選項中頻譜效率最高的，但需要更高的 SNR 才能可靠解調。"
+    },
+    en:{
+      question:"Under the same transmission bandwidth, which modulation scheme provides the highest spectral efficiency (bits/s/Hz)?",
+      options:[
+        "BPSK (Binary PSK): 1 bit per symbol, the most basic spectral efficiency",
+        "QPSK (Quadrature PSK): 2 bits per symbol, commonly used in satellite and wireless communications",
+        "8-PSK (8-ary PSK): 3 bits per symbol, higher spectral efficiency within the PSK family",
+        "64-QAM (64-ary QAM): 6 bits per symbol, highest spectral efficiency but requires a higher SNR"
+      ],
+      explanation:"64-QAM has 64 constellation points, carrying log₂64 = 6 bits/symbol — the highest spectral efficiency among the four options, but requiring higher SNR for reliable demodulation."
+    },
+    answer:3
+  },
+
+  // ── 40 ── Medium  answer B(1)
+  {
+    difficulty:"medium", points:15,
+    zh:{
+      question:"停止等待（Stop-and-Wait）ARQ 協定在高延遲長距離鏈路上效率低落的根本原因是什麼？",
+      options:[
+        "停止等待 ARQ 不具備錯誤偵測能力，反覆重傳導致延遲時間不斷累積",
+        "發射端傳送每個封包後，必須等到收到確認訊號（ACK）才能傳下一個，導致大量時間被閒置浪費",
+        "停止等待 ARQ 的封包大小固定不可調整，無法適應不同的網路頻寬條件",
+        "接收端對每個封包都需要連續送出兩次 ACK，造成確認流量過大"
+      ],
+      explanation:"Stop-and-Wait 的根本問題是低管道利用率：在高延遲鏈路（如衛星）上，往返延遲（RTT）遠大於封包傳輸時間，發射端幾乎大多時間都在等待 ACK。滑動視窗（如 Go-Back-N、Selective Repeat）可解決此問題。"
+    },
+    en:{
+      question:"What is the fundamental reason why the Stop-and-Wait ARQ protocol is inefficient on high-latency, long-distance links?",
+      options:[
+        "Stop-and-Wait ARQ lacks error detection capability, causing retransmissions that continuously accumulate delay",
+        "The transmitter must wait for an acknowledgment (ACK) after each packet before sending the next, leaving most of the link time wasted in idle",
+        "Stop-and-Wait ARQ has a fixed, non-adjustable packet size that cannot adapt to varying network bandwidth conditions",
+        "The receiver must send two consecutive ACKs for each packet, causing excessive acknowledgment traffic"
+      ],
+      explanation:"Stop-and-Wait's fundamental problem is low pipeline utilization: on high-latency links (e.g., satellite), the round-trip time (RTT) far exceeds packet transmission time, leaving the transmitter mostly idle waiting for ACKs. Sliding window protocols (Go-Back-N, Selective Repeat) solve this issue."
+    },
+    answer:1
+  }
+];
+
+// ═══════════════════════════════════
+// STATE
+// ═══════════════════════════════════
+let lang = 'zh';
+let currentQ = 0;
+const answers = new Array(Q.length).fill(-1);
+let busy = false;
+
+// ═══════════════════════════════════
+// THEME
+// ═══════════════════════════════════
+function applyTheme() {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const forcedDark = document.documentElement.dataset.forcedTheme === 'dark';
+  const forcedLight = document.documentElement.dataset.forcedTheme === 'light';
+  const isDark = forcedDark || (!forcedLight && prefersDark);
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.textContent = isDark
+    ? (lang === 'zh' ? '☀️ 淺色' : '☀️ Light')
+    : (lang === 'zh' ? '🌙 深色' : '🌙 Dark');
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  document.documentElement.dataset.forcedTheme = cur === 'dark' ? 'light' : 'dark';
+  applyTheme();
+}
+
+// ═══════════════════════════════════
+// LANGUAGE
+// ═══════════════════════════════════
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+  document.getElementById('langBtn').textContent = lang === 'zh' ? 'English' : '中文';
+  applyTheme();
+  if (document.getElementById('resultsPage').classList.contains('show')) {
+    renderResults();
+  } else {
+    renderQuestion(false);
+  }
+}
+
+// ═══════════════════════════════════
+// RENDER QUESTION
+// ═══════════════════════════════════
+function renderQuestion(animate) {
+  const card = document.getElementById('qCard');
+  if (animate) {
+    card.classList.add('fade');
+    setTimeout(() => { _fill(); card.classList.remove('fade'); }, 220);
+  } else {
+    _fill();
+  }
+}
+
+function _fill() {
+  const q = Q[currentQ];
+  const d = lang === 'zh' ? q.zh : q.en;
+  const n = Q.length;
+  const LABELS = ['A', 'B', 'C', 'D'];
+
+  // Header
+  document.getElementById('hTitle').textContent =
+    lang === 'zh' ? '通訊系統 互動測驗' : 'Communication Systems Quiz';
+  document.getElementById('progressLabel').textContent =
+    lang === 'zh' ? `第 ${currentQ + 1} / ${n} 題` : `Question ${currentQ + 1} / ${n}`;
+  document.getElementById('progressFill').style.width = `${(currentQ / n) * 100}%`;
+
+  // Question
+  document.getElementById('qMeta').textContent =
+    lang === 'zh' ? `第 ${currentQ + 1} 題` : `Question ${currentQ + 1}`;
+  document.getElementById('qText').textContent = d.question;
+
+  // Options
+  const opts = document.getElementById('opts');
+  opts.innerHTML = '';
+  d.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn' + (answers[currentQ] === i ? ' selected' : '');
+    btn.innerHTML = `<span class="opt-label">${LABELS[i]}</span><span>${opt}</span>`;
+    btn.addEventListener('click', () => pick(i));
+    opts.appendChild(btn);
+  });
+
+  // Prev
+  const prev = document.getElementById('prevBtn');
+  prev.style.display = currentQ === 0 ? 'none' : '';
+  prev.textContent = lang === 'zh' ? '← 上一題' : '← Previous';
+
+  // Submit (last question only)
+  const sub = document.getElementById('submitBtn');
+  sub.style.display = currentQ === n - 1 ? '' : 'none';
+  sub.textContent = lang === 'zh' ? '提交測驗' : 'Submit Quiz';
+}
+
+// ═══════════════════════════════════
+// INTERACTIONS
+// ═══════════════════════════════════
+function pick(idx) {
+  if (busy) return;
+  answers[currentQ] = idx;
+
+  // Highlight
+  document.querySelectorAll('.opt-btn').forEach((b, i) =>
+    b.classList.toggle('selected', i === idx));
+
+  // Auto-advance (not on last question)
+  if (currentQ < Q.length - 1) {
+    busy = true;
+    setTimeout(() => {
+      currentQ++;
+      renderQuestion(true);
+      busy = false;
+    }, 400);
+  }
+  // On last question: show submit button (already visible), user clicks manually
+}
+
+function prevQ() {
+  if (busy || currentQ === 0) return;
+  busy = true;
+  currentQ--;
+  renderQuestion(true);
+  setTimeout(() => { busy = false; }, 280);
+}
+
+function submitQuiz() {
+  document.getElementById('quizPage').style.display = 'none';
+  document.getElementById('resultsPage').classList.add('show');
+  renderResults();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ═══════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════
+function normalCDF(z) {
+  // Abramowitz & Stegun approximation
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const p = t * (0.319381530 + t * (-0.356563782 +
+    t * (1.781477937 + t * (-1.821255978 + t * 1.330274429))));
+  const phi = 1 - (1 / Math.sqrt(2 * Math.PI)) * Math.exp(-0.5 * z * z) * p;
+  return z >= 0 ? phi : 1 - phi;
+}
+
+function calcPercentile(score) {
+  const mean = 670 * 0.45;  // 301.5
+  const std  = 670 * 0.15;  // 100.5
+  return Math.min(99, Math.max(1, Math.round(normalCDF((score - mean) / std) * 100)));
+}
+
+function getGrade(score) {
+  const g = (zh, en) => lang === 'zh' ? zh : en;
+  if (score >= 600) return g('🏆 頂尖專家', '🏆 Top Expert');
+  if (score >= 500) return g('⭐ 進階掌握', '⭐ Advanced');
+  if (score >= 380) return g('📘 中等水準', '📘 Intermediate');
+  if (score >= 250) return g('📗 基礎尚可', '📗 Basic');
+  return g('📕 需要加強', '📕 Needs Improvement');
+}
+
+function renderResults() {
+  const t = (zh, en) => lang === 'zh' ? zh : en;
+  const LABELS = ['A', 'B', 'C', 'D'];
+
+  let totalScore = 0, correct = 0;
+  const byDiff = {
+    easy:   { c: 0, tot: 10 },
+    medium: { c: 0, tot: 15 },
+    hard:   { c: 0, tot: 10 },
+    trap:   { c: 0, tot: 5 }
+  };
+  const wrong = [];
+
+  Q.forEach((q, i) => {
+    if (answers[i] === q.answer) {
+      totalScore += q.points;
+      correct++;
+      byDiff[q.difficulty].c++;
+    } else {
+      wrong.push(i);
+    }
+  });
+
+  const pct = calcPercentile(totalScore);
+  const grade = getGrade(totalScore);
+
+  const diffLabels = {
+    easy:   t('簡單 Easy', 'Easy'),
+    medium: t('中等 Med',  'Medium'),
+    hard:   t('困難 Hard', 'Hard'),
+    trap:   t('陷阱 Trap', 'Trap')
+  };
+
+  let html = `
+    <div class="score-hero">
+      <div class="score-num">${totalScore}</div>
+      <div class="score-denom">/ 670 ${t('分', 'pts')}</div>
+      <div class="grade-text">${grade}</div>
+      <div class="pct-text">${t(`你的成績超越了約 ${pct}% 的測試者`, `Your score surpasses approximately ${pct}% of test-takers`)}</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">${t('答對題數', 'Correct Answers')}</div>
+        <div class="stat-val">${correct} / 40</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">${t('答錯題數', 'Wrong Answers')}</div>
+        <div class="stat-val">${40 - correct} / 40</div>
+      </div>
+    </div>
+
+    <div class="diff-box">
+      <div class="diff-box-title">${t('各難度正確率', 'Accuracy by Difficulty')}</div>
+      ${['easy','medium','hard','trap'].map(d => {
+        const b = byDiff[d];
+        const pct = b.tot > 0 ? Math.round(b.c / b.tot * 100) : 0;
+        return `
+          <div class="diff-row">
+            <span>${diffLabels[d]}</span>
+            <span><strong>${b.c}</strong> / ${b.tot} &nbsp;(${pct}%)</span>
+          </div>
+          <div class="diff-mini-bar"><div class="diff-mini-fill" style="width:${pct}%"></div></div>`;
+      }).join('')}
+    </div>
+
+    <div class="results-btns">
+      <button class="btn-primary" onclick="restartQuiz()">${t('重新測驗', 'Restart Quiz')}</button>
+      <button class="btn-secondary" onclick="copyResult()">${t('複製結果', 'Copy Results')}</button>
+    </div>`;
+
+  if (wrong.length === 0) {
+    html += `<div class="review-title">🎉 ${t('所有題目全部答對！完美成績！', 'All questions correct! Perfect score!')}</div>`;
+  } else {
+    html += `<div class="review-title">${t('錯題回顧', 'Wrong Answer Review')} (${wrong.length} ${t('題', 'questions')})</div>`;
+    wrong.forEach(i => {
+      const q = Q[i];
+      const d = lang === 'zh' ? q.zh : q.en;
+      const userAns = answers[i];
+      html += `
+        <div class="review-item">
+          <div class="review-q">${t('第', 'Q.')} ${i + 1}. ${d.question}</div>
+          <div class="review-opt wrong">
+            ✗ ${t('你的答案', 'Your answer')}: ${userAns >= 0 ? LABELS[userAns] + '. ' + d.options[userAns] : t('未作答', 'Not answered')}
+          </div>
+          <div class="review-opt correct">
+            ✓ ${t('正確答案', 'Correct answer')}: ${LABELS[q.answer]}. ${d.options[q.answer]}
+          </div>
+          <div class="review-exp">💡 ${d.explanation}</div>
+        </div>`;
+    });
+  }
+
+  document.getElementById('resultsPage').innerHTML = html;
+}
+
+function restartQuiz() {
+  answers.fill(-1);
+  currentQ = 0;
+  document.getElementById('resultsPage').classList.remove('show');
+  document.getElementById('resultsPage').innerHTML = '';
+  document.getElementById('quizPage').style.display = '';
+  renderQuestion(false);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyResult() {
+  let totalScore = 0, correct = 0;
+  const byDiff = { easy:{c:0,tot:10}, medium:{c:0,tot:15}, hard:{c:0,tot:10}, trap:{c:0,tot:5} };
+  Q.forEach((q, i) => {
+    if (answers[i] === q.answer) { totalScore += q.points; correct++; byDiff[q.difficulty].c++; }
+  });
+  const pct = calcPercentile(totalScore);
+  const grade = getGrade(totalScore);
+  const text = lang === 'zh'
+    ? `【通訊系統測驗成績】\n總分：${totalScore}/670\n正確：${correct}/40\n等級：${grade}\n超越約 ${pct}% 的測試者\n簡單：${byDiff.easy.c}/10 ｜ 中等：${byDiff.medium.c}/15 ｜ 困難：${byDiff.hard.c}/10 ｜ 陷阱：${byDiff.trap.c}/5`
+    : `[Communication Systems Quiz Result]\nScore: ${totalScore}/670\nCorrect: ${correct}/40\nGrade: ${grade}\nBeats ~${pct}% of test-takers\nEasy: ${byDiff.easy.c}/10 | Medium: ${byDiff.medium.c}/15 | Hard: ${byDiff.hard.c}/10 | Trap: ${byDiff.trap.c}/5`;
+  navigator.clipboard.writeText(text)
+    .then(() => alert(lang === 'zh' ? '已複製到剪貼簿！' : 'Copied to clipboard!'))
+    .catch(() => prompt(lang === 'zh' ? '請手動複製：' : 'Copy manually:', text));
+}
+
+// ═══════════════════════════════════
+// INIT
+// ═══════════════════════════════════
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+applyTheme();
+renderQuestion(false);
+  </script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微積分互動測驗 | Calculus Interactive Quiz</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --track: #E5E7EB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --track: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    transition: background 0.2s, color 0.2s;
+  }
+  header {
+    position: sticky; top: 0;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 10px;
+    z-index: 10;
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .ctrl-btn {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .ctrl-btn:hover { background: var(--hover); }
+  .progress-text { font-size: 14px; color: var(--text-secondary); white-space: nowrap; }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 20px 100px; }
+  .question-card { transition: opacity 0.25s ease; }
+  .question-card.fade { opacity: 0; }
+  .q-number { font-size: 14px; color: var(--text-secondary); margin-bottom: 10px; }
+  .q-text { font-size: 20px; font-weight: 600; margin-bottom: 22px; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    display: flex; align-items: center; gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    font-size: 16px;
+    background: var(--bg);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .option:hover { background: var(--hover); }
+  .option.selected { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+  .option .label {
+    flex-shrink: 0;
+    width: 26px; height: 26px;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600;
+  }
+  .option.selected .label { border-color: var(--accent-text); }
+  .nav-row { margin-top: 26px; display: flex; justify-content: space-between; align-items: center; }
+  .nav-btn {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 18px;
+    font-size: 15px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--hover); }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .submit-btn {
+    background: var(--accent); color: var(--accent-text);
+    border: none; border-radius: 6px; padding: 12px 24px;
+    font-size: 16px; font-weight: 600; cursor: pointer;
+  }
+  .progress-bar-wrap {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 6px; background: var(--track);
+  }
+  .progress-bar { height: 100%; width: 0; background: var(--accent); transition: width 0.3s; }
+  /* Results */
+  .results h2 { font-size: 26px; margin-bottom: 6px; }
+  .score-big { font-size: 44px; font-weight: 800; color: var(--accent); margin: 8px 0; }
+  .grade { font-size: 22px; font-weight: 700; margin: 6px 0 18px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 18px 0; }
+  .stat-box { border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .stat-box .k { font-size: 13px; color: var(--text-secondary); }
+  .stat-box .v { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .percentile { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 18px 0; font-size: 17px; }
+  .section-title { font-size: 18px; font-weight: 700; margin: 26px 0 12px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .review-line { font-size: 15px; margin: 3px 0; }
+  .review-line.user { color: var(--wrong); }
+  .review-line.correct { color: var(--correct); }
+  .review-exp { font-size: 14px; color: var(--text-secondary); margin-top: 6px; }
+  .result-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  .hidden { display: none; }
+  @media (max-width: 520px) {
+    .title { font-size: 15px; }
+    .ctrl-btn { padding: 6px 9px; font-size: 13px; }
+    .q-text { font-size: 18px; }
+    .stat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="title" id="appTitle">微積分互動測驗</div>
+  <div class="controls">
+    <span class="progress-text" id="progressText">第 1 / 40 題</span>
+    <button class="ctrl-btn" id="langBtn">English</button>
+    <button class="ctrl-btn" id="themeBtn">🌙</button>
+  </div>
+</header>
+
+<main>
+  <div id="quizView">
+    <div class="question-card" id="questionCard"></div>
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn">上一題</button>
+      <button class="submit-btn hidden" id="submitBtn">提交測驗</button>
+    </div>
+  </div>
+  <div id="resultView" class="results hidden"></div>
+</main>
+
+<div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{question:"求 d/dx (x³) 的值為何？", options:["3x²","2x²","3x³","x⁴"], explanation:"冪次規則：d/dx xⁿ = n·xⁿ⁻¹。"},
+    en:{question:"What is d/dx (x³)?", options:["3x²","2x²","3x³","x⁴"], explanation:"Power rule: d/dx xⁿ = n·xⁿ⁻¹."} },
+
+  { id:2, difficulty:"medium", points:15, answer:1,
+    zh:{question:"求 d/dx [sin(x²)] 為何？", options:["cos(x²)","2x·cos(x²)","2x·sin(x²)","x²·cos(x)"], explanation:"連鎖律：外層 cos 乘上內層導數 2x。"},
+    en:{question:"What is d/dx [sin(x²)]?", options:["cos(x²)","2x·cos(x²)","2x·sin(x²)","x²·cos(x)"], explanation:"Chain rule: outer cos times inner derivative 2x."} },
+
+  { id:3, difficulty:"hard", points:25, answer:2,
+    zh:{question:"求 lim(x→0) (eˣ − 1 − x) / x² 的值？", options:["0","1","1/2","2"], explanation:"用羅必達兩次或泰勒展開，極限為 1/2。"},
+    en:{question:"Find lim(x→0) (eˣ − 1 − x) / x².", options:["0","1","1/2","2"], explanation:"L'Hôpital twice or Taylor series gives 1/2."} },
+
+  { id:4, difficulty:"trap", points:19, answer:3,
+    zh:{question:"lim(x→0) |x| / x 的值為何？", options:["等於 0","等於 1","等於 −1","極限不存在"], explanation:"左極限 −1、右極限 +1，兩側不等故不存在。"},
+    en:{question:"What is lim(x→0) |x| / x?", options:["Equals 0","Equals 1","Equals −1","Does not exist"], explanation:"Left limit −1, right limit +1; one-sided limits differ."} },
+
+  { id:5, difficulty:"medium", points:15, answer:1,
+    zh:{question:"lim(x→0) (sin x) / x 的值為何？", options:["0","1","∞","不存在"], explanation:"這是基本三角極限，結果等於 1。"},
+    en:{question:"What is lim(x→0) (sin x) / x?", options:["0","1","∞","Does not exist"], explanation:"A fundamental trig limit; the value is 1."} },
+
+  { id:6, difficulty:"medium", points:15, answer:2,
+    zh:{question:"求 ∫ x·eˣ dx 的結果為何？", options:["x·eˣ + C","eˣ + C","x·eˣ − eˣ + C","x²·eˣ/2 + C"], explanation:"分部積分：令 u=x、dv=eˣdx。"},
+    en:{question:"Evaluate ∫ x·eˣ dx.", options:["x·eˣ + C","eˣ + C","x·eˣ − eˣ + C","x²·eˣ/2 + C"], explanation:"Integration by parts with u=x, dv=eˣdx."} },
+
+  { id:7, difficulty:"hard", points:25, answer:3,
+    zh:{question:"廣義積分 ∫ (1/x²) dx（x 從 1 到 ∞）的值為何？", options:["發散","0","2","1"], explanation:"反導數 −1/x，代入上下限得 0−(−1)=1。"},
+    en:{question:"Evaluate the improper integral ∫ (1/x²) dx from x = 1 to ∞.", options:["Diverges","0","2","1"], explanation:"Antiderivative −1/x; evaluating limits gives 1."} },
+
+  { id:8, difficulty:"medium", points:15, answer:0,
+    zh:{question:"求 d/dx [x²·sin x] 為何？", options:["2x·sin x + x²·cos x","2x·cos x","x²·cos x","2x·sin x − x²·cos x"], explanation:"乘積律：u'v + uv'。"},
+    en:{question:"What is d/dx [x²·sin x]?", options:["2x·sin x + x²·cos x","2x·cos x","x²·cos x","2x·sin x − x²·cos x"], explanation:"Product rule: u'v + uv'."} },
+
+  { id:9, difficulty:"easy", points:10, answer:1,
+    zh:{question:"求 d/dx (eˣ) 為何？", options:["x·eˣ⁻¹","eˣ","eˣ⁺¹","x·eˣ"], explanation:"指數函數 eˣ 的導數仍為 eˣ。"},
+    en:{question:"What is d/dx (eˣ)?", options:["x·eˣ⁻¹","eˣ","eˣ⁺¹","x·eˣ"], explanation:"The derivative of eˣ is eˣ itself."} },
+
+  { id:10, difficulty:"trap", points:19, answer:2,
+    zh:{question:"不定積分 ∫ (1/x) dx 的正確結果為何？", options:["ln x + C","1/x² + C","ln|x| + C","x⁻¹ + C"], explanation:"定義域含負值，必須加絕對值。"},
+    en:{question:"What is the correct result of ∫ (1/x) dx?", options:["ln x + C","1/x² + C","ln|x| + C","x⁻¹ + C"], explanation:"Domain includes negatives, so absolute value is required."} },
+
+  { id:11, difficulty:"medium", points:15, answer:3,
+    zh:{question:"定積分 ∫₀¹ x² dx 的值為何？", options:["1","1/2","2/3","1/3"], explanation:"反導數 x³/3，代入得 1/3。"},
+    en:{question:"Evaluate the definite integral ∫₀¹ x² dx.", options:["1","1/2","2/3","1/3"], explanation:"Antiderivative x³/3 evaluated gives 1/3."} },
+
+  { id:12, difficulty:"easy", points:10, answer:0,
+    zh:{question:"求 d/dx (sin x) 為何？", options:["cos x","−cos x","−sin x","tan x"], explanation:"正弦的導數為餘弦。"},
+    en:{question:"What is d/dx (sin x)?", options:["cos x","−cos x","−sin x","tan x"], explanation:"The derivative of sine is cosine."} },
+
+  { id:13, difficulty:"hard", points:25, answer:1,
+    zh:{question:"曲線 y = ln x 在 x=1 到 x=e 的弧長最接近下列何者？", options:["1.00","2.00","e−1","0.50"], explanation:"弧長 ∫√(1+1/x²)dx，數值約為 2.00。"},
+    en:{question:"The arc length of y = ln x from x=1 to x=e is closest to:", options:["1.00","2.00","e−1","0.50"], explanation:"∫√(1+1/x²)dx evaluates numerically to about 2.00."} },
+
+  { id:14, difficulty:"medium", points:15, answer:2,
+    zh:{question:"求 d/dx (tan x) 為何？", options:["sec x","cot x","sec²x","csc²x"], explanation:"tan x 的導數為 sec²x。"},
+    en:{question:"What is d/dx (tan x)?", options:["sec x","cot x","sec²x","csc²x"], explanation:"The derivative of tan x is sec²x."} },
+
+  { id:15, difficulty:"easy", points:10, answer:3,
+    zh:{question:"求 ∫ 2x dx 的結果為何？", options:["2 + C","2x² + C","x + C","x² + C"], explanation:"反導數為 x²，常數 2 與冪次相消。"},
+    en:{question:"Evaluate ∫ 2x dx.", options:["2 + C","2x² + C","x + C","x² + C"], explanation:"Antiderivative is x²; the 2 cancels with the power."} },
+
+  { id:16, difficulty:"hard", points:25, answer:0,
+    zh:{question:"用部分分式求 ∫ 1/(x²−1) dx 為何？", options:["½ ln|(x−1)/(x+1)| + C","ln|x²−1| + C","arctan x + C","½ ln|x²−1| + C"], explanation:"拆成 1/(x−1)−1/(x+1) 各除以 2。"},
+    en:{question:"Using partial fractions, ∫ 1/(x²−1) dx equals:", options:["½ ln|(x−1)/(x+1)| + C","ln|x²−1| + C","arctan x + C","½ ln|x²−1| + C"], explanation:"Split into 1/(x−1)−1/(x+1), each over 2."} },
+
+  { id:17, difficulty:"medium", points:15, answer:1,
+    zh:{question:"函數 f(x)=x³−3x 的局部極大值出現在何處？", options:["x = 1","x = −1","x = 0","x = 3"], explanation:"f'=3x²−3=0 得 x=±1，x=−1 為極大。"},
+    en:{question:"Where does f(x)=x³−3x have a local maximum?", options:["x = 1","x = −1","x = 0","x = 3"], explanation:"f'=3x²−3=0 gives x=±1; x=−1 is the maximum."} },
+
+  { id:18, difficulty:"trap", points:19, answer:2,
+    zh:{question:"下列關於 f(x)=|x| 在 x=0 的敘述何者正確？", options:["可微且導數為 0","可微且導數為 1","連續但不可微","既不連續也不可微"], explanation:"左右導數 −1 與 1 不等，故連續卻不可微。"},
+    en:{question:"Which statement about f(x)=|x| at x=0 is correct?", options:["Differentiable, derivative 0","Differentiable, derivative 1","Continuous but not differentiable","Neither continuous nor differentiable"], explanation:"Left/right derivatives −1 and 1 differ: continuous, not differentiable."} },
+
+  { id:19, difficulty:"easy", points:10, answer:2,
+    zh:{question:"任意常數函數 f(x)=7 的導數為何？", options:["7","x","0","1"], explanation:"常數的導數恆為 0。"},
+    en:{question:"What is the derivative of the constant function f(x)=7?", options:["7","x","0","1"], explanation:"The derivative of any constant is 0."} },
+
+  { id:20, difficulty:"medium", points:15, answer:3,
+    zh:{question:"定積分 ∫₀^π sin x dx 的值為何？", options:["0","π","1","2"], explanation:"反導數 −cos x，代入得 −(−1)−(−1)=2。"},
+    en:{question:"Evaluate ∫₀^π sin x dx.", options:["0","π","1","2"], explanation:"Antiderivative −cos x gives −(−1)−(−1)=2."} },
+
+  { id:21, difficulty:"hard", points:25, answer:1,
+    zh:{question:"級數 Σ(n=1→∞) 1/n^p 收斂的條件為何？", options:["p ≤ 1","p > 1","p ≥ 0","所有 p 皆收斂"], explanation:"p 級數在 p>1 時收斂，p≤1 時發散。"},
+    en:{question:"For which p does the series Σ(n=1→∞) 1/n^p converge?", options:["p ≤ 1","p > 1","p ≥ 0","Converges for all p"], explanation:"The p-series converges when p>1, diverges when p≤1."} },
+
+  { id:22, difficulty:"medium", points:15, answer:0,
+    zh:{question:"求 ∫ cos(2x) dx 的結果為何？", options:["½ sin(2x) + C","2 sin(2x) + C","−½ sin(2x) + C","sin(2x) + C"], explanation:"內層 2x 的係數需除回，得 ½。"},
+    en:{question:"Evaluate ∫ cos(2x) dx.", options:["½ sin(2x) + C","2 sin(2x) + C","−½ sin(2x) + C","sin(2x) + C"], explanation:"Divide by the inner coefficient 2, giving ½."} },
+
+  { id:23, difficulty:"easy", points:10, answer:0,
+    zh:{question:"求 d/dx (ln x) 為何（x>0）？", options:["1/x","ln x","x","1/x²"], explanation:"自然對數的導數為 1/x。"},
+    en:{question:"What is d/dx (ln x) for x>0?", options:["1/x","ln x","x","1/x²"], explanation:"The derivative of the natural log is 1/x."} },
+
+  { id:24, difficulty:"hard", points:25, answer:2,
+    zh:{question:"用三角代換，∫ 1/√(1−x²) dx 等於何者？", options:["√(1−x²) + C","ln|x| + C","arcsin x + C","−√(1−x²) + C"], explanation:"令 x=sinθ，標準結果為 arcsin x。"},
+    en:{question:"Using trig substitution, ∫ 1/√(1−x²) dx equals:", options:["√(1−x²) + C","ln|x| + C","arcsin x + C","−√(1−x²) + C"], explanation:"Let x=sinθ; the standard result is arcsin x."} },
+
+  { id:25, difficulty:"medium", points:15, answer:1,
+    zh:{question:"由隱函數 x²+y²=25 求 dy/dx 為何？", options:["x/y","−x/y","−y/x","y/x"], explanation:"兩邊微分得 2x+2y·y'=0，故 y'=−x/y。"},
+    en:{question:"For the implicit curve x²+y²=25, find dy/dx.", options:["x/y","−x/y","−y/x","y/x"], explanation:"Differentiate: 2x+2y·y'=0, so y'=−x/y."} },
+
+  { id:26, difficulty:"easy", points:10, answer:3,
+    zh:{question:"求 d/dx (cos x) 為何？", options:["sin x","cos x","csc x","−sin x"], explanation:"餘弦的導數為負正弦。"},
+    en:{question:"What is d/dx (cos x)?", options:["sin x","cos x","csc x","−sin x"], explanation:"The derivative of cosine is negative sine."} },
+
+  { id:27, difficulty:"hard", points:25, answer:0,
+    zh:{question:"eˣ 在 x=0 的泰勒展開前三項為何？", options:["1 + x + x²/2","1 + x + x²","1 + x²/2 + x³/6","x + x²/2 + x³/6"], explanation:"eˣ=Σxⁿ/n!，前三項為 1+x+x²/2。"},
+    en:{question:"The first three Taylor terms of eˣ at x=0 are:", options:["1 + x + x²/2","1 + x + x²","1 + x²/2 + x³/6","x + x²/2 + x³/6"], explanation:"eˣ=Σxⁿ/n!, so 1+x+x²/2."} },
+
+  { id:28, difficulty:"medium", points:15, answer:2,
+    zh:{question:"lim(x→∞) (3x²+2x) / (x²+1) 的值為何？", options:["0","2","3","∞"], explanation:"分子分母同次，比值取最高次係數 3。"},
+    en:{question:"Evaluate lim(x→∞) (3x²+2x) / (x²+1).", options:["0","2","3","∞"], explanation:"Same degree; ratio of leading coefficients is 3."} },
+
+  { id:29, difficulty:"easy", points:10, answer:1,
+    zh:{question:"求 ∫ x² dx 的結果為何？", options:["2x + C","x³/3 + C","3x³ + C","x²/2 + C"], explanation:"冪次積分：xⁿ⁺¹/(n+1)。"},
+    en:{question:"Evaluate ∫ x² dx.", options:["2x + C","x³/3 + C","3x³ + C","x²/2 + C"], explanation:"Power rule for integrals: xⁿ⁺¹/(n+1)."} },
+
+  { id:30, difficulty:"hard", points:25, answer:3,
+    zh:{question:"周長固定為 P 的矩形，何時面積最大？", options:["長是寬的兩倍","愈細長愈大","無最大值","四邊相等的正方形"], explanation:"在邊界限制下，正方形使面積最大。"},
+    en:{question:"For a rectangle with fixed perimeter P, when is the area maximal?", options:["Length twice the width","The thinner the larger","No maximum exists","A square with equal sides"], explanation:"Under the constraint, the square maximizes area."} },
+
+  { id:31, difficulty:"medium", points:15, answer:0,
+    zh:{question:"函數 f(x)=x³ 的凹向變化（反曲點）在何處？", options:["x = 0","x = 1","x = −1","沒有反曲點"], explanation:"f''=6x，於 x=0 變號，為反曲點。"},
+    en:{question:"Where is the inflection point of f(x)=x³?", options:["x = 0","x = 1","x = −1","No inflection point"], explanation:"f''=6x changes sign at x=0, an inflection point."} },
+
+  { id:32, difficulty:"trap", points:19, answer:1,
+    zh:{question:"廣義積分 ∫₋₁¹ (1/x²) dx 的正確結論為何？", options:["等於 −2","發散（不存在）","等於 2","等於 0"], explanation:"被積函數在 x=0 無界，積分發散。"},
+    en:{question:"What is the correct conclusion for ∫₋₁¹ (1/x²) dx?", options:["Equals −2","Diverges (does not exist)","Equals 2","Equals 0"], explanation:"The integrand is unbounded at x=0; the integral diverges."} },
+
+  { id:33, difficulty:"medium", points:15, answer:2,
+    zh:{question:"半徑以 2 cm/s 增加的圓，當 r=3 時面積變化率為何？", options:["6π cm²/s","9π cm²/s","12π cm²/s","3π cm²/s"], explanation:"dA/dt=2πr·dr/dt=2π·3·2=12π。"},
+    en:{question:"A circle's radius grows at 2 cm/s. At r=3, the rate of area change is:", options:["6π cm²/s","9π cm²/s","12π cm²/s","3π cm²/s"], explanation:"dA/dt=2πr·dr/dt=2π·3·2=12π."} },
+
+  { id:34, difficulty:"easy", points:10, answer:2,
+    zh:{question:"求 d/dx (5x) 為何？", options:["5x","x","5","0"], explanation:"線性函數的斜率即導數，為 5。"},
+    en:{question:"What is d/dx (5x)?", options:["5x","x","5","0"], explanation:"The slope of a linear function is its derivative, 5."} },
+
+  { id:35, difficulty:"hard", points:25, answer:1,
+    zh:{question:"lim(x→0⁺) x·ln x 的值為何？", options:["−∞","0","1","不存在"], explanation:"改寫為 ln x /(1/x) 用羅必達，極限為 0。"},
+    en:{question:"Evaluate lim(x→0⁺) x·ln x.", options:["−∞","0","1","Does not exist"], explanation:"Rewrite as ln x /(1/x); L'Hôpital gives 0."} },
+
+  { id:36, difficulty:"medium", points:15, answer:3,
+    zh:{question:"均值定理保證 f 在 [a,b] 上存在 c 使得？", options:["f(c)=0","f''(c)=0","f(c)=f(a)","f'(c)=(f(b)−f(a))/(b−a)"], explanation:"均值定理斷言切線斜率等於平均變化率。"},
+    en:{question:"The Mean Value Theorem guarantees a c in [a,b] such that:", options:["f(c)=0","f''(c)=0","f(c)=f(a)","f'(c)=(f(b)−f(a))/(b−a)"], explanation:"MVT asserts a tangent slope equal to the average rate."} },
+
+  { id:37, difficulty:"easy", points:10, answer:3,
+    zh:{question:"求 ∫ eˣ dx 的結果為何？", options:["x·eˣ + C","eˣ⁻¹ + C","eˣ/x + C","eˣ + C"], explanation:"eˣ 的反導數仍為 eˣ。"},
+    en:{question:"Evaluate ∫ eˣ dx.", options:["x·eˣ + C","eˣ⁻¹ + C","eˣ/x + C","eˣ + C"], explanation:"The antiderivative of eˣ is eˣ."} },
+
+  { id:38, difficulty:"medium", points:15, answer:0,
+    zh:{question:"求 d/dx [(x+1)/(x−1)] 為何？", options:["−2/(x−1)²","2/(x−1)²","1/(x−1)²","−1/(x−1)²"], explanation:"商法則：分子 (x−1)−(x+1)=−2。"},
+    en:{question:"What is d/dx [(x+1)/(x−1)]?", options:["−2/(x−1)²","2/(x−1)²","1/(x−1)²","−1/(x−1)²"], explanation:"Quotient rule numerator: (x−1)−(x+1)=−2."} },
+
+  { id:39, difficulty:"hard", points:25, answer:2,
+    zh:{question:"曲線 y=x² 與 y=x 所圍區域的面積為何？", options:["1","1/3","1/6","1/2"], explanation:"∫₀¹(x−x²)dx = 1/2 − 1/3 = 1/6。"},
+    en:{question:"The area enclosed by y=x² and y=x is:", options:["1","1/3","1/6","1/2"], explanation:"∫₀¹(x−x²)dx = 1/2 − 1/3 = 1/6."} },
+
+  { id:40, difficulty:"trap", points:19, answer:3,
+    zh:{question:"若 f'(c)=0，下列敘述何者最正確？", options:["c 必為極大值","c 必為極小值","c 必為反曲點","c 為臨界點，未必是極值"], explanation:"導數為零僅代表臨界點，需進一步判斷。"},
+    en:{question:"If f'(c)=0, which statement is most accurate?", options:["c must be a maximum","c must be a minimum","c must be an inflection point","c is a critical point, not necessarily an extremum"], explanation:"A zero derivative only marks a critical point; further tests are needed."} },
+];
+
+const i18n = {
+  zh: { appTitle:"微積分互動測驗", langBtn:"English", prev:"上一題", submit:"提交測驗",
+    progress:(c,t)=>`第 ${c} / ${t} 題`, qLabel:(n)=>`第 ${n} 題`,
+    resultTitle:"測驗結果", totalScore:"總分", correctCount:"正確題數", wrongCount:"錯誤題數",
+    easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱",
+    byDifficulty:"各難度正確率",
+    percentile:(p)=>`你的成績超越了約 ${p}% 的測試者`,
+    grades:["🏆 頂尖專家","⭐ 進階掌握","📘 中等水準","📗 基礎尚可","📕 需要加強"],
+    reviewTitle:"錯題回顧", yourAns:"你的選擇", correctAns:"正確答案",
+    retake:"重新測驗", copy:"複製結果", copied:"已複製！", allCorrect:"太厲害了，全部答對！",
+    summary:(s,c)=>`我的微積分測驗成績：${s}/670 分，答對 ${c}/40 題。` },
+  en: { appTitle:"Calculus Interactive Quiz", langBtn:"中文", prev:"Previous", submit:"Submit Quiz",
+    progress:(c,t)=>`Question ${c} / ${t}`, qLabel:(n)=>`Question ${n}`,
+    resultTitle:"Quiz Results", totalScore:"Total Score", correctCount:"Correct", wrongCount:"Incorrect",
+    easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap",
+    byDifficulty:"Accuracy by Difficulty",
+    percentile:(p)=>`You scored higher than about ${p}% of test-takers`,
+    grades:["🏆 Top Expert","⭐ Advanced","📘 Intermediate","📗 Basic","📕 Needs Improvement"],
+    reviewTitle:"Review of Mistakes", yourAns:"Your answer", correctAns:"Correct answer",
+    retake:"Retake Quiz", copy:"Copy Result", copied:"Copied!", allCorrect:"Excellent — all correct!",
+    summary:(s,c)=>`My Calculus quiz score: ${s}/670, ${c}/40 correct.` },
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const LETTERS = ["A","B","C","D"];
+
+// Theme init
+(function(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+  document.getElementById("themeBtn").textContent = prefersDark ? "☀️" : "🌙";
+})();
+
+const $ = id => document.getElementById(id);
+
+function renderQuestion() {
+  const t = i18n[lang];
+  const q = questions[current];
+  const data = q[lang];
+  const card = $("questionCard");
+  card.classList.add("fade");
+  setTimeout(() => {
+    let html = `<div class="q-number">${t.qLabel(current+1)}</div>`;
+    html += `<div class="q-text">${data.question}</div><div class="options">`;
+    data.options.forEach((opt, i) => {
+      const sel = answers[current] === i ? " selected" : "";
+      html += `<div class="option${sel}" data-i="${i}"><span class="label">${LETTERS[i]}</span><span>${opt}</span></div>`;
+    });
+    html += `</div>`;
+    card.innerHTML = html;
+    card.querySelectorAll(".option").forEach(el => {
+      el.addEventListener("click", () => selectOption(parseInt(el.dataset.i)));
+    });
+    card.classList.remove("fade");
+  }, 120);
+  $("progressText").textContent = t.progress(current+1, questions.length);
+  $("prevBtn").disabled = current === 0;
+  $("prevBtn").textContent = t.prev;
+  const isLast = current === questions.length - 1;
+  const submitBtn = $("submitBtn");
+  if (isLast && answers[current] !== null) submitBtn.classList.remove("hidden");
+  else submitBtn.classList.add("hidden");
+  submitBtn.textContent = t.submit;
+  const pct = ((current+1) / questions.length) * 100;
+  $("progressBar").style.width = pct + "%";
+}
+
+function selectOption(i) {
+  answers[current] = i;
+  const card = $("questionCard");
+  card.querySelectorAll(".option").forEach(el => {
+    el.classList.toggle("selected", parseInt(el.dataset.i) === i);
+  });
+  const isLast = current === questions.length - 1;
+  if (isLast) {
+    $("submitBtn").classList.remove("hidden");
+    return;
+  }
+  setTimeout(() => {
+    current++;
+    renderQuestion();
+  }, 400);
+}
+
+function normalCDF(z) {
+  // Abramowitz-Stegun approximation
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp(-z*z/2);
+  let p = d * t * (0.3193815 + t*(-0.3565638 + t*(1.781478 + t*(-1.821256 + t*1.330274))));
+  return z > 0 ? 1 - p : p;
+}
+
+function showResults() {
+  const t = i18n[lang];
+  let score = 0, correct = 0;
+  const byDiff = { easy:[0,0], medium:[0,0], hard:[0,0], trap:[0,0] };
+  const wrongList = [];
+  questions.forEach((q, idx) => {
+    byDiff[q.difficulty][1]++;
+    if (answers[idx] === q.answer) {
+      score += q.points; correct++;
+      byDiff[q.difficulty][0]++;
+    } else {
+      wrongList.push({ q, idx });
+    }
+  });
+  const wrong = questions.length - correct;
+
+  const mean = 670 * 0.45, sd = 670 * 0.15;
+  const z = (score - mean) / sd;
+  let pct = Math.round(normalCDF(z) * 100);
+  pct = Math.max(1, Math.min(99, pct));
+
+  let gIdx;
+  if (score >= 600) gIdx = 0;
+  else if (score >= 500) gIdx = 1;
+  else if (score >= 380) gIdx = 2;
+  else if (score >= 250) gIdx = 3;
+  else gIdx = 4;
+
+  let html = `<h2>${t.resultTitle}</h2>`;
+  html += `<div class="score-big">${score} / 670</div>`;
+  html += `<div class="grade">${t.grades[gIdx]}</div>`;
+  html += `<div class="stat-grid">`;
+  html += `<div class="stat-box"><div class="k">${t.correctCount}</div><div class="v">${correct} / 40</div></div>`;
+  html += `<div class="stat-box"><div class="k">${t.wrongCount}</div><div class="v">${wrong} / 40</div></div>`;
+  html += `</div>`;
+  html += `<div class="section-title">${t.byDifficulty}</div><div class="stat-grid">`;
+  [["easy",10],["medium",15],["hard",10],["trap",5]].forEach(([d,tot]) => {
+    html += `<div class="stat-box"><div class="k">${t[d]}</div><div class="v">${byDiff[d][0]} / ${tot}</div></div>`;
+  });
+  html += `</div>`;
+  html += `<div class="percentile">${t.percentile(pct)}</div>`;
+
+  html += `<div class="section-title">${t.reviewTitle}</div>`;
+  if (wrongList.length === 0) {
+    html += `<div class="review-item">${t.allCorrect}</div>`;
+  } else {
+    wrongList.forEach(({ q, idx }) => {
+      const data = q[lang];
+      const ua = answers[idx];
+      html += `<div class="review-item">`;
+      html += `<div class="review-q">${t.qLabel(idx+1)}. ${data.question}</div>`;
+      html += `<div class="review-line user">${t.yourAns}: ${LETTERS[ua]}. ${data.options[ua]}</div>`;
+      html += `<div class="review-line correct">${t.correctAns}: ${LETTERS[q.answer]}. ${data.options[q.answer]}</div>`;
+      html += `<div class="review-exp">${data.explanation}</div>`;
+      html += `</div>`;
+    });
+  }
+  html += `<div class="result-actions">`;
+  html += `<button class="submit-btn" id="retakeBtn">${t.retake}</button>`;
+  html += `<button class="nav-btn" id="copyBtn">${t.copy}</button>`;
+  html += `</div>`;
+
+  $("resultView").innerHTML = html;
+  $("quizView").classList.add("hidden");
+  $("resultView").classList.remove("hidden");
+  $("progressBar").style.width = "100%";
+  $("progressText").textContent = t.progress(40, 40);
+
+  $("retakeBtn").addEventListener("click", retake);
+  $("copyBtn").addEventListener("click", () => {
+    const txt = t.summary(score, correct);
+    navigator.clipboard.writeText(txt).then(() => {
+      $("copyBtn").textContent = t.copied;
+      setTimeout(() => { $("copyBtn").textContent = t.copy; }, 1500);
+    });
+  });
+  window.scrollTo(0, 0);
+}
+
+function retake() {
+  current = 0;
+  answers.fill(null);
+  $("resultView").classList.add("hidden");
+  $("quizView").classList.remove("hidden");
+  renderQuestion();
+  window.scrollTo(0, 0);
+}
+
+// Event bindings
+$("prevBtn").addEventListener("click", () => {
+  if (current > 0) { current--; renderQuestion(); }
+});
+$("submitBtn").addEventListener("click", showResults);
+$("langBtn").addEventListener("click", () => {
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  $("appTitle").textContent = i18n[lang].appTitle;
+  $("langBtn").textContent = i18n[lang].langBtn;
+  if (!$("resultView").classList.contains("hidden")) showResults();
+  else renderQuestion();
+});
+$("themeBtn").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  $("themeBtn").textContent = next === "dark" ? "☀️" : "🌙";
+});
+
+renderQuestion();
+</script>
+</body>
+</html>

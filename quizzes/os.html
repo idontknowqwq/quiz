@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>作業系統互動測驗</title>
+<style>
+:root{
+  --bg:#FFFFFF; --text:#1A1A1A; --muted:#6B7280; --border:#E5E7EB;
+  --accent:#2563EB; --accent-text:#FFFFFF; --track:#E5E7EB; --hover:#F3F4F6;
+  --correct:#16A34A; --wrong:#DC2626; --card:#FFFFFF;
+}
+:root[data-theme="dark"]{
+  --bg:#111111; --text:#E5E7EB; --muted:#9CA3AF; --border:#374151;
+  --accent:#60A5FA; --accent-text:#111111; --track:#374151; --hover:#1F2937;
+  --correct:#4ADE80; --wrong:#F87171; --card:#111111;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+  line-height:1.6; min-height:100vh;
+}
+.wrap{max-width:760px;margin:0 auto;padding:16px}
+header{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;padding:12px 0;border-bottom:1px solid var(--border);
+}
+.title{font-size:18px;font-weight:700}
+.controls{display:flex;gap:8px;align-items:center}
+.btn{
+  background:var(--bg);color:var(--text);border:1px solid var(--border);
+  border-radius:6px;padding:7px 12px;font-size:14px;cursor:pointer;
+  transition:background .15s;font-family:inherit;
+}
+.btn:hover{background:var(--hover)}
+.btn-primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent);opacity:.9}
+.progress-text{font-size:14px;color:var(--muted);padding:14px 0 6px}
+.qcard{padding:8px 0 4px;transition:opacity .25s ease}
+.qcard.fade{opacity:0}
+.qnum{font-size:13px;color:var(--muted);margin-bottom:6px}
+.question{font-size:18px;font-weight:600;margin-bottom:18px}
+.options{display:flex;flex-direction:column;gap:10px}
+.option{
+  display:flex;align-items:flex-start;gap:10px;
+  border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;cursor:pointer;background:var(--bg);
+  transition:background .15s,border-color .15s;font-size:15px;
+}
+.option:hover{background:var(--hover)}
+.option.selected{border-color:var(--accent);background:var(--hover)}
+.option .letter{
+  font-weight:700;color:var(--muted);min-width:20px;
+}
+.option.selected .letter{color:var(--accent)}
+.nav{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:22px}
+.progress-bar{height:6px;background:var(--track);border-radius:3px;margin-top:20px;overflow:hidden}
+.progress-fill{height:100%;background:var(--accent);width:0;transition:width .25s}
+/* result */
+.result h2{font-size:22px;margin-bottom:4px}
+.score-big{font-size:40px;font-weight:800;color:var(--accent);margin:6px 0}
+.grade{font-size:20px;font-weight:700;margin:8px 0}
+.percentile{font-size:15px;color:var(--muted);margin-bottom:18px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.stat{border:1px solid var(--border);border-radius:8px;padding:12px}
+.stat .lbl{font-size:13px;color:var(--muted)}
+.stat .val{font-size:18px;font-weight:700;margin-top:2px}
+.section-title{font-size:16px;font-weight:700;margin:22px 0 10px;padding-top:16px;border-top:1px solid var(--border)}
+.review-item{border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.review-q{font-weight:600;margin-bottom:8px}
+.review-line{font-size:14px;margin:3px 0}
+.review-line.your{color:var(--wrong)}
+.review-line.correct{color:var(--correct)}
+.review-exp{font-size:13px;color:var(--muted);margin-top:6px}
+.result-actions{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}
+.hidden{display:none}
+@media(max-width:520px){
+  .stat-grid{grid-template-columns:1fr}
+  .title{font-size:16px}
+  .question{font-size:16px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">作業系統互動測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <!-- QUIZ -->
+  <main id="quizView">
+    <div class="progress-text" id="progressText"></div>
+    <div class="qcard" id="qcard">
+      <div class="qnum" id="qnum"></div>
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </main>
+
+  <!-- RESULT -->
+  <main id="resultView" class="result hidden"></main>
+</div>
+
+<script>
+const questions = [
+  {id:1,difficulty:"easy",points:10,answer:1,
+    zh:{question:"在作業系統中，正在執行的程式被稱為什麼？",options:["原始碼","行程（Process）","編譯器","暫存器"],explanation:"行程是執行中的程式實例。"},
+    en:{question:"In an operating system, a program in execution is called a what?",options:["Source code","A process","A compiler","A register"],explanation:"A process is a program in execution."}},
+
+  {id:2,difficulty:"medium",points:15,answer:2,
+    zh:{question:"下列哪種排程演算法可能造成「飢餓（Starvation）」？",options:["先到先服務 FCFS","輪轉法 Round Robin","優先權排程 Priority","多級回饋佇列的時間片"],explanation:"優先權排程使低優先權行程可能長期等待。"},
+    en:{question:"Which scheduling algorithm can lead to starvation?",options:["First-Come First-Served","Round Robin scheduling","Priority scheduling","Time slice in multilevel queues"],explanation:"Priority scheduling can starve low-priority processes."}},
+
+  {id:3,difficulty:"hard",points:25,answer:3,
+    zh:{question:"系統有 5 個行程，每個需要 3 個某資源，至少要多少個該資源才能保證絕不發生死結？",options:["10 個資源實例","12 個資源實例","13 個資源實例","11 個資源實例"],explanation:"5×(3-1)+1=11，確保至少一行程可完成。"},
+    en:{question:"Five processes each need 3 units of a resource. The minimum units to guarantee no deadlock is?",options:["10 units of the resource","12 units of the resource","13 units of the resource","11 units of the resource"],explanation:"5×(3-1)+1=11 guarantees one process can finish."}},
+
+  {id:4,difficulty:"trap",points:19,answer:0,
+    zh:{question:"關於號誌（Semaphore）與互斥鎖（Mutex），下列敘述何者正確？",options:["Mutex 強調擁有權，僅上鎖者能解鎖","號誌的值只能是 0 或 1","Mutex 一定比號誌執行更快速","兩者皆無法用於多執行緒同步"],explanation:"Mutex 有擁有權；二元號誌可由他者釋放。"},
+    en:{question:"Regarding semaphores and mutexes, which statement is correct?",options:["A mutex has ownership; only the locker unlocks","A semaphore's value can only be 0 or 1","A mutex always runs faster than a semaphore","Neither can be used for thread synchronization"],explanation:"A mutex has ownership; a binary semaphore can be released by others."}},
+
+  {id:5,difficulty:"easy",points:10,answer:2,
+    zh:{question:"虛擬記憶體技術主要解決下列哪一個問題？",options:["加快 CPU 的時脈速度","減少磁碟的讀寫次數","讓程式可使用超過實體記憶體的空間","防止行程之間互相通訊"],explanation:"虛擬記憶體讓程式邏輯位址超過實體記憶體。"},
+    en:{question:"Virtual memory primarily addresses which problem?",options:["Speeding up the CPU clock rate","Reducing the number of disk reads","Letting programs exceed physical memory size","Preventing communication between processes"],explanation:"Virtual memory lets logical space exceed physical RAM."}},
+
+  {id:6,difficulty:"medium",points:15,answer:1,
+    zh:{question:"分頁（Paging）機制中，邏輯位址被切分為哪兩個部分？",options:["區段編號與位移量","頁碼與頁內位移","基底暫存器與界限","磁軌號與磁區號"],explanation:"分頁將位址分為頁碼與頁內位移。"},
+    en:{question:"In paging, a logical address is divided into which two parts?",options:["Segment number and an offset","Page number and a page offset","Base register and a limit","Track number and sector number"],explanation:"Paging splits an address into page number and offset."}},
+
+  {id:7,difficulty:"hard",points:25,answer:2,
+    zh:{question:"參考字串 1,2,3,4,1,2,5,1,2,3,4,5 在 3 個頁框下，FIFO 的缺頁次數為何？",options:["7 次缺頁","8 次缺頁","9 次缺頁","10 次缺頁"],explanation:"以 FIFO 模擬此字串得 9 次缺頁。"},
+    en:{question:"For the string 1,2,3,4,1,2,5,1,2,3,4,5 with 3 frames, how many page faults does FIFO cause?",options:["7 page faults","8 page faults","9 page faults","10 page faults"],explanation:"Simulating FIFO on this string yields 9 faults."}},
+
+  {id:8,difficulty:"easy",points:10,answer:3,
+    zh:{question:"下列何者屬於行程的三種基本狀態之一？",options:["編譯中（Compiling）","連結中（Linking）","除錯中（Debugging）","就緒（Ready）"],explanation:"基本狀態為執行、就緒、等待。"},
+    en:{question:"Which of the following is one of the three basic process states?",options:["Compiling","Linking","Debugging","Ready"],explanation:"Basic states are running, ready, and waiting."}},
+
+  {id:9,difficulty:"medium",points:15,answer:0,
+    zh:{question:"產生死結需同時滿足四個條件，下列何者不屬於這四個條件？",options:["優先權反轉（Priority inversion）","互斥（Mutual exclusion）","佔有並等待（Hold and wait）","循環等待（Circular wait）"],explanation:"四條件為互斥、佔有等待、不可剝奪、循環等待。"},
+    en:{question:"Deadlock requires four conditions. Which is NOT one of them?",options:["Priority inversion","Mutual exclusion","Hold and wait","Circular wait"],explanation:"The four are mutual exclusion, hold-and-wait, no preemption, circular wait."}},
+
+  {id:10,difficulty:"trap",points:19,answer:1,
+    zh:{question:"關於行程（Process）與執行緒（Thread），下列敘述何者正確？",options:["同行程的執行緒擁有各自獨立的位址空間","同行程的執行緒共享程式碼與全域資料","建立執行緒的成本通常高於建立行程","單一行程內絕不可能存在多個執行緒"],explanation:"同行程的執行緒共享位址空間與資料。"},
+    en:{question:"Regarding processes and threads, which statement is correct?",options:["Threads of a process each own a separate address space","Threads of a process share code and global data","Creating a thread usually costs more than a process","A single process can never contain multiple threads"],explanation:"Threads in a process share the address space and data."}},
+
+  {id:11,difficulty:"easy",points:10,answer:1,
+    zh:{question:"負責將邏輯位址轉換成實體位址的硬體元件是？",options:["算術邏輯單元 ALU","記憶體管理單元 MMU","直接記憶體存取 DMA","中斷控制器 PIC"],explanation:"MMU 負責位址轉換。"},
+    en:{question:"Which hardware component translates logical addresses to physical addresses?",options:["Arithmetic Logic Unit (ALU)","Memory Management Unit (MMU)","Direct Memory Access (DMA)","Interrupt controller (PIC)"],explanation:"The MMU performs address translation."}},
+
+  {id:12,difficulty:"medium",points:15,answer:2,
+    zh:{question:"在生產者—消費者問題中，使用有界緩衝區時通常需要幾個號誌來協調？",options:["僅需一個互斥號誌","需要兩個號誌即可","三個：互斥、空格數、滿格數","完全不需要任何號誌"],explanation:"需 mutex、empty、full 三個號誌。"},
+    en:{question:"In the producer–consumer problem with a bounded buffer, how many semaphores are typically used?",options:["Only one mutex semaphore","Just two semaphores suffice","Three: mutex, empty count, full count","No semaphores are needed at all"],explanation:"It needs mutex, empty, and full semaphores."}},
+
+  {id:13,difficulty:"hard",points:25,answer:0,
+    zh:{question:"使用 Banker 演算法時，系統判定一個狀態為「安全」的依據是？",options:["存在一個能讓所有行程完成的執行序列","所有資源當下皆已被完全配置出去","沒有任何行程正在等待其他資源","每個行程的最大需求都小於可用量"],explanation:"安全狀態即存在安全序列使所有行程完成。"},
+    en:{question:"In the Banker's algorithm, a state is deemed safe based on what?",options:["A sequence exists letting all processes finish","All resources are currently fully allocated out","No process is currently waiting for any resource","Each process's max need is below availability"],explanation:"A safe state has a sequence completing all processes."}},
+
+  {id:14,difficulty:"medium",points:15,answer:3,
+    zh:{question:"相較於 FCFS 磁碟排程，SSTF（最短搜尋時間優先）的主要缺點是？",options:["平均搜尋距離反而更長","完全無法降低磁頭移動","實作複雜度遠高於電梯演算法","可能造成遠端請求飢餓"],explanation:"SSTF 偏好近請求，遠端請求可能飢餓。"},
+    en:{question:"Compared with FCFS disk scheduling, the main drawback of SSTF is?",options:["Its average seek distance is actually longer","It cannot reduce head movement at all","It is far harder to implement than SCAN","It may starve far-away requests"],explanation:"SSTF favors nearby requests, starving far ones."}},
+
+  {id:15,difficulty:"easy",points:10,answer:0,
+    zh:{question:"下列哪一項是作業系統核心（Kernel）的基本職責？",options:["管理硬體資源並提供系統呼叫","負責編譯使用者的高階程式碼","直接繪製應用程式的圖形介面","為網站提供 HTML 內容回應"],explanation:"核心管理資源並提供系統呼叫介面。"},
+    en:{question:"Which is a basic responsibility of the operating system kernel?",options:["Managing hardware and providing system calls","Compiling the user's high-level source code","Directly drawing applications' graphical interfaces","Serving HTML content responses for websites"],explanation:"The kernel manages resources and exposes system calls."}},
+
+  {id:16,difficulty:"medium",points:15,answer:1,
+    zh:{question:"行程之間切換時，作業系統儲存與還原狀態的動作稱為？",options:["中斷處理（Interrupt handling）","上下文切換（Context switch）","系統呼叫（System call）","記憶體置換（Page swapping）"],explanation:"上下文切換儲存/還原行程狀態。"},
+    en:{question:"Saving and restoring state when switching between processes is called?",options:["Interrupt handling","Context switching","A system call","Page swapping"],explanation:"A context switch saves/restores process state."}},
+
+  {id:17,difficulty:"hard",points:25,answer:1,
+    zh:{question:"關於 LRU 與 FIFO 頁面置換，下列何者只可能發生在 FIFO？",options:["缺頁率隨工作集變動而改變","Belady 異常：頁框增加反而缺頁變多","堆疊演算法的包含性質成立","以最近最少使用為置換依據"],explanation:"Belady 異常發生於 FIFO，LRU 為堆疊演算法不會。"},
+    en:{question:"Regarding LRU and FIFO page replacement, which can only occur in FIFO?",options:["Fault rate changes with the working set size","Belady's anomaly: more frames yet more faults","The inclusion property of stack algorithms holds","Replacing based on least recently used pages"],explanation:"Belady's anomaly occurs in FIFO; LRU is a stack algorithm and avoids it."}},
+
+  {id:18,difficulty:"easy",points:10,answer:2,
+    zh:{question:"分時系統（Time-sharing）設計的主要目標是？",options:["最大化單一批次工作的吞吐量","完全消除任何中斷的發生","縮短互動使用者的回應時間","讓所有行程永遠不被搶佔"],explanation:"分時系統著重縮短互動回應時間。"},
+    en:{question:"The main goal of a time-sharing system design is?",options:["Maximizing throughput of a single batch job","Eliminating any interrupts from occurring","Reducing response time for interactive users","Ensuring processes are never preempted"],explanation:"Time-sharing emphasizes short interactive response time."}},
+
+  {id:19,difficulty:"medium",points:15,answer:0,
+    zh:{question:"下列哪一種記憶體配置方式最容易產生「外部碎裂」？",options:["可變長度的分段配置","固定大小的分頁配置","純粹的單一連續配置","帶有夥伴系統的配置"],explanation:"分段為可變長度，易造成外部碎裂。"},
+    en:{question:"Which memory allocation scheme most readily causes external fragmentation?",options:["Variable-length segmentation allocation","Fixed-size paging allocation","A purely single contiguous allocation","Allocation with the buddy system"],explanation:"Variable-length segmentation tends to cause external fragmentation."}},
+
+  {id:20,difficulty:"trap",points:19,answer:2,
+    zh:{question:"關於「分頁」與「分段」，下列敘述何者正確？",options:["分頁會造成外部碎裂，分段不會","兩者的區塊長度都必須完全相同","分頁可能造成內部碎裂，分段不會","分段對程式設計師而言是不可見的"],explanation:"分頁固定大小有內部碎裂；分段可變長度無內部碎裂。"},
+    en:{question:"Regarding paging versus segmentation, which statement is correct?",options:["Paging causes external fragmentation, segments don't","Both must have exactly identical block lengths","Paging may cause internal fragmentation, segments don't","Segmentation is invisible to the programmer"],explanation:"Fixed-size paging causes internal fragmentation; variable segments don't."}},
+
+  {id:21,difficulty:"medium",points:15,answer:3,
+    zh:{question:"非搶佔式（Non-preemptive）排程的特徵是？",options:["每個時間片結束就強制切換行程","只要有更高優先權行程就立即搶佔","所有行程被分配相同長度的時間片","行程一旦取得 CPU 便執行至自願釋放"],explanation:"非搶佔下行程持有 CPU 直到結束或阻塞。"},
+    en:{question:"A characteristic of non-preemptive scheduling is?",options:["It forces a switch at every time slice end","A higher-priority process preempts immediately","All processes get equal-length time slices","A process keeps the CPU until it voluntarily yields"],explanation:"Under non-preemptive scheduling a process holds the CPU until it ends or blocks."}},
+
+  {id:22,difficulty:"easy",points:10,answer:1,
+    zh:{question:"使用者程式要求作業系統提供服務的標準介面稱為？",options:["裝置驅動程式（Device driver）","系統呼叫（System call）","引導載入器（Bootloader）","檔案配置表（File table）"],explanation:"系統呼叫是請求核心服務的介面。"},
+    en:{question:"The standard interface a user program uses to request OS services is called?",options:["A device driver","A system call","The bootloader","The file allocation table"],explanation:"A system call is the interface to request kernel services."}},
+
+  {id:23,difficulty:"hard",points:25,answer:3,
+    zh:{question:"三個行程 CPU 區間為 P1=24、P2=3、P3=3（依序到達），FCFS 的平均等待時間為？",options:["平均等待 3 毫秒","平均等待 9 毫秒","平均等待 13 毫秒","平均等待 17 毫秒"],explanation:"等待 0、24、27，平均 (0+24+27)/3=17。"},
+    en:{question:"Three processes with bursts P1=24, P2=3, P3=3 (in that arrival order). FCFS average waiting time is?",options:["Average waiting time 3 ms","Average waiting time 9 ms","Average waiting time 13 ms","Average waiting time 17 ms"],explanation:"Waits 0, 24, 27 → average (0+24+27)/3 = 17."}},
+
+  {id:24,difficulty:"medium",points:15,answer:2,
+    zh:{question:"關於 TLB（轉譯後備緩衝區）的主要用途是？",options:["暫存即將寫入磁碟的髒頁資料","儲存行程的完整程式碼片段","快取頁表項以加速位址轉換","記錄每個檔案的存取權限位元"],explanation:"TLB 快取頁表項，加速位址轉換。"},
+    en:{question:"The main purpose of the TLB (Translation Lookaside Buffer) is?",options:["Buffering dirty pages about to be written to disk","Storing a process's complete code segments","Caching page-table entries to speed translation","Recording access permission bits for each file"],explanation:"The TLB caches page-table entries to speed translation."}},
+
+  {id:25,difficulty:"easy",points:10,answer:3,
+    zh:{question:"下列何者是行程間通訊（IPC）的常見機制？",options:["編譯器最佳化","堆疊溢位保護","快取一致性協定","管線（Pipe）與訊息佇列"],explanation:"管線與訊息佇列是常見 IPC 機制。"},
+    en:{question:"Which of the following is a common inter-process communication (IPC) mechanism?",options:["Compiler optimization","Stack overflow protection","Cache coherence protocol","Pipes and message queues"],explanation:"Pipes and message queues are common IPC mechanisms."}},
+
+  {id:26,difficulty:"medium",points:15,answer:0,
+    zh:{question:"輪轉法（Round Robin）排程中，時間片設得「過小」會導致？",options:["上下文切換的額外負擔大幅增加","行程平均回應時間顯著惡化","退化成先到先服務的行為","完全無法保證任何公平性"],explanation:"時間片太小使上下文切換負擔過高。"},
+    en:{question:"In Round Robin scheduling, setting the time quantum too small leads to?",options:["A sharp rise in context-switch overhead","Significantly worse average response time","Degenerating into first-come first-served","No fairness guarantee being possible at all"],explanation:"Too small a quantum causes excessive context-switch overhead."}},
+
+  {id:27,difficulty:"trap",points:19,answer:3,
+    zh:{question:"關於「忙碌等待（Busy waiting）」，下列敘述何者正確？",options:["它一定比阻塞式等待更省 CPU","自旋鎖（Spinlock）從不使用忙碌等待","它能完全避免競爭條件的發生","在短暫等待的多核心情境下可能更有效率"],explanation:"短暫等待時自旋避免上下文切換，可能更有效率。"},
+    en:{question:"Regarding busy waiting, which statement is correct?",options:["It always saves more CPU than blocking waits","Spinlocks never use busy waiting at all","It completely prevents any race conditions","For brief waits on multicore it can be more efficient"],explanation:"For very short waits, spinning avoids context switches and can be more efficient."}},
+
+  {id:28,difficulty:"easy",points:10,answer:0,
+    zh:{question:"作業系統中，「核心模式」相較於「使用者模式」的差別在於？",options:["核心模式可執行特權指令，使用者模式不行","使用者模式可直接存取所有硬體裝置","核心模式無法執行任何中斷處理","兩種模式的權限其實完全相同"],explanation:"核心模式可執行特權指令，使用者模式受限。"},
+    en:{question:"How does kernel mode differ from user mode in an OS?",options:["Kernel mode can run privileged instructions, user can't","User mode can directly access all hardware devices","Kernel mode cannot handle any interrupts","The two modes actually have identical privileges"],explanation:"Kernel mode can execute privileged instructions; user mode is restricted."}},
+
+  {id:29,difficulty:"medium",points:15,answer:1,
+    zh:{question:"檔案系統中，i-node（索引節點）主要儲存什麼？",options:["檔案的實際內容資料區塊","檔案的中介資料與資料區塊指標","目前所有開啟檔案的清單","使用者輸入的命令歷史紀錄"],explanation:"i-node 存中介資料與指向資料區塊的指標。"},
+    en:{question:"In a file system, what does an i-node primarily store?",options:["The actual content data blocks of the file","File metadata and pointers to data blocks","A list of all currently open files","The history of commands the user typed"],explanation:"An i-node stores metadata and pointers to data blocks."}},
+
+  {id:30,difficulty:"hard",points:25,answer:2,
+    zh:{question:"系統需求頁式記憶體存取時間為 100ns，缺頁服務 8ms，欲使有效存取時間不超過 200ns，可容忍的最大缺頁率約為？",options:["大約 1.0×10⁻³","大約 5.0×10⁻⁵","大約 1.25×10⁻⁵","大約 2.5×10⁻⁴"],explanation:"200=100+p×8,000,000 → p≈1.25×10⁻⁵。"},
+    en:{question:"Memory access is 100ns and page-fault service is 8ms. For effective access time ≤200ns, the max tolerable fault rate is about?",options:["About 1.0×10⁻³","About 5.0×10⁻⁵","About 1.25×10⁻⁵","About 2.5×10⁻⁴"],explanation:"200=100+p×8,000,000 → p≈1.25×10⁻⁵."}},
+
+  {id:31,difficulty:"medium",points:15,answer:2,
+    zh:{question:"下列哪一個條件被破壞，就能預防「循環等待」型死結？",options:["允許作業系統剝奪已配置的資源","要求行程一次取得所有所需資源","對所有資源類型施加全序並依序申請","讓每種資源同時只能被一個行程使用"],explanation:"對資源全序編號並依序申請可破壞循環等待。"},
+    en:{question:"Breaking which condition specifically prevents circular-wait deadlocks?",options:["Allowing the OS to preempt allocated resources","Requiring a process to acquire all resources at once","Imposing a total ordering and requesting in order","Letting each resource be used by one process only"],explanation:"A total ordering of resources requested in order breaks circular wait."}},
+
+  {id:32,difficulty:"easy",points:10,answer:1,
+    zh:{question:"下列何者最適合描述「多工（Multitasking）」？",options:["一次只能執行單一程式到結束","在多個行程間快速切換以共享 CPU","將程式永久載入唯讀記憶體中","用多台電腦同時處理同一任務"],explanation:"多工在多行程間切換以共享 CPU。"},
+    en:{question:"Which best describes multitasking?",options:["Running only one program to completion at a time","Rapidly switching among processes to share the CPU","Permanently loading programs into read-only memory","Using many computers on the same task at once"],explanation:"Multitasking switches among processes to share the CPU."}},
+
+  {id:33,difficulty:"hard",points:25,answer:0,
+    zh:{question:"考慮 SCAN（電梯）磁碟排程，磁頭目前在 53、朝大號方向移動，待服務磁軌 98,183,37,122,14,124,65,67（共 0~199）。下一個被服務的磁軌是？",options:["磁軌 65","磁軌 37","磁軌 98","磁軌 14"],explanation:"朝大號方向，53 之後最近的是 65。"},
+    en:{question:"For SCAN disk scheduling, the head is at 53 moving toward higher numbers, with pending tracks 98,183,37,122,14,124,65,67 (range 0–199). Which track is served next?",options:["Track 65","Track 37","Track 98","Track 14"],explanation:"Moving up, the nearest track above 53 is 65."}},
+
+  {id:34,difficulty:"medium",points:15,answer:3,
+    zh:{question:"下列何者是「最短工作優先（SJF）」排程的已知性質？",options:["它一定是非搶佔式的演算法","它能完全避免行程飢餓","它與輪轉法的平均等待時間相同","它使平均等待時間達到最小"],explanation:"SJF 對給定作業集可達最小平均等待時間。"},
+    en:{question:"Which is a known property of Shortest-Job-First (SJF) scheduling?",options:["It is necessarily a non-preemptive algorithm","It completely avoids process starvation","Its average waiting time equals Round Robin's","It minimizes the average waiting time"],explanation:"SJF achieves the minimum average waiting time for a given job set."}},
+
+  {id:35,difficulty:"trap",points:19,answer:0,
+    zh:{question:"關於「死結（Deadlock）」與「飢餓（Starvation）」，下列敘述何者正確？",options:["死結中行程互相等待而全部停滯，飢餓則是長期得不到資源","兩者是完全相同的現象，只是名稱不同","飢餓一定會在有限時間內自動解除","死結只會發生在單一行程的系統中"],explanation:"死結是互相等待全停滯；飢餓是長期被延遲但系統仍前進。"},
+    en:{question:"Regarding deadlock and starvation, which statement is correct?",options:["Deadlock halts all involved processes mutually; starvation is indefinite denial of resources","They are exactly the same phenomenon with different names","Starvation always resolves itself within finite time","Deadlock can only occur in single-process systems"],explanation:"Deadlock mutually halts processes; starvation is indefinite delay while the system still progresses."}},
+
+  {id:36,difficulty:"medium",points:15,answer:2,
+    zh:{question:"寫入時複製（Copy-on-Write）技術主要在何種情境下提升效率？",options:["磁碟陣列的同位元計算過程","網路封包的分段與重組","fork() 建立子行程時共享頁面","CPU 快取行的失效與更新"],explanation:"fork 後父子共享頁面，寫入時才複製。"},
+    en:{question:"Copy-on-Write primarily improves efficiency in which scenario?",options:["Parity computation in a disk RAID array","Segmentation and reassembly of network packets","Sharing pages when fork() creates a child process","Invalidation and update of CPU cache lines"],explanation:"After fork, parent and child share pages, copying only on write."}},
+
+  {id:37,difficulty:"hard",points:25,answer:1,
+    zh:{question:"某系統採用二級頁表，邏輯位址 32 位元、頁面大小 4KB，每個頁表項 4 位元組。若外層與內層頁碼平均分配，外層頁碼占多少位元？",options:["外層頁碼占 8 位元","外層頁碼占 10 位元","外層頁碼占 12 位元","外層頁碼占 16 位元"],explanation:"頁內位移 12 位元，剩 20 位元平分，外層 10 位元。"},
+    en:{question:"A two-level page table has 32-bit addresses, 4KB pages, and 4-byte entries. If outer and inner page numbers are split evenly, how many bits is the outer page number?",options:["The outer page number is 8 bits","The outer page number is 10 bits","The outer page number is 12 bits","The outer page number is 16 bits"],explanation:"Offset is 12 bits; the remaining 20 split evenly gives 10 bits outer."}},
+
+  {id:38,difficulty:"hard",points:25,answer:2,
+    zh:{question:"TLB 命中率為 80%，TLB 存取 10ns、記憶體存取 100ns，未命中時需額外一次記憶體存取查頁表。有效存取時間約為？",options:["大約 110 奈秒","大約 120 奈秒","大約 130 奈秒","大約 150 奈秒"],explanation:"0.8×110+0.2×210=130ns。"},
+    en:{question:"TLB hit ratio is 80%, TLB access 10ns, memory access 100ns; a miss needs one extra memory access for the page table. Effective access time is about?",options:["About 110 nanoseconds","About 120 nanoseconds","About 130 nanoseconds","About 150 nanoseconds"],explanation:"0.8×110+0.2×210=130ns."}},
+
+  {id:39,difficulty:"medium",points:15,answer:3,
+    zh:{question:"關於「微核心（Microkernel）」架構，下列何者為其主要特徵？",options:["將所有驅動程式都放進核心空間","核心體積龐大且服務全部內建","完全不需要任何使用者層級行程","僅保留最基本功能於核心，其餘移至使用者空間"],explanation:"微核心將多數服務移到使用者空間，核心精簡。"},
+    en:{question:"Which is a main feature of the microkernel architecture?",options:["Placing all device drivers inside kernel space","A huge kernel with all services built in","Needing no user-level processes whatsoever","Keeping only essentials in the kernel, the rest in user space"],explanation:"A microkernel moves most services to user space, keeping the kernel minimal."}},
+
+  {id:40,difficulty:"hard",points:25,answer:1,
+    zh:{question:"在「讀者—寫者問題」中，若優先保障寫者，可能導致下列何種結果？",options:["寫者之間發生死結而互相等待","讀者可能長期飢餓無法取得存取","資料一致性必然遭到破壞","系統退化為單一執行緒運作"],explanation:"寫者優先策略下，持續的寫者會使讀者飢餓。"},
+    en:{question:"In the readers–writers problem, giving writers priority may lead to which outcome?",options:["Writers deadlock among themselves while waiting","Readers may starve indefinitely without access","Data consistency is inevitably destroyed","The system degrades to single-threaded operation"],explanation:"With writer priority, a steady stream of writers can starve readers."}}
+];
+
+const i18n = {
+  zh:{appTitle:"作業系統互動測驗",lang:"English",prev:"上一題",submit:"提交測驗",
+    progress:(c,t)=>`第 ${c} / ${t} 題`,
+    resultTitle:"測驗結果",totalScore:"總分",correctCount:"正確題數",wrongCount:"錯誤題數",
+    byDiff:"各難度正確率",easy:"簡單",medium:"中等",hard:"困難",trap:"陷阱",
+    percentile:p=>`你的成績超越了約 ${p}% 的測試者`,
+    review:"錯題回顧",yourAns:"你的選擇",correctAns:"正確答案",noWrong:"太厲害了！沒有任何錯題。",
+    retry:"重新測驗",copy:"複製結果",copied:"已複製！",
+    grades:{top:"🏆 頂尖專家",adv:"⭐ 進階掌握",inter:"📘 中等水準",basic:"📗 基礎尚可",need:"📕 需要加強"},
+    summary:(s,c,g)=>`作業系統測驗結果\n總分：${s} / 670\n正確：${c} / 40\n等級：${g}`},
+  en:{appTitle:"Operating Systems Quiz",lang:"中文",prev:"Previous",submit:"Submit Quiz",
+    progress:(c,t)=>`Question ${c} / ${t}`,
+    resultTitle:"Quiz Result",totalScore:"Total Score",correctCount:"Correct",wrongCount:"Wrong",
+    byDiff:"Accuracy by Difficulty",easy:"Easy",medium:"Medium",hard:"Hard",trap:"Trap",
+    percentile:p=>`You scored higher than about ${p}% of test-takers`,
+    review:"Review of Wrong Answers",yourAns:"Your choice",correctAns:"Correct answer",noWrong:"Outstanding! No wrong answers.",
+    retry:"Retake Quiz",copy:"Copy Result",copied:"Copied!",
+    grades:{top:"🏆 Top Expert",adv:"⭐ Advanced",inter:"📘 Intermediate",basic:"📗 Basic",need:"📕 Needs Improvement"},
+    summary:(s,c,g)=>`Operating Systems Quiz Result\nScore: ${s} / 670\nCorrect: ${c} / 40\nGrade: ${g}`}
+};
+
+let lang="zh", current=0, answers=new Array(questions.length).fill(null), submitted=false;
+const letters=["A","B","C","D"];
+
+// theme
+const root=document.documentElement;
+function initTheme(){
+  const prefersDark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark?"dark":"light");
+}
+function setTheme(t){root.setAttribute("data-theme",t);document.getElementById("themeBtn").textContent=t==="dark"?"☀️":"🌙";}
+document.getElementById("themeBtn").addEventListener("click",()=>{
+  setTheme(root.getAttribute("data-theme")==="dark"?"light":"dark");
+});
+
+// language
+document.getElementById("langBtn").addEventListener("click",()=>{
+  lang=lang==="zh"?"en":"zh";
+  document.documentElement.lang=lang==="zh"?"zh-Hant":"en";
+  applyStaticText();
+  if(submitted) renderResult(); else renderQuestion(false);
+});
+function applyStaticText(){
+  const t=i18n[lang];
+  document.getElementById("appTitle").textContent=t.appTitle;
+  document.getElementById("langBtn").textContent=t.lang;
+  document.getElementById("prevBtn").textContent=t.prev;
+  document.getElementById("submitBtn").textContent=t.submit;
+}
+
+// quiz rendering
+function renderQuestion(fade=true){
+  const t=i18n[lang], q=questions[current], data=q[lang];
+  const card=document.getElementById("qcard");
+  const draw=()=>{
+    document.getElementById("progressText").textContent=t.progress(current+1,questions.length);
+    document.getElementById("qnum").textContent=t.progress(current+1,questions.length);
+    document.getElementById("questionText").textContent=data.question;
+    const box=document.getElementById("optionsBox");
+    box.innerHTML="";
+    data.options.forEach((opt,idx)=>{
+      const div=document.createElement("div");
+      div.className="option"+(answers[current]===idx?" selected":"");
+      div.innerHTML=`<span class="letter">${letters[idx]}</span><span>${opt}</span>`;
+      div.addEventListener("click",()=>selectOption(idx));
+      box.appendChild(div);
+    });
+    document.getElementById("prevBtn").style.visibility=current===0?"hidden":"visible";
+    const isLast=current===questions.length-1;
+    document.getElementById("submitBtn").classList.toggle("hidden",!(isLast&&answers[current]!==null));
+    const pct=((current+ (answers[current]!==null?1:0))/questions.length)*100;
+    document.getElementById("progressFill").style.width=Math.min(pct,100)+"%";
+    card.classList.remove("fade");
+  };
+  if(fade){card.classList.add("fade");setTimeout(draw,180);}else draw();
+}
+function selectOption(idx){
+  answers[current]=idx;
+  // highlight
+  const opts=document.querySelectorAll("#optionsBox .option");
+  opts.forEach((o,i)=>o.classList.toggle("selected",i===idx));
+  const isLast=current===questions.length-1;
+  if(isLast){
+    document.getElementById("submitBtn").classList.remove("hidden");
+    const pct=((current+1)/questions.length)*100;
+    document.getElementById("progressFill").style.width=pct+"%";
+  }else{
+    setTimeout(()=>{current++;renderQuestion(true);},400);
+  }
+}
+document.getElementById("prevBtn").addEventListener("click",()=>{
+  if(current>0){current--;renderQuestion(true);}
+});
+document.getElementById("submitBtn").addEventListener("click",()=>{
+  submitted=true;
+  document.getElementById("quizView").classList.add("hidden");
+  document.getElementById("resultView").classList.remove("hidden");
+  renderResult();
+});
+
+// normal CDF
+function normalCdf(x,mean,sd){
+  const z=(x-mean)/(sd*Math.sqrt(2));
+  // erf approximation (Abramowitz & Stegun 7.1.26)
+  const t=1/(1+0.3275911*Math.abs(z));
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-z*z);
+  const erf=z>=0?y:-y;
+  return 0.5*(1+erf);
+}
+
+function computeResults(){
+  let score=0,correct=0;
+  const diff={easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0},trap:{c:0,t:0}};
+  const wrong=[];
+  questions.forEach((q,i)=>{
+    diff[q.difficulty].t++;
+    if(answers[i]===q.answer){score+=q.points;correct++;diff[q.difficulty].c++;}
+    else wrong.push(i);
+  });
+  return {score,correct,wrong:questions.length-correct,wrongList:wrong,diff};
+}
+function gradeFor(score){
+  const g=i18n[lang].grades;
+  if(score>=600)return g.top;
+  if(score>=500)return g.adv;
+  if(score>=380)return g.inter;
+  if(score>=250)return g.basic;
+  return g.need;
+}
+function renderResult(){
+  const t=i18n[lang], r=computeResults();
+  const mean=670*0.45, sd=670*0.15;
+  let pct=Math.round(normalCdf(r.score,mean,sd)*100);
+  pct=Math.max(1,Math.min(99,pct));
+  const grade=gradeFor(r.score);
+  const v=document.getElementById("resultView");
+  let html=`
+    <h2>${t.resultTitle}</h2>
+    <div class="score-big">${r.score} / 670</div>
+    <div class="grade">${grade}</div>
+    <div class="percentile">${t.percentile(pct)}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">${t.correctCount}</div><div class="val">${r.correct} / 40</div></div>
+      <div class="stat"><div class="lbl">${t.wrongCount}</div><div class="val">${r.wrong} / 40</div></div>
+    </div>
+    <div class="section-title">${t.byDiff}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="lbl">${t.easy}</div><div class="val">${r.diff.easy.c} / ${r.diff.easy.t}</div></div>
+      <div class="stat"><div class="lbl">${t.medium}</div><div class="val">${r.diff.medium.c} / ${r.diff.medium.t}</div></div>
+      <div class="stat"><div class="lbl">${t.hard}</div><div class="val">${r.diff.hard.c} / ${r.diff.hard.t}</div></div>
+      <div class="stat"><div class="lbl">${t.trap}</div><div class="val">${r.diff.trap.c} / ${r.diff.trap.t}</div></div>
+    </div>
+    <div class="section-title">${t.review}</div>`;
+  if(r.wrongList.length===0){
+    html+=`<p style="color:var(--muted)">${t.noWrong}</p>`;
+  }else{
+    r.wrongList.forEach(i=>{
+      const q=questions[i], d=q[lang];
+      html+=`<div class="review-item">
+        <div class="review-q">${i+1}. ${d.question}</div>
+        <div class="review-line your">✗ ${t.yourAns}: ${letters[answers[i]]}. ${d.options[answers[i]]}</div>
+        <div class="review-line correct">✓ ${t.correctAns}: ${letters[q.answer]}. ${d.options[q.answer]}</div>
+        <div class="review-exp">${d.explanation}</div>
+      </div>`;
+    });
+  }
+  html+=`<div class="result-actions">
+      <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+      <button class="btn" id="copyBtn">${t.copy}</button>
+    </div>`;
+  v.innerHTML=html;
+  document.getElementById("retryBtn").addEventListener("click",reset);
+  document.getElementById("copyBtn").addEventListener("click",()=>{
+    const txt=t.summary(r.score,r.correct,grade.replace(/^[^\s]+\s/,""));
+    navigator.clipboard.writeText(txt).then(()=>{
+      document.getElementById("copyBtn").textContent=t.copied;
+      setTimeout(()=>document.getElementById("copyBtn").textContent=t.copy,1500);
+    });
+  });
+}
+function reset(){
+  current=0;answers=new Array(questions.length).fill(null);submitted=false;
+  document.getElementById("resultView").classList.add("hidden");
+  document.getElementById("quizView").classList.remove("hidden");
+  renderQuestion(false);
+}
+
+initTheme();
+applyStaticText();
+renderQuestion(false);
+</script>
+</body>
+</html>

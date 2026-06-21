@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>計算機組織與架構 測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --option-bg: #FFFFFF;
+    --option-hover: #F3F4F6;
+    --track: #E5E7EB;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --correct-bg: #ECFDF5;
+    --wrong-bg: #FEF2F2;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --muted: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --option-bg: #1A1A1A;
+    --option-hover: #1F2937;
+    --track: #374151;
+    --correct: #34D399;
+    --wrong: #F87171;
+    --correct-bg: #1A2E22;
+    --wrong-bg: #2E1A1A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "PingFang TC", "Microsoft JhengHei", Roboto, sans-serif;
+    line-height: 1.6;
+    transition: background-color .2s, color .2s;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; }
+  .btn {
+    background: var(--option-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 7px 12px; font-size: 14px; cursor: pointer; font-family: inherit;
+    transition: background-color .15s;
+  }
+  .btn:hover { background: var(--option-hover); }
+  .btn-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn-primary:hover { opacity: .9; background: var(--accent); }
+  .progress-info { color: var(--muted); font-size: 14px; margin: 18px 0 8px; }
+  .qcard { flex: 1; }
+  .qfade { opacity: 1; transition: opacity .25s; }
+  .qfade.hide { opacity: 0; }
+  .qnum { color: var(--muted); font-size: 13px; margin-bottom: 6px; }
+  .qtext { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--option-bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; font-size: 15px; cursor: pointer; text-align: left;
+    font-family: inherit; transition: background-color .15s, border-color .15s;
+  }
+  .option:hover { background: var(--option-hover); }
+  .option .label { font-weight: 700; color: var(--muted); flex-shrink: 0; }
+  .option.selected { border-color: var(--accent); background: var(--option-hover); }
+  .option.selected .label { color: var(--accent); }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 12px; }
+  .barwrap { margin-top: 20px; }
+  .bar-track { background: var(--track); height: 6px; border-radius: 99px; overflow: hidden; }
+  .bar-fill { background: var(--accent); height: 100%; width: 0; transition: width .25s; }
+  /* results */
+  .results h2 { font-size: 22px; margin-bottom: 4px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); margin: 8px 0; }
+  .grade { font-size: 20px; font-weight: 700; margin: 6px 0 18px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+  .stat {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--option-bg);
+  }
+  .stat .k { color: var(--muted); font-size: 13px; }
+  .stat .v { font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .percentile { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 16px 0; background: var(--option-bg); }
+  .review-title { font-size: 17px; font-weight: 700; margin: 24px 0 12px; }
+  .review-item { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; background: var(--option-bg); }
+  .review-q { font-weight: 600; margin-bottom: 10px; }
+  .ans-line { font-size: 14px; padding: 4px 0; }
+  .ans-wrong { color: var(--wrong); }
+  .ans-correct { color: var(--correct); }
+  .explain { color: var(--muted); font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .result-actions { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+  .hidden { display: none !important; }
+  .copied { color: var(--correct); font-size: 13px; margin-left: 8px; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 16px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">計算機組織與架構 測驗</h1>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </header>
+
+  <!-- QUIZ VIEW -->
+  <div id="quizView">
+    <div class="progress-info" id="progressInfo">第 1 / 40 題</div>
+    <div class="qcard">
+      <div class="qfade" id="qfade">
+        <div class="qnum" id="qnum"></div>
+        <div class="qtext" id="qtext"></div>
+        <div class="options" id="options"></div>
+      </div>
+      <div class="nav">
+        <button class="btn" id="prevBtn">上一題</button>
+        <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+      </div>
+    </div>
+    <div class="barwrap">
+      <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+    </div>
+  </div>
+
+  <!-- RESULTS VIEW -->
+  <div id="resultView" class="results hidden"></div>
+
+  <footer id="footer">© 計算機組織與架構 互動測驗</footer>
+</div>
+
+<script>
+/* ===================== DATA ===================== */
+const POINTS = { easy: 10, medium: 15, hard: 25, trap: 19 };
+
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"在 CPU 中，算術邏輯單元（ALU）的主要功能是什麼？",
+      options:["執行算術運算與邏輯運算","儲存程式的指令與資料","解碼並控制指令的執行","負責與輸入輸出裝置通訊"],
+      explanation:"ALU 負責加減及 AND/OR 等運算。" },
+    en:{ question:"What is the primary function of the Arithmetic Logic Unit (ALU) in a CPU?",
+      options:["Perform arithmetic and logic operations","Store the program's instructions and data","Decode and control instruction execution","Handle communication with I/O devices"],
+      explanation:"The ALU carries out arithmetic and logical operations." } },
+
+  { id:2, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"在直接映射（direct-mapped）快取中，一個主記憶體區塊可以被放在多少個快取行？",
+      options:["可放入任意一個目前空的快取行","可放入同一組內的任兩個快取行","只能放入唯一一個固定的快取行","可放入整個快取中的任何位置"],
+      explanation:"區塊位址對行數取模，決定唯一位置。" },
+    en:{ question:"In a direct-mapped cache, how many cache lines can a given memory block occupy?",
+      options:["Any one cache line that is currently empty","Any two lines within the same cache set","Exactly one fixed cache line only","Any location anywhere within the cache"],
+      explanation:"Block address mod number-of-lines gives one fixed line." } },
+
+  { id:3, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"快取命中時間為 2 ns，失誤率為 5%，失誤懲罰為 100 ns，則平均記憶體存取時間（AMAT）為何？",
+      options:["5 ns","7 ns","102 ns","12 ns"],
+      explanation:"AMAT = 2 + 0.05×100 = 7 ns。" },
+    en:{ question:"Cache hit time is 2 ns, miss rate is 5%, and miss penalty is 100 ns. What is the average memory access time (AMAT)?",
+      options:["5 ns","7 ns","102 ns","12 ns"],
+      explanation:"AMAT = 2 + 0.05×100 = 7 ns." } },
+
+  { id:4, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"關於增加快取容量，下列哪一個敘述最為正確？",
+      options:["增加快取容量就會提升整體系統的執行效能","快取容量越大時其命中時間就會變得越短","快取容量加倍就會使失誤率剛好減少一半","增大快取或許降低失誤率但也拉長存取時間"],
+      explanation:"容量與速度、成本之間需取捨。" },
+    en:{ question:"Which statement about increasing cache size is most accurate?",
+      options:["Increasing the cache size will improve total system performance","A larger cache will make every cache hit time shorter","Doubling the cache capacity will halve the cache miss rate","A larger cache may cut miss rate but also raises access cost"],
+      explanation:"Capacity trades off against access latency and cost." } },
+
+  { id:5, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"一個位元組（byte）通常包含多少個位元（bit）？",
+      options:["4 個位元","8 個位元","16 個位元","32 個位元"],
+      explanation:"1 byte = 8 bits。" },
+    en:{ question:"How many bits are there in one byte?",
+      options:["4 bits","8 bits","16 bits","32 bits"],
+      explanation:"1 byte = 8 bits." } },
+
+  { id:6, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"當一條指令需要用到前一條指令尚未寫回的計算結果時，會發生哪一種危障（hazard）？",
+      options:["資料危障（data hazard）","結構危障（structural hazard）","控制危障（control hazard）","名稱危障（name hazard）"],
+      explanation:"資料相依造成資料危障。" },
+    en:{ question:"Which hazard occurs when an instruction needs a result that a previous instruction has not yet written back?",
+      options:["Data hazard","Structural hazard","Control hazard","Name hazard"],
+      explanation:"A true data dependency causes a data hazard." } },
+
+  { id:7, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"某程式中 50% 的指令 CPI 為 1，30% 為 2，20% 為 3，則平均 CPI 為何？",
+      options:["1.5","2.0","1.7","2.3"],
+      explanation:"0.5×1 + 0.3×2 + 0.2×3 = 1.7。" },
+    en:{ question:"In a program, 50% of instructions have a CPI of 1, 30% have 2, and 20% have 3. What is the average CPI?",
+      options:["1.5","2.0","1.7","2.3"],
+      explanation:"0.5×1 + 0.3×2 + 0.2×3 = 1.7." } },
+
+  { id:8, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"程式計數器（Program Counter, PC）的功能是什麼？",
+      options:["暫存算術運算過程中的中間結果","計算程式已經執行了多少時間","統計程式所使用的記憶體數量","儲存下一條要執行指令的位址"],
+      explanation:"PC 指向下一條要執行的指令位址。" },
+    en:{ question:"What is the function of the Program Counter (PC)?",
+      options:["Hold intermediate results during arithmetic operations","Measure how long the program has been running","Count how much memory the program is using","Store the address of the next instruction to execute"],
+      explanation:"The PC holds the address of the next instruction." } },
+
+  { id:9, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"根據 Amdahl 定律，若程式僅有 60% 可被平行加速，則理論上最大加速比的上限為何？",
+      options:["1.6 倍","2.5 倍","4.0 倍","6.0 倍"],
+      explanation:"上限 = 1 / (1 − 0.6) = 2.5。" },
+    en:{ question:"By Amdahl's law, if only 60% of a program can be parallelised, what is the theoretical upper bound on speedup?",
+      options:["1.6×","2.5×","4.0×","6.0×"],
+      explanation:"Upper bound = 1 / (1 − 0.6) = 2.5." } },
+
+  { id:10, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"關於 8 位元二補數（two's complement）表示法，下列何者正確？",
+      options:["可表示的範圍為 −128 到 +127","可表示的範圍為 −127 到 +128","可表示的範圍為 −128 到 +128","可表示的範圍為 −127 到 +127"],
+      explanation:"8 位元二補數範圍為 −128 至 +127。" },
+    en:{ question:"For 8-bit two's complement representation, which range is correct?",
+      options:["The representable range is −128 to +127","The representable range is −127 to +128","The representable range is −128 to +128","The representable range is −127 to +127"],
+      explanation:"8-bit two's complement ranges from −128 to +127." } },
+
+  { id:11, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"下列哪一種記憶體屬於揮發性（volatile），斷電後資料會消失？",
+      options:["唯讀記憶體，常用來儲存開機韌體","快閃記憶體，常見於固態硬碟與隨身碟","動態隨機存取記憶體，常作為主記憶體","硬式磁碟機，以磁性碟片儲存資料"],
+      explanation:"DRAM 為揮發性記憶體，斷電即失。" },
+    en:{ question:"Which of the following memories is volatile, losing its data when power is removed?",
+      options:["Read-Only Memory, often storing the boot firmware","Flash memory, common in SSDs and USB flash drives","Dynamic RAM, commonly serving as the main memory","Hard Disk Drive, storing data on magnetic platters"],
+      explanation:"DRAM is volatile and loses data without power." } },
+
+  { id:12, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"32 位元位址、直接映射、容量 16 KB、區塊大小 32 bytes 的快取，其標籤（tag）欄位為幾位元？",
+      options:["5 位元","9 位元","14 位元","18 位元"],
+      explanation:"32 − 5(offset) − 9(index) = 18 位元。" },
+    en:{ question:"For a 32-bit address, direct-mapped cache of 16 KB with 32-byte blocks, how many bits are in the tag field?",
+      options:["5 bits","9 bits","14 bits","18 bits"],
+      explanation:"32 − 5 (offset) − 9 (index) = 18 bits." } },
+
+  { id:13, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"在「立即定址（immediate addressing）」模式中，運算元是如何提供的？",
+      options:["運算元直接編碼在該指令本身之中","運算元位於指令所指定的暫存器內","運算元的位址存放在某個暫存器中","運算元位於指令給定的記憶體位址"],
+      explanation:"立即定址將運算元直接放在指令中。" },
+    en:{ question:"In immediate addressing mode, how is the operand provided?",
+      options:["The operand is encoded directly within the instruction","The operand resides in a register named by the instruction","The operand's address is held inside some register","The operand is at a memory address given by the instruction"],
+      explanation:"Immediate addressing embeds the operand in the instruction." } },
+
+  { id:14, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"范紐曼（Von Neumann）架構的核心特徵是什麼？",
+      options:["指令與資料分別存放於不同的記憶體","指令與資料共用同一個記憶體空間","每個運算單元都擁有獨立的記憶體","程式必須以硬體接線方式來設定"],
+      explanation:"范紐曼架構共用單一記憶體（儲存程式概念）。" },
+    en:{ question:"What is the defining characteristic of the Von Neumann architecture?",
+      options:["Instructions and data are kept in separate memories","Instructions and data share the same memory space","Each execution unit owns its own private memory","Programs must be set up by hardware wiring"],
+      explanation:"Von Neumann uses one shared memory (stored-program concept)." } },
+
+  { id:15, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"32 位元位址、4 路組相聯、容量 32 KB、區塊 64 bytes 的快取，其組索引（set index）為幾位元？",
+      options:["5 位元","6 位元","7 位元","9 位元"],
+      explanation:"區塊數 512，組數 512/4 = 128 = 2^7，故索引 7 位元。" },
+    en:{ question:"For a 32-bit address, 4-way set-associative cache of 32 KB with 64-byte blocks, how many bits are in the set index?",
+      options:["5 bits","6 bits","7 bits","9 bits"],
+      explanation:"512 blocks, 512/4 = 128 = 2^7 sets, so 7 index bits." } },
+
+  { id:16, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"在分頁式虛擬記憶體中，當程式存取的分頁不在主記憶體時會發生什麼？",
+      options:["立即觸發快取失誤並重新載入快取","由硬體直接忽略並跳過該次存取","CPU 改存取其他分頁以繼續執行","產生分頁錯誤並從磁碟載入該分頁"],
+      explanation:"分頁不在記憶體時產生分頁錯誤（page fault）。" },
+    en:{ question:"In paged virtual memory, what happens when a program accesses a page not present in main memory?",
+      options:["A cache miss is triggered and reloads the cache","The hardware simply ignores and skips that access","The CPU accesses other pages instead to keep running","A page fault occurs and the page is loaded from disk"],
+      explanation:"A missing page causes a page fault and a disk load." } },
+
+  { id:17, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"「時脈頻率較高的 CPU 一定執行得比較快」，這個說法的正確評價是？",
+      options:["不正確，效能還取決於 CPI 與指令數","正確，頻率是決定效能的唯一因素","不正確，因為頻率與效能完全無關聯","正確，只要頻率提高效能就會同比例上升"],
+      explanation:"執行時間 = 指令數 × CPI × 時脈週期。" },
+    en:{ question:"\"A CPU with a higher clock frequency always runs faster.\" How should this claim be judged?",
+      options:["Incorrect; performance also depends on CPI and instruction count","Correct; frequency is the sole factor deciding performance","Incorrect; because frequency is entirely unrelated to performance","Correct; raising frequency scales performance proportionally"],
+      explanation:"Execution time = instruction count × CPI × clock period." } },
+
+  { id:18, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"下列儲存層級中，存取速度最快的是哪一個？",
+      options:["主記憶體，以 DRAM 晶片構成","第二層快取，位於處理器晶片上","暫存器，直接位於 CPU 核心之中","固態硬碟，以快閃記憶體構成"],
+      explanation:"暫存器位於 CPU 內部，速度最快。" },
+    en:{ question:"Among the following storage levels, which has the fastest access speed?",
+      options:["Main memory, built from DRAM memory chips","Level-2 cache, located on the processor chip","Registers, located inside the CPU core itself","Solid-state drive, built from flash memory cells"],
+      explanation:"Registers are inside the CPU and are the fastest." } },
+
+  { id:19, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"在「大端序（big-endian）」系統中，多位元組資料的最高有效位元組（MSB）存放在哪裡？",
+      options:["存放在資料區間的最高記憶體位址","存放在資料區間的最低記憶體位址","平均分散於資料各個位元組位址","由編譯器在執行期隨機決定位置"],
+      explanation:"大端序將最高有效位元組放在最低位址。" },
+    en:{ question:"In a big-endian system, where is the most significant byte (MSB) of multi-byte data stored?",
+      options:["At the highest memory address of the data range","At the lowest memory address of the data range","Spread evenly across the data's byte addresses","At a position chosen randomly by the compiler"],
+      explanation:"Big-endian places the MSB at the lowest address." } },
+
+  { id:20, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"一條 5 級管線，各級延遲相同，忽略危障與填充延遲且指令數極大時，理論加速比趨近於多少？",
+      options:["趨近於 5.0 倍","趨近於 2.5 倍","趨近於 10 倍","趨近於 1.0 倍"],
+      explanation:"理想情況下加速比趨近於管線級數，即 5。" },
+    en:{ question:"For a 5-stage pipeline with equal stage delays, ignoring hazards and fill latency with a very large instruction count, the ideal speedup approaches what value?",
+      options:["Approaches 5.0×","Approaches 2.5×","Approaches 10×","Approaches 1.0×"],
+      explanation:"Ideal pipeline speedup approaches the number of stages, 5." } },
+
+  { id:21, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"中央處理器中的控制單元（Control Unit）主要負責什麼？",
+      options:["執行浮點數的乘法與除法運算","永久儲存使用者所建立的檔案資料","提供處理器與螢幕之間的影像介面","產生控制訊號以協調各元件的運作"],
+      explanation:"控制單元發出控制訊號協調 CPU 各部分。" },
+    en:{ question:"What is the main responsibility of the Control Unit in a CPU?",
+      options:["Perform floating-point multiply and divide operations","Permanently store the data files created by the user","Provide the video interface between CPU and monitor","Generate control signals to coordinate the components"],
+      explanation:"The control unit issues control signals to coordinate the CPU." } },
+
+  { id:22, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"在 IEEE 754 單精度（32 位元）浮點數格式中，各欄位的位元分配為何？",
+      options:["1 位元符號、10 位元指數、21 位元尾數","1 位元符號、11 位元指數、20 位元尾數","1 位元符號、8 位元指數、23 位元尾數","1 位元符號、5 位元指數、26 位元尾數"],
+      explanation:"單精度為 1 符號 + 8 指數 + 23 尾數 位元。" },
+    en:{ question:"In IEEE 754 single-precision (32-bit) floating-point format, how are the bit fields allocated?",
+      options:["1 sign bit, 10 exponent bits, 21 mantissa bits","1 sign bit, 11 exponent bits, 20 mantissa bits","1 sign bit, 8 exponent bits, 23 mantissa bits","1 sign bit, 5 exponent bits, 26 mantissa bits"],
+      explanation:"Single precision is 1 sign + 8 exponent + 23 mantissa bits." } },
+
+  { id:23, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"在 MESI 快取一致性協定中，「Exclusive（獨占）」狀態代表什麼？",
+      options:["該快取行已被修改且與主記憶體不一致","該快取行乾淨且僅存在於此一個快取中","該快取行同時存在於多個快取且皆乾淨","該快取行內容無效，需重新自記憶體載入"],
+      explanation:"Exclusive 表示乾淨且唯一存在於此快取。" },
+    en:{ question:"In the MESI cache-coherence protocol, what does the \"Exclusive\" state indicate?",
+      options:["The line has been modified and differs from main memory","The line is clean and present in only this one cache","The line is clean and present in several caches at once","The line's contents are invalid and must be reloaded"],
+      explanation:"Exclusive means clean and held only in this cache." } },
+
+  { id:24, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"CPU 的時脈頻率通常以什麼單位來衡量？",
+      options:["赫茲（Hz），用於衡量每秒的週期數","位元組（Byte），用於衡量資料量","瓦特（Watt），用於衡量電功率大小","位元（bit），用於衡量資訊的多寡"],
+      explanation:"頻率以赫茲（每秒週期數）衡量。" },
+    en:{ question:"In what unit is a CPU's clock frequency typically measured?",
+      options:["Hertz (Hz), the unit for cycles per second","Byte (B), the unit for an amount of data","Watt (W), the unit for electrical power","Bit (b), the unit for an amount of information"],
+      explanation:"Frequency is measured in hertz (cycles per second)." } },
+
+  { id:25, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"直接記憶體存取（DMA）的主要目的是什麼？",
+      options:["增加 CPU 內部通用暫存器的數量","將快取中的資料永久寫入到硬碟","提高 CPU 的時脈以加速整體運算","讓週邊裝置不經 CPU 存取記憶體"],
+      explanation:"DMA 讓裝置直接存取記憶體，減輕 CPU 負擔。" },
+    en:{ question:"What is the main purpose of Direct Memory Access (DMA)?",
+      options:["Increase the number of general registers inside the CPU","Permanently write the cached data onto the hard disk","Raise the CPU clock to speed up overall computation","Let peripherals access memory directly without the CPU"],
+      explanation:"DMA lets devices access memory directly, offloading the CPU." } },
+
+  { id:26, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"某程式 80% 可平行化，使用 4 個處理器執行可平行部分，整體加速比約為多少？",
+      options:["約 2.5 倍","約 3.3 倍","約 4.0 倍","約 1.8 倍"],
+      explanation:"1 / (0.2 + 0.8/4) = 1/0.4 = 2.5。" },
+    en:{ question:"A program is 80% parallelisable and runs the parallel part on 4 processors. What is the overall speedup approximately?",
+      options:["About 2.5×","About 3.3×","About 4.0×","About 1.8×"],
+      explanation:"1 / (0.2 + 0.8/4) = 1/0.4 = 2.5." } },
+
+  { id:27, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"關於 RISC 與 CISC 架構，下列哪一個敘述最為正確？",
+      options:["RISC 的單一指令會比 CISC 完成更多的工作","RISC 指令集精簡且格式固定，常需較多指令","CISC 因指令較少，所以程式碼必定更短","RISC 較新，因此在所有應用場景都優於 CISC"],
+      explanation:"RISC 指令精簡固定，常以較多指令完成工作。" },
+    en:{ question:"Regarding RISC and CISC architectures, which statement is most accurate?",
+      options:["A single RISC instruction will accomplish more total work than a CISC one","RISC has a small, fixed-format set, often needing more instructions","CISC has fewer instructions, so its code is shorter overall","RISC is newer, so it is a better choice than CISC in every case"],
+      explanation:"RISC keeps instructions simple and fixed, often using more of them." } },
+
+  { id:28, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"在 CPU 與主記憶體之間設置快取（cache）的主要目的是什麼？",
+      options:["永久且安全地保存使用者的重要檔案","完全取代主記憶體以節省整體成本","縮短資料的平均存取時間以提升效能","增加硬碟可使用的總儲存容量空間"],
+      explanation:"快取利用區域性縮短平均存取時間。" },
+    en:{ question:"What is the main purpose of placing a cache between the CPU and main memory?",
+      options:["Permanently and safely preserve the user's important files","Completely replace main memory to reduce overall cost","Shorten the average data access time to boost performance","Increase the total usable storage capacity of the disk"],
+      explanation:"Cache exploits locality to shorten average access time." } },
+
+  { id:29, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"處理器採用分支預測（branch prediction）的主要目的是什麼？",
+      options:["減少程式執行時所需的記憶體總容量","確保分支的結果完全不影響整體效能","降低每一條機器指令所需的位元數量","減少分支指令在管線中所造成的停頓"],
+      explanation:"分支預測減少控制危障造成的管線停頓。" },
+    en:{ question:"What is the main purpose of branch prediction in a processor?",
+      options:["Reduce the total memory a program needs during execution","Ensure that branch outcomes never affect overall performance","Reduce the number of bits each machine instruction requires","Reduce the pipeline stalls caused by branch instructions"],
+      explanation:"Branch prediction reduces control-hazard pipeline stalls." } },
+
+  { id:30, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"轉譯後備緩衝區（TLB）的主要作用是什麼？",
+      options:["快取虛擬位址到實體位址的轉譯結果","快取最近使用過的指令以加速擷取","暫存尚未寫回主記憶體的髒資料區塊","紀錄分支指令的歷史結果以供預測"],
+      explanation:"TLB 快取分頁表的位址轉譯，加速虛擬記憶體存取。" },
+    en:{ question:"What is the main role of the Translation Lookaside Buffer (TLB)?",
+      options:["Cache the virtual-to-physical address translation results","Cache recently used instructions to speed up fetching","Buffer dirty data blocks not yet written back to memory","Record branch instruction history outcomes for later prediction"],
+      explanation:"The TLB caches page-table translations to speed address mapping." } },
+
+  { id:31, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"二進位數 1011 轉換為十進位等於多少？",
+      options:["9","11","13","15"],
+      explanation:"8 + 0 + 2 + 1 = 11。" },
+    en:{ question:"What is the binary number 1011 converted to decimal?",
+      options:["9","11","13","15"],
+      explanation:"8 + 0 + 2 + 1 = 11." } },
+
+  { id:32, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"RAID 1 採用何種方式來保護資料的安全？",
+      options:["將資料分散儲存於多顆磁碟以提升速度","使用同位元（parity）計算還原資料","將資料完整複製到另一顆磁碟（鏡像）","將多顆磁碟合併成單一的大容量磁區"],
+      explanation:"RAID 1 為鏡像，將資料完整複製。" },
+    en:{ question:"How does RAID 1 protect data?",
+      options:["Stripes data across several disks to improve speed","Uses parity calculations to reconstruct lost data","Mirrors a complete copy of data onto another disk","Merges several disks into one large-capacity volume"],
+      explanation:"RAID 1 mirrors a full copy of the data." } },
+
+  { id:33, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"在二進位浮點數中，為何 0.1 + 0.2 的計算結果常不等於 0.3？",
+      options:["因為浮點數的加法運算不滿足結合律","因為 CPU 的浮點運算單元發生硬體錯誤","因為指數欄位的位元數不足以表示結果","因為這兩個小數無法用有限二進位精確表示"],
+      explanation:"0.1、0.2 為無限循環二進位，存在捨入誤差。" },
+    en:{ question:"In binary floating point, why does 0.1 + 0.2 often not equal 0.3?",
+      options:["Because floating-point addition does not satisfy associativity","Because the CPU's floating-point unit made a hardware error","Because the exponent field has too few bits for the result","Because 0.1 and 0.2 cannot be exactly represented in binary"],
+      explanation:"0.1 and 0.2 are repeating in binary, causing rounding error." } },
+
+  { id:34, difficulty:"trap", points:19, answer:2,
+    zh:{ question:"「管線化（pipelining）一定會縮短每一條指令的執行時間」，正確的評價是？",
+      options:["正確，管線化能使每個單一指令的延遲變得更短","正確，每一條指令的延遲都會等比例下降","不正確，管線提升的是吞吐量而非單指令延遲","不正確，因為管線化其實完全無法提升任何效能"],
+      explanation:"管線提升整體吞吐量，單一指令延遲不變甚至略增。" },
+    en:{ question:"\"Pipelining always shortens the execution time of each individual instruction.\" How should this be judged?",
+      options:["Correct; pipelining lowers the execution latency of each single instruction","Correct; every instruction's latency drops in exact proportion","Incorrect; pipelining boosts throughput, not per-instruction latency","Incorrect; because pipelining cannot improve performance in any way at all"],
+      explanation:"Pipelining raises throughput; single-instruction latency is unchanged." } },
+
+  { id:35, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"在多層快取系統中，加入第二層（L2）快取主要透過什麼方式改善效能？",
+      options:["降低第一層快取發生失誤時的失誤懲罰","直接縮短第一層快取每次命中的時間","增加主記憶體對外可提供的總頻寬","完全消除虛擬記憶體所產生的分頁錯誤"],
+      explanation:"L2 在 L1 失誤時提供較快來源，降低失誤懲罰。" },
+    en:{ question:"In a multi-level cache system, how does adding a second-level (L2) cache mainly improve performance?",
+      options:["It lowers the miss penalty incurred when L1 misses occur","It directly shortens the L1 cache's per-hit access time","It increases the total bandwidth main memory can supply","It completely eliminates the page faults of virtual memory"],
+      explanation:"L2 supplies a faster source on L1 misses, lowering miss penalty." } },
+
+  { id:36, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"典型的指令週期（instruction cycle）依序包含哪些主要階段？",
+      options:["解碼 → 擷取 → 執行 → 寫回","擷取 → 解碼 → 執行 → 寫回","執行 → 擷取 → 解碼 → 寫回","擷取 → 執行 → 解碼 → 寫回"],
+      explanation:"順序為擷取 → 解碼 → 執行 → 寫回。" },
+    en:{ question:"What is the correct order of the main stages in a typical instruction cycle?",
+      options:["Decode → fetch → execute → write-back","Fetch → decode → execute → write-back","Execute → fetch → decode → write-back","Fetch → execute → decode → write-back"],
+      explanation:"The order is fetch → decode → execute → write-back." } },
+
+  { id:37, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"快取的「寫回（write-back）」策略相較於「寫穿（write-through）」具有何種特性？",
+      options:["每一次寫入都會同步更新整個主記憶體","僅在該快取行被換出時才寫回主記憶體","完全不需要使用任何髒位元做標記","反而會降低快取整體的命中率與效能"],
+      explanation:"寫回僅在換出髒資料時更新記憶體，減少寫入流量。" },
+    en:{ question:"Compared with write-through, what characterizes a write-back cache policy?",
+      options:["Every single write is synchronised straight to main memory","It writes back to memory only when a cache line is evicted","It needs no dirty bit at all to mark the cache lines","It instead lowers the cache's overall hit rate and speed"],
+      explanation:"Write-back updates memory only on eviction, reducing write traffic." } },
+
+  { id:38, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"L1 命中 1 ns、失誤率 10%；L2 命中 10 ns、區域失誤率 5%；記憶體存取 100 ns，則 AMAT 為何？",
+      options:["1.5 ns","2.0 ns","11 ns","2.5 ns"],
+      explanation:"1 + 0.1×(10 + 0.05×100) = 2.5 ns。" },
+    en:{ question:"L1 hit 1 ns, miss rate 10%; L2 hit 10 ns, local miss rate 5%; memory access 100 ns. What is the AMAT?",
+      options:["1.5 ns","2.0 ns","11 ns","2.5 ns"],
+      explanation:"1 + 0.1×(10 + 0.05×100) = 2.5 ns." } },
+
+  { id:39, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"在 Flynn 分類法中，單指令多資料流（SIMD）架構的特徵是什麼？",
+      options:["多條不同指令分別處理多筆不同的資料","以單一指令依序逐筆處理單一筆資料","同一條指令同時對多筆資料進行運算","多條不同指令同時處理同一筆相同資料"],
+      explanation:"SIMD 以同一指令同時處理多筆資料（如向量運算）。" },
+    en:{ question:"In Flynn's taxonomy, what characterizes a Single Instruction Multiple Data (SIMD) architecture?",
+      options:["Several different instructions each process different data","A single instruction processes one datum sequentially","One single instruction operates on many data simultaneously","Several different instructions process the same single datum"],
+      explanation:"SIMD applies one instruction to many data at once (e.g. vectors)." } },
+
+  { id:40, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"程式存取剛使用過的資料時很可能再次用到，這描述的是哪一種區域性？",
+      options:["空間區域性（spatial locality）","演算法區域性（algorithmic locality）","結構區域性（structural locality）","時間區域性（temporal locality）"],
+      explanation:"時間區域性指最近使用的資料可能很快再次被使用。" },
+    en:{ question:"A program is likely to reuse data it has just accessed. Which kind of locality does this describe?",
+      options:["Spatial locality","Algorithmic locality","Structural locality","Temporal locality"],
+      explanation:"Temporal locality: recently used data is likely reused soon." } },
+];
+
+/* ===================== I18N ===================== */
+const UI = {
+  zh: {
+    title:"計算機組織與架構 測驗", langBtn:"English", themeDark:"🌙 深色", themeLight:"☀️ 淺色",
+    progress:(c,t)=>`第 ${c} / ${t} 題`, qnum:(n)=>`第 ${n} 題`, prev:"上一題", submit:"提交測驗",
+    resultTitle:"測驗結果", total:"總分", correct:"正確題數", wrong:"錯誤題數",
+    byDiff:"各難度正確率", easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱",
+    percentileTitle:"百分位排名", percentile:(p)=>`你的成績超越了約 ${p}% 的測試者`,
+    grade:"等級評定", review:"錯題回顧", yourAns:"你的選擇", correctAns:"正確答案",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！", allCorrect:"太厲害了，全部答對，沒有錯題！",
+    summary:(s,c)=>`計算機組織與架構 測驗結果\n總分：${s} / 670\n正確：${c} / 40`
+  },
+  en: {
+    title:"Computer Organization & Architecture Quiz", langBtn:"中文", themeDark:"🌙 Dark", themeLight:"☀️ Light",
+    progress:(c,t)=>`Question ${c} / ${t}`, qnum:(n)=>`Question ${n}`, prev:"Previous", submit:"Submit Quiz",
+    resultTitle:"Your Results", total:"Total Score", correct:"Correct", wrong:"Incorrect",
+    byDiff:"Accuracy by Difficulty", easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap",
+    percentileTitle:"Percentile Rank", percentile:(p)=>`You scored higher than about ${p}% of test takers`,
+    grade:"Grade", review:"Review of Wrong Answers", yourAns:"Your choice", correctAns:"Correct answer",
+    retry:"Retake Quiz", copy:"Copy Result", copied:"Copied!", allCorrect:"Excellent — all correct, no mistakes!",
+    summary:(s,c)=>`Computer Organization & Architecture Quiz Result\nScore: ${s} / 670\nCorrect: ${c} / 40`
+  }
+};
+const GRADES = [
+  { min:600, zh:"🏆 頂尖專家", en:"🏆 Top Expert" },
+  { min:500, zh:"⭐ 進階掌握", en:"⭐ Advanced" },
+  { min:380, zh:"📘 中等水準", en:"📘 Intermediate" },
+  { min:250, zh:"📗 基礎尚可", en:"📗 Basic" },
+  { min:0,   zh:"📕 需要加強", en:"📕 Needs Improvement" },
+];
+const LETTERS = ["A","B","C","D"];
+
+/* ===================== STATE ===================== */
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+
+/* ===================== ELEMENTS ===================== */
+const el = (id)=>document.getElementById(id);
+
+/* ===================== THEME ===================== */
+function initTheme(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  el("themeBtn").textContent = t==="dark" ? UI[lang].themeLight : UI[lang].themeDark;
+}
+el("themeBtn").addEventListener("click", ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur==="dark" ? "light" : "dark");
+});
+
+/* ===================== LANGUAGE ===================== */
+el("langBtn").addEventListener("click", ()=>{
+  lang = lang==="zh" ? "en" : "zh";
+  document.documentElement.lang = lang==="zh" ? "zh-Hant" : "en";
+  applyStaticText();
+  if(!el("resultView").classList.contains("hidden")) renderResults();
+  else renderQuestion(false);
+});
+function applyStaticText(){
+  const u = UI[lang];
+  el("title").textContent = u.title;
+  el("langBtn").textContent = u.langBtn;
+  document.title = u.title;
+  const t = document.documentElement.getAttribute("data-theme");
+  el("themeBtn").textContent = t==="dark" ? u.themeLight : u.themeDark;
+  el("prevBtn").textContent = u.prev;
+  el("submitBtn").textContent = u.submit;
+}
+
+/* ===================== QUIZ RENDER ===================== */
+function renderQuestion(animate=true){
+  const u = UI[lang];
+  const q = questions[current];
+  const data = q[lang];
+  const fade = el("qfade");
+
+  const paint = ()=>{
+    el("progressInfo").textContent = u.progress(current+1, questions.length);
+    el("qnum").textContent = u.qnum(current+1);
+    el("qtext").textContent = data.question;
+    const opts = el("options");
+    opts.innerHTML = "";
+    data.options.forEach((text, i)=>{
+      const b = document.createElement("button");
+      b.className = "option" + (answers[current]===i ? " selected" : "");
+      b.innerHTML = `<span class="label">${LETTERS[i]}</span><span>${escapeHtml(text)}</span>`;
+      b.addEventListener("click", ()=>selectOption(i));
+      opts.appendChild(b);
+    });
+    el("prevBtn").style.visibility = current===0 ? "hidden" : "visible";
+    // submit button only on last question
+    el("submitBtn").classList.toggle("hidden", current!==questions.length-1);
+    el("barFill").style.width = ((current+1)/questions.length*100) + "%";
+    fade.classList.remove("hide");
+  };
+
+  if(animate){
+    fade.classList.add("hide");
+    setTimeout(paint, 200);
+  } else {
+    paint();
+  }
+}
+
+function selectOption(i){
+  answers[current] = i;
+  // show selected state on options
+  const opts = el("options").children;
+  for(let k=0;k<opts.length;k++) opts[k].classList.toggle("selected", k===i);
+
+  const isLast = current===questions.length-1;
+  if(isLast){
+    // do not auto-advance; reveal submit button (already visible)
+    el("submitBtn").classList.remove("hidden");
+  } else {
+    // brief selected state then auto-advance
+    setTimeout(()=>{ current++; renderQuestion(true); }, 400);
+  }
+}
+
+el("prevBtn").addEventListener("click", ()=>{
+  if(current>0){ current--; renderQuestion(true); }
+});
+el("submitBtn").addEventListener("click", ()=>{
+  if(answers[current]===null) return;
+  showResults();
+});
+
+/* ===================== NORMAL CDF ===================== */
+function erf(x){
+  const sign = x<0 ? -1 : 1; x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+function normalCdf(x, mean, sd){ return 0.5*(1+erf((x-mean)/(sd*Math.SQRT2))); }
+
+/* ===================== RESULTS ===================== */
+function computeScore(){
+  let score=0, correctCount=0;
+  const perDiff = { easy:{c:0,t:0}, medium:{c:0,t:0}, hard:{c:0,t:0}, trap:{c:0,t:0} };
+  questions.forEach((q,idx)=>{
+    perDiff[q.difficulty].t++;
+    if(answers[idx]===q.answer){ score+=q.points; correctCount++; perDiff[q.difficulty].c++; }
+  });
+  return { score, correctCount, wrongCount: questions.length-correctCount, perDiff };
+}
+
+function showResults(){
+  el("quizView").classList.add("hidden");
+  el("resultView").classList.remove("hidden");
+  renderResults();
+  window.scrollTo(0,0);
+}
+
+function renderResults(){
+  const u = UI[lang];
+  const r = computeScore();
+  const mean = 670*0.45, sd = 670*0.15;
+  let pct = normalCdf(r.score, mean, sd)*100;
+  pct = Math.max(1, Math.min(99, Math.round(pct)));
+  const grade = GRADES.find(g=>r.score>=g.min);
+
+  const wrongItems = questions.map((q,idx)=>({q,idx})).filter(o=>answers[o.idx]!==o.q.answer);
+
+  let reviewHtml = "";
+  if(wrongItems.length===0){
+    reviewHtml = `<div class="review-item">${u.allCorrect}</div>`;
+  } else {
+    reviewHtml = wrongItems.map(({q,idx})=>{
+      const d = q[lang];
+      const ua = answers[idx];
+      const uaText = ua===null ? "—" : `${LETTERS[ua]}. ${escapeHtml(d.options[ua])}`;
+      const caText = `${LETTERS[q.answer]}. ${escapeHtml(d.options[q.answer])}`;
+      return `<div class="review-item">
+        <div class="review-q">${u.qnum(idx+1)}. ${escapeHtml(d.question)}</div>
+        <div class="ans-line ans-wrong">✗ ${u.yourAns}: ${uaText}</div>
+        <div class="ans-line ans-correct">✓ ${u.correctAns}: ${caText}</div>
+        <div class="explain">${escapeHtml(d.explanation)}</div>
+      </div>`;
+    }).join("");
+  }
+
+  el("resultView").innerHTML = `
+    <h2>${u.resultTitle}</h2>
+    <div class="score-big">${r.score} / 670</div>
+    <div class="grade">${lang==="zh"?grade.zh:grade.en}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="k">${u.correct}</div><div class="v">${r.correctCount} / 40</div></div>
+      <div class="stat"><div class="k">${u.wrong}</div><div class="v">${r.wrongCount} / 40</div></div>
+    </div>
+    <div class="review-title">${u.byDiff}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="k">${u.easy}</div><div class="v">${r.perDiff.easy.c} / ${r.perDiff.easy.t}</div></div>
+      <div class="stat"><div class="k">${u.medium}</div><div class="v">${r.perDiff.medium.c} / ${r.perDiff.medium.t}</div></div>
+      <div class="stat"><div class="k">${u.hard}</div><div class="v">${r.perDiff.hard.c} / ${r.perDiff.hard.t}</div></div>
+      <div class="stat"><div class="k">${u.trap}</div><div class="v">${r.perDiff.trap.c} / ${r.perDiff.trap.t}</div></div>
+    </div>
+    <div class="percentile">
+      <div class="k" style="color:var(--muted);font-size:13px">${u.percentileTitle}</div>
+      <div class="v" style="font-size:17px;font-weight:700;margin-top:4px">${u.percentile(pct)}</div>
+    </div>
+    <div class="result-actions">
+      <button class="btn btn-primary" id="retryBtn">${u.retry}</button>
+      <button class="btn" id="copyBtn">${u.copy}</button>
+      <span class="copied hidden" id="copiedMsg">${u.copied}</span>
+    </div>
+    <div class="review-title">${u.review}</div>
+    ${reviewHtml}
+  `;
+
+  el("retryBtn").addEventListener("click", resetQuiz);
+  el("copyBtn").addEventListener("click", ()=>{
+    const text = u.summary(r.score, r.correctCount) + "\n" + (lang==="zh"?grade.zh:grade.en) + "\n" + u.percentile(pct);
+    copyText(text);
+    el("copiedMsg").classList.remove("hidden");
+    setTimeout(()=>el("copiedMsg").classList.add("hidden"), 2000);
+  });
+}
+
+function resetQuiz(){
+  for(let i=0;i<answers.length;i++) answers[i]=null;
+  current = 0;
+  el("resultView").classList.add("hidden");
+  el("quizView").classList.remove("hidden");
+  renderQuestion(false);
+  window.scrollTo(0,0);
+}
+
+/* ===================== HELPERS ===================== */
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;" }[c]));
+}
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).catch(()=>fallbackCopy(text));
+  } else fallbackCopy(text);
+}
+function fallbackCopy(text){
+  const ta = document.createElement("textarea");
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta);
+}
+
+/* ===================== INIT ===================== */
+initTheme();
+applyStaticText();
+renderQuestion(false);
+</script>
+</body>
+</html>

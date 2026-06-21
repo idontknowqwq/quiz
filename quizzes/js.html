@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JavaScript 互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --surface: #FFFFFF;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --track: #E5E7EB;
+  }
+  html[data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --surface: #1A1A1A;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --track: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    transition: background 0.2s, color 0.2s;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font: inherit;
+    font-size: 14px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .btn:hover { background: var(--hover); }
+  .progress-text { color: var(--text-secondary); font-size: 14px; margin: 18px 0 8px; }
+
+  .qcard { opacity: 1; transition: opacity 0.25s ease; }
+  .qcard.fade { opacity: 0; }
+  .question {
+    font-size: 19px;
+    font-weight: 600;
+    margin: 8px 0 20px;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 16px;
+    text-align: left;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .option:hover { background: var(--hover); }
+  .option .label { font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  .option.selected {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .option.selected .label { color: var(--accent-text); }
+
+  .nav { display: flex; justify-content: space-between; margin-top: 24px; }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent); opacity: 0.9; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .bar-track {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 6px;
+    background: var(--track);
+  }
+  .bar-fill {
+    height: 100%;
+    width: 0;
+    background: var(--accent);
+    transition: width 0.3s ease;
+  }
+
+  /* Results */
+  .result h2 { font-size: 22px; margin: 8px 0 16px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .grade { font-size: 24px; font-weight: 700; margin: 8px 0; }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 18px 0;
+  }
+  .stat {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .stat .k { color: var(--text-secondary); font-size: 13px; }
+  .stat .v { font-size: 20px; font-weight: 700; margin-top: 2px; }
+  .percentile {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 16px;
+  }
+  .review-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 12px 0;
+  }
+  .review-q { font-weight: 600; margin-bottom: 8px; white-space: pre-wrap; }
+  .review-line { font-size: 15px; margin: 3px 0; }
+  .mark-wrong { color: var(--wrong); font-weight: 600; }
+  .mark-correct { color: var(--correct); font-weight: 600; }
+  .review-exp { color: var(--text-secondary); font-size: 14px; margin-top: 6px; }
+  .section-h { font-size: 17px; font-weight: 700; margin: 24px 0 6px; }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin: 20px 0 40px; }
+  .hidden { display: none; }
+  @media (max-width: 480px) {
+    .title { font-size: 16px; }
+    .question { font-size: 17px; }
+    .stat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">JavaScript 互動測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </header>
+
+  <!-- Quiz view -->
+  <div id="quizView">
+    <div class="progress-text" id="progressText"></div>
+    <div class="qcard" id="qcard">
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+    </div>
+  </div>
+
+  <!-- Result view -->
+  <div id="resultView" class="result hidden"></div>
+</div>
+<div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{question:'在 JavaScript 中，`typeof "hello"` 的結果是什麼？',options:["string","text","char","object"],explanation:'字串的 typeof 結果為 "string"。'},
+    en:{question:'In JavaScript, what does `typeof "hello"` return?',options:["string","text","char","object"],explanation:'typeof a string is "string".'} },
+
+  { id:2, difficulty:"medium", points:15, answer:2,
+    zh:{question:'`for(var i=0;i<3;i++){ setTimeout(()=>console.log(i),0) }` 會印出什麼？',options:["0 1 2","0 0 0","3 3 3","1 2 3"],explanation:'var 無區塊作用域，迴圈結束時 i 為 3。'},
+    en:{question:'What does `for(var i=0;i<3;i++){ setTimeout(()=>console.log(i),0) }` print?',options:["0 1 2","0 0 0","3 3 3","1 2 3"],explanation:'var has no block scope; i is 3 after the loop.'} },
+
+  { id:3, difficulty:"hard", points:25, answer:1,
+    zh:{question:'依序執行：\nconsole.log(1);\nsetTimeout(()=>console.log(2));\nPromise.resolve().then(()=>console.log(3));\nconsole.log(4);\n輸出順序為？',options:["1 4 2 3","1 4 3 2","1 2 3 4","1 3 4 2"],explanation:'同步先執行，微任務早於巨集任務。'},
+    en:{question:'Run in order:\nconsole.log(1);\nsetTimeout(()=>console.log(2));\nPromise.resolve().then(()=>console.log(3));\nconsole.log(4);\nWhat is the output order?',options:["1 4 2 3","1 4 3 2","1 2 3 4","1 3 4 2"],explanation:'Sync runs first; microtasks before macrotasks.'} },
+
+  { id:4, difficulty:"easy", points:10, answer:3,
+    zh:{question:'運算子 `===` 與 `==` 的主要差異是什麼？',options:["=== 在比較前會自動轉換型別","== 比較時完全不會轉換型別","這兩者在功能上其實完全相同","=== 比較時不做任何型別轉換"],explanation:'=== 不進行型別轉換。'},
+    en:{question:'What is the main difference between `===` and `==`?',options:["=== converts operand types before comparing","== will never compare the two values given","The two operators are completely identical","=== compares values and never coerces types"],explanation:'=== performs no type coercion.'} },
+
+  { id:5, difficulty:"trap", points:19, answer:0,
+    zh:{question:'下列關於 `NaN` 的敘述，哪一個是正確的？',options:["NaN 並不等於它自己本身","typeof NaN 會回傳 \"nan\"","NaN 等於任何一個數字","NaN 比 Infinity 還要大"],explanation:'NaN !== NaN，唯一不等於自身的值。'},
+    en:{question:'Which statement about `NaN` is correct?',options:["NaN is not equal to itself","typeof NaN returns the \"nan\"","NaN is equal to any number","NaN is greater than Infinity"],explanation:'NaN is the only value not equal to itself.'} },
+
+  { id:6, difficulty:"medium", points:15, answer:1,
+    zh:{question:'在宣告之前存取一個 `let` 變數會發生什麼？',options:["回傳一個 undefined 的值","拋出 ReferenceError 例外","丟出 SyntaxError 並中止執行","自動向上提升並回傳 null"],explanation:'let 在暫時死區存取會拋錯。'},
+    en:{question:'What happens if you access a `let` variable before its declaration?',options:["It returns the value of undefined","It throws a ReferenceError error","It throws a SyntaxError and stops","It becomes a hoisted global value"],explanation:'Accessing let in the temporal dead zone throws.'} },
+
+  { id:7, difficulty:"easy", points:10, answer:3,
+    zh:{question:'哪一個陣列方法會在陣列的「尾端」加入元素？',options:["shift()","unshift()","reverse()","push()"],explanation:'push 會在陣列尾端新增元素。'},
+    en:{question:'Which array method adds an element to the end of an array?',options:["shift()","unshift()","reverse()","push()"],explanation:'push appends an element to the end.'} },
+
+  { id:8, difficulty:"hard", points:25, answer:2,
+    zh:{question:'定義在物件方法內的箭頭函式，其 `this` 指向什麼？',options:["呼叫該方法的那個物件","全域物件 window 本身","外層語彙環境的 this","一個新建立的空物件"],explanation:'箭頭函式繼承外層語彙的 this。'},
+    en:{question:'For an arrow function defined inside an object method, what is `this`?',options:["The object calling the method","The global object window","The enclosing lexical this","A newly created empty object"],explanation:'Arrow functions inherit the enclosing lexical this.'} },
+
+  { id:9, difficulty:"medium", points:15, answer:1,
+    zh:{question:'執行 `const [a, ...b] = [1, 2, 3, 4]` 之後，b 的值為？',options:["[1, 2, 3]","[2, 3, 4]","[1, 2, 3, 4]","[2, 3]"],explanation:'其餘運算子收集剩下的元素。'},
+    en:{question:'After `const [a, ...b] = [1, 2, 3, 4]`, what is the value of b?',options:["[1, 2, 3]","[2, 3, 4]","[1, 2, 3, 4]","[2, 3]"],explanation:'The rest operator collects remaining elements.'} },
+
+  { id:10, difficulty:"easy", points:10, answer:0,
+    zh:{question:'要宣告一個值不可被重新指定的變數，應使用哪個關鍵字？',options:["const","let","var","static"],explanation:'const 宣告的變數無法重新指定。'},
+    en:{question:'Which keyword declares a variable whose value cannot be reassigned?',options:["const","let","var","static"],explanation:'A const variable cannot be reassigned.'} },
+
+  { id:11, difficulty:"medium", points:15, answer:3,
+    zh:{question:'`JSON.stringify({ a: undefined, b: 2 })` 的結果是什麼？',options:['{"a":undefined,"b":2}','{"a":null,"b":2}',"整個物件被忽略為 null",'{"b":2}'],explanation:'值為 undefined 的屬性會被略過。'},
+    en:{question:'What does `JSON.stringify({ a: undefined, b: 2 })` produce?',options:['{"a":undefined,"b":2}','{"a":null,"b":2}',"The whole object becomes null",'{"b":2}'],explanation:'Properties with undefined values are omitted.'} },
+
+  { id:12, difficulty:"hard", points:25, answer:2,
+    zh:{question:'存取物件屬性時，若物件本身沒有該屬性，引擎會怎麼做？',options:["立即回傳 null 作為結果","拋出 TypeError 型別錯誤","沿著原型鏈向上尋找屬性","自動在物件上建立該屬性"],explanation:'引擎會沿原型鏈向上查找屬性。'},
+    en:{question:'When accessing a property the object itself lacks, what does the engine do?',options:["Immediately return null result","Throw a TypeError exception","Search up the prototype chain","Create the property on the object"],explanation:'It searches up the prototype chain.'} },
+
+  { id:13, difficulty:"easy", points:10, answer:0,
+    zh:{question:'要取得字串 `"abc"` 的字元數量，應使用什麼？',options:[".length",".size",".count()",".len()"],explanation:'字串以 length 屬性取得長度。'},
+    en:{question:'To get the number of characters in the string `"abc"`, what do you use?',options:[".length",".size",".count()",".len()"],explanation:'Strings expose length as a property.'} },
+
+  { id:14, difficulty:"medium", points:15, answer:1,
+    zh:{question:'運算式 `[] + []` 的結果是什麼？',options:["0 （數字零）","\"\" （空字串）","[] （空陣列）","null （空值）"],explanation:'陣列轉成字串後相加得空字串。'},
+    en:{question:'What is the result of the expression `[] + []`?',options:["0 (the number zero)","\"\" (an empty string)","[] (an empty array)","null (a null value)"],explanation:'Arrays coerce to "" and concatenate.'} },
+
+  { id:15, difficulty:"trap", points:19, answer:2,
+    zh:{question:'下列哪一個關於「陣列」的敘述是正確的？',options:["typeof [] 會回傳 \"array\"","陣列並不是一種物件型別","陣列的 typeof 結果是 \"object\"","陣列無法使用 length 屬性"],explanation:'typeof 陣列的結果為 "object"。'},
+    en:{question:'Which statement about arrays is correct?',options:["typeof [] returns the \"array\"","An array is not an object type","typeof an array gives \"object\"","Arrays cannot use length property"],explanation:'typeof an array returns "object".'} },
+
+  { id:16, difficulty:"hard", points:25, answer:3,
+    zh:{question:'立即執行函式 (IIFE) 最常見的用途是什麼？',options:["讓函式每隔一秒自動執行一次","把區域變數全都提升為全域變數","延遲函式直到事件被觸發才執行","建立獨立作用域以避免污染全域"],explanation:'IIFE 建立私有作用域避免污染全域。'},
+    en:{question:'What is the most common purpose of an IIFE?',options:["Run a function once every second","Hoist local variables to globals","Delay a function until an event","Create a scope to avoid globals"],explanation:'IIFEs create a private scope.'} },
+
+  { id:17, difficulty:"easy", points:10, answer:1,
+    zh:{question:'JavaScript 中「單行註解」的正確寫法是？',options:["# 這是一行註解","// 這是一行註解","<!-- 這是註解 -->","** 這是一行註解"],explanation:'單行註解使用兩條斜線 //。'},
+    en:{question:'What is the correct syntax for a single-line comment in JavaScript?',options:["# this is a comment","// this is a comment","<!-- a comment -->","** this is comment"],explanation:'Single-line comments use //.'} },
+
+  { id:18, difficulty:"medium", points:15, answer:0,
+    zh:{question:'`Array.prototype.map` 與 `forEach` 最主要的差別是？',options:["map 會回傳一個新的陣列","forEach 會回傳一個新陣列","map 完全無法存取索引值","forEach 執行起來一定較快"],explanation:'map 回傳新陣列，forEach 回傳 undefined。'},
+    en:{question:'What is the key difference between `Array.prototype.map` and `forEach`?',options:["map returns a brand new array","forEach returns a brand new array","map cannot access the index","forEach is always faster to run"],explanation:'map returns a new array; forEach returns undefined.'} },
+
+  { id:19, difficulty:"hard", points:25, answer:2,
+    zh:{question:'函式宣告 (declaration) 與函式運算式 (expression) 在「提升」上的差異是？',options:["這兩者都會完整提升並可提前呼叫","這兩者在任何情況下都不會被提升","宣告整體提升，運算式僅提升變數","運算式會被提升而宣告反而不提升"],explanation:'宣告整體提升，運算式只提升變數名。'},
+    en:{question:'How do function declarations and function expressions differ in hoisting?',options:["Both hoist fully and run early","Neither of them is hoisted at all","Declaration hoists fully; expr only var","Expression hoists; declaration does not"],explanation:'Declarations hoist fully; expressions only the variable.'} },
+
+  { id:20, difficulty:"medium", points:15, answer:3,
+    zh:{question:'`function f(a, b = a) {}` 呼叫 `f(5)` 之後，b 的值為？',options:["undefined 未定義值","null 代表空值結果","0 這個數字零值","5，等同於參數 a"],explanation:'預設值可引用前面已定義的參數。'},
+    en:{question:'Given `function f(a, b = a) {}`, after calling `f(5)`, what is b?',options:["undefined as the value","null as the empty value","0, the number zero value","5, the same as a value"],explanation:'Default values can reference earlier params.'} },
+
+  { id:21, difficulty:"medium", points:15, answer:0,
+    zh:{question:'三元運算子 `cond ? x : y` 當 cond 為 falsy 時會回傳？',options:["y 的值（冒號後）","x 的值（問號後）","布林值 true","空值 null 結果"],explanation:'條件為假時回傳冒號之後的值。'},
+    en:{question:'For the ternary `cond ? x : y`, what is returned when cond is falsy?',options:["The value y (after colon)","The value x (after question)","The boolean value true","The null value result"],explanation:'A falsy condition returns the value after the colon.'} },
+
+  { id:22, difficulty:"trap", points:19, answer:3,
+    zh:{question:'運算式 `0.1 + 0.2 === 0.3` 的結果是什麼？',options:["true，浮點數計算很精確","拋出一個語法錯誤的訊息","回傳 0.3 這個數字本身","false，浮點數存在誤差"],explanation:'浮點誤差使結果為 0.30000…4。'},
+    en:{question:'What is the result of the expression `0.1 + 0.2 === 0.3`?',options:["true, floating point is exact","It throws a syntax error msg","It returns the number 0.3","false, floating point error"],explanation:'Floating-point error yields 0.30000…4.'} },
+
+  { id:23, difficulty:"medium", points:15, answer:1,
+    zh:{question:'用 `const` 宣告一個物件之後，下列哪件事是可以做的？',options:["把它重新指定成另一個物件","修改它內部既有的屬性值","完全無法對它做任何操作","它會自動被凍結成唯讀"],explanation:'const 限制重新指定，不限制改屬性。'},
+    en:{question:'After declaring an object with `const`, which of these is allowed?',options:["Reassign it to another object","Modify its existing property value","Do nothing at all with the object","It is auto-frozen as read only"],explanation:'const blocks reassignment, not mutation.'} },
+
+  { id:24, difficulty:"hard", points:25, answer:2,
+    zh:{question:'一個 `async` 函式的回傳值具有什麼特性？',options:["和一般同步函式回傳完全相同","一定要搭配 yield 才能回傳值","其回傳值永遠被包裝成 Promise","只能回傳數字或字串等型別"],explanation:'async 函式的回傳值永遠是 Promise。'},
+    en:{question:'What characterizes the return value of an `async` function?',options:["Identical to a sync function return","Requires yield in order to return","Always wrapped inside a Promise","Can only return numbers or strings"],explanation:'async functions always return a Promise.'} },
+
+  { id:25, difficulty:"easy", points:10, answer:0,
+    zh:{question:'下列哪一個值在 JavaScript 中屬於 falsy？',options:["0","\"0\"","[]","{}"],explanation:'數字 0 為 falsy 值。'},
+    en:{question:'Which of the following values is falsy in JavaScript?',options:["0","\"0\"","[]","{}"],explanation:'The number 0 is a falsy value.'} },
+
+  { id:26, difficulty:"medium", points:15, answer:2,
+    zh:{question:'`x == null` 在 x 為哪些值時會回傳 true？',options:["僅在 x 嚴格為 null 時","僅在 x 為 undefined 時","x 為 null 或 undefined 時","x 為 0 或空字串時"],explanation:'== null 同時匹配 null 與 undefined。'},
+    en:{question:'For which values of x does `x == null` return true?',options:["Only when x is strictly null","Only when x is undefined value","When x is null or undefined","When x is 0 or empty string"],explanation:'== null matches both null and undefined.'} },
+
+  { id:27, difficulty:"medium", points:15, answer:3,
+    zh:{question:'已宣告 a 與 b，`[a, b] = [b, a]` 這段程式的作用是？',options:["把 a 與 b 同時設成相同值","刪除變數 a 與 b 的全部內容","宣告兩個全新的區域變數","交換 a 與 b 兩者的值"],explanation:'解構賦值可一行交換兩變數的值。'},
+    en:{question:'With a and b declared, what does `[a, b] = [b, a]` do?',options:["Set both a and b to one value","Delete the contents of a and b","Declare two brand-new variables","Swap the values of a and b"],explanation:'Destructuring swaps the two values in one line.'} },
+
+  { id:28, difficulty:"easy", points:10, answer:1,
+    zh:{question:'下列何者是宣告一個函式的正確語法？',options:["func greet() {}","function greet() {}","define greet() {}","method greet() {}"],explanation:'使用 function 關鍵字宣告函式。'},
+    en:{question:'Which of the following is correct syntax to declare a function?',options:["func greet() {}","function greet() {}","define greet() {}","method greet() {}"],explanation:'Use the function keyword to declare it.'} },
+
+  { id:29, difficulty:"medium", points:15, answer:0,
+    zh:{question:'`const b = [...a]` 這個寫法會產生什麼結果？',options:["陣列 a 的一份淺層複本","指向 a 的同一個參照","陣列 a 的一份深層複本","一個全新的空白陣列"],explanation:'展開運算子製作的是淺複製。'},
+    en:{question:'What does `const b = [...a]` produce?',options:["A shallow copy of array a","The same reference as array a","A deep copy of the array a","A brand new empty array b"],explanation:'Spread makes a shallow copy.'} },
+
+  { id:30, difficulty:"trap", points:19, answer:1,
+    zh:{question:'下列關於 `typeof null` 的敘述，哪一個是正確的？',options:["回傳 \"null\" 這個字串","回傳 \"object\"，屬歷史遺留","回傳 \"undefined\" 結果","會直接拋出型別錯誤"],explanation:'typeof null 為 "object"，是歷史遺留 bug。'},
+    en:{question:'Which statement about `typeof null` is correct?',options:["It returns the string \"null\"","Returns \"object\", a legacy quirk","It returns \"undefined\" result","It throws a type error directly"],explanation:'typeof null is "object", a legacy bug.'} },
+
+  { id:31, difficulty:"hard", points:25, answer:2,
+    zh:{question:'`Promise.all` 在其中一個 Promise 被拒絕 (reject) 時會怎樣？',options:["等待其餘全部完成後才回報","忽略被拒絕的那一個 Promise","立即以該拒絕原因被 reject","回傳一個含有錯誤的結果陣列"],explanation:'任一拒絕即整體立即 reject。'},
+    en:{question:'What does `Promise.all` do when one of its promises rejects?',options:["Wait for all others to finish first","Ignore the one that got rejected","Reject immediately with that reason","Return a result array with errors"],explanation:'It rejects immediately on the first rejection.'} },
+
+  { id:32, difficulty:"medium", points:15, answer:3,
+    zh:{question:'`let` 與 `var` 在「作用域」上的主要差別是什麼？',options:["var 具有區塊層級的作用域","let 會被提升到全域作用域","兩者的作用域規則完全一致","let 具有區塊層級的作用域"],explanation:'let 為區塊作用域，var 為函式作用域。'},
+    en:{question:'What is the main scoping difference between `let` and `var`?',options:["var has block-level scoping rules","let is hoisted to global scope","Their scoping rules are identical","let has block-level scoping rules"],explanation:'let is block-scoped; var is function-scoped.'} },
+
+  { id:33, difficulty:"easy", points:10, answer:1,
+    zh:{question:'運算子 `++` 的作用是什麼？',options:["將變數的值乘以二倍","將變數的值增加一","把兩個變數相加起來","將變數的值減少一"],explanation:'++ 會使變數的值加一。'},
+    en:{question:'What does the `++` operator do?',options:["Multiply the value by two","Increase the value by one","Add two variables together","Decrease the value by one"],explanation:'++ increases a value by one.'} },
+
+  { id:34, difficulty:"hard", points:25, answer:0,
+    zh:{question:'在嚴格模式 (strict mode) 下，獨立呼叫的一般函式內 `this` 為何？',options:["undefined （未定義）","全域物件 window 本身","該函式本身的參照","一個全新的空物件"],explanation:'嚴格模式下獨立呼叫的 this 為 undefined。'},
+    en:{question:'In strict mode, what is `this` inside a standalone-called regular function?',options:["undefined (not defined)","The global window object","A reference to that function","A brand-new empty object"],explanation:'In strict mode, this is undefined.'} },
+
+  { id:35, difficulty:"medium", points:15, answer:3,
+    zh:{question:'運算子 `?.`（可選串連 optional chaining）的功能是什麼？',options:["強制要求屬性一定要存在","把所有 null 值轉換成零","合併兩個物件的所有屬性","安全存取可能不存在的屬性"],explanation:'中間為 null/undefined 時回傳 undefined。'},
+    en:{question:'What does the `?.` (optional chaining) operator do?',options:["Force a property to always exist","Convert all null values to zero","Merge all props of two objects","Safely access possibly missing props"],explanation:'Returns undefined if a link is null/undefined.'} },
+
+  { id:36, difficulty:"medium", points:15, answer:2,
+    zh:{question:'運算式 `"a" && "b"` 的回傳值是什麼？',options:["true （布林真值）","\"a\" （第一個值）","\"b\" （第二個值）","false （布林假值）"],explanation:'&& 回傳最後一個 truthy 的運算元。'},
+    en:{question:'What is the return value of the expression `"a" && "b"`?',options:["true (a boolean truth)","\"a\" (the first value)","\"b\" (the second value)","false (a boolean false)"],explanation:'&& returns the last truthy operand.'} },
+
+  { id:37, difficulty:"trap", points:19, answer:0,
+    zh:{question:'`[1, 2, 3].map(parseInt)` 的結果是什麼？',options:["[1, NaN, NaN]","[1, 2, 3] 原樣回傳","[NaN, NaN, NaN]","[0, 1, 2] 各減一"],explanation:'map 把索引當作 parseInt 的基數。'},
+    en:{question:'What is the result of `[1, 2, 3].map(parseInt)`?',options:["[1, NaN, NaN]","[1, 2, 3] unchanged","[NaN, NaN, NaN]","[0, 1, 2] each minus"],explanation:'map passes the index as parseInt radix.'} },
+
+  { id:38, difficulty:"easy", points:10, answer:2,
+    zh:{question:'運算式 `"5" + 3` 在 JavaScript 中的結果是什麼？',options:["8 （數字相加）","拋出型別錯誤訊息","\"53\" （字串串接）","15 （重複字串）"],explanation:'數字被轉成字串後進行串接。'},
+    en:{question:'What is the result of the expression `"5" + 3` in JavaScript?',options:["8 (added as numbers)","Throws a type error msg","\"53\" (string concat)","15 (repeated string)"],explanation:'The number is coerced to a string and concatenated.'} },
+
+  { id:39, difficulty:"hard", points:25, answer:1,
+    zh:{question:'`Object.freeze(obj)` 的限制是什麼？',options:["會遞迴凍結所有巢狀物件","僅凍結最外層，巢狀仍可改","凍結後仍可新增頂層屬性","會把物件變成不可讀取狀態"],explanation:'freeze 為淺層，巢狀物件不受影響。'},
+    en:{question:'What is a limitation of `Object.freeze(obj)`?',options:["It recursively freezes nested objects","Only top level; nested stays mutable","Top-level props can still be added","It makes the object unreadable too"],explanation:'freeze is shallow; nested objects stay mutable.'} },
+
+  { id:40, difficulty:"hard", points:25, answer:3,
+    zh:{question:'`WeakMap` 與 `Map` 最關鍵的差異是什麼？',options:["WeakMap 可用任意型別當作鍵","WeakMap 會記錄其大小 size","Map 的鍵一定會被垃圾回收","WeakMap 鍵僅限物件且可被回收"],explanation:'WeakMap 的鍵須為物件且不阻止回收。'},
+    en:{question:'What is the key difference between `WeakMap` and `Map`?',options:["WeakMap allows any type as a key","WeakMap exposes its size property","Map keys are always garbage collected","WeakMap keys are objects, GC-eligible"],explanation:'WeakMap keys must be objects and are GC-eligible.'} }
+];
+
+const i18n = {
+  zh: {
+    title: "JavaScript 互動測驗",
+    lang: "English",
+    dark: "🌙 深色",
+    light: "☀️ 淺色",
+    progress: (c, t) => `第 ${c} / ${t} 題`,
+    prev: "上一題",
+    submit: "提交測驗",
+    labels: ["A","B","C","D"],
+    rTitle: "測驗結果",
+    rScore: "總分",
+    rCorrect: "正確題數",
+    rWrong: "錯誤題數",
+    rByDiff: "各難度正確率",
+    dEasy: "簡單",
+    dMedium: "中等",
+    dHard: "困難",
+    dTrap: "陷阱",
+    percentile: (p) => `你的成績超越了約 ${p}% 的測試者`,
+    grades: ["🏆 頂尖專家","⭐ 進階掌握","📘 中等水準","📗 基礎尚可","📕 需要加強"],
+    reviewH: "錯題回顧",
+    yourAns: "你的選擇",
+    correctAns: "正確答案",
+    allCorrect: "🎉 全部答對，沒有錯題！",
+    retry: "重新測驗",
+    copy: "複製結果",
+    copied: "已複製！",
+    summary: (s, c) => `我的 JavaScript 測驗成績：${s} / 670 分，答對 ${c} / 40 題。`
+  },
+  en: {
+    title: "JavaScript Interactive Quiz",
+    lang: "繁體中文",
+    dark: "🌙 Dark",
+    light: "☀️ Light",
+    progress: (c, t) => `Question ${c} / ${t}`,
+    prev: "Previous",
+    submit: "Submit Quiz",
+    labels: ["A","B","C","D"],
+    rTitle: "Your Results",
+    rScore: "Total Score",
+    rCorrect: "Correct",
+    rWrong: "Incorrect",
+    rByDiff: "Accuracy by Difficulty",
+    dEasy: "Easy",
+    dMedium: "Medium",
+    dHard: "Hard",
+    dTrap: "Trap",
+    percentile: (p) => `You scored higher than about ${p}% of test takers`,
+    grades: ["🏆 Top Expert","⭐ Advanced","📘 Intermediate","📗 Basic","📕 Needs Improvement"],
+    reviewH: "Review of Incorrect Answers",
+    yourAns: "Your choice",
+    correctAns: "Correct answer",
+    allCorrect: "🎉 Perfect score — no mistakes!",
+    retry: "Retake Quiz",
+    copy: "Copy Results",
+    copied: "Copied!",
+    summary: (s, c) => `My JavaScript quiz score: ${s} / 670, with ${c} / 40 correct.`
+  }
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+let locked = false;
+
+const $ = (id) => document.getElementById(id);
+
+function initTheme() {
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+}
+function setTheme(mode) {
+  document.documentElement.setAttribute("data-theme", mode);
+  $("themeBtn").textContent = mode === "dark" ? i18n[lang].light : i18n[lang].dark;
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+}
+
+function toggleLang() {
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-Hant" : "en");
+  applyStaticText();
+  if ($("resultView").classList.contains("hidden")) {
+    renderQuestion(true);
+  } else {
+    renderResult();
+  }
+}
+
+function applyStaticText() {
+  const t = i18n[lang];
+  $("appTitle").textContent = t.title;
+  $("langBtn").textContent = t.lang;
+  $("prevBtn").textContent = t.prev;
+  $("submitBtn").textContent = t.submit;
+  const mode = document.documentElement.getAttribute("data-theme");
+  $("themeBtn").textContent = mode === "dark" ? t.light : t.dark;
+  document.title = t.title;
+}
+
+function updateBar() {
+  const answered = answers.filter(a => a !== null).length;
+  $("barFill").style.width = (answered / questions.length * 100) + "%";
+}
+
+function renderQuestion(skipFade) {
+  const t = i18n[lang];
+  const q = questions[current];
+  const data = q[lang];
+  const card = $("qcard");
+
+  const paint = () => {
+    $("progressText").textContent = t.progress(current + 1, questions.length);
+    $("questionText").textContent = data.question;
+    const box = $("optionsBox");
+    box.innerHTML = "";
+    data.options.forEach((opt, i) => {
+      const el = document.createElement("button");
+      el.className = "option" + (answers[current] === i ? " selected" : "");
+      el.innerHTML = `<span class="label">${t.labels[i]}</span><span>${escapeHtml(opt)}</span>`;
+      el.onclick = () => choose(i);
+      box.appendChild(el);
+    });
+    $("prevBtn").disabled = current === 0;
+    const isLast = current === questions.length - 1;
+    const allAnswered = answers.every(a => a !== null);
+    $("submitBtn").classList.toggle("hidden", !(isLast && answers[current] !== null && allAnswered));
+    card.classList.remove("fade");
+  };
+
+  if (skipFade) { paint(); }
+  else { card.classList.add("fade"); setTimeout(paint, 150); }
+}
+
+function choose(i) {
+  if (locked) return;
+  answers[current] = i;
+  // show selection
+  const opts = document.querySelectorAll(".option");
+  opts.forEach((el, idx) => el.classList.toggle("selected", idx === i));
+  updateBar();
+
+  const isLast = current === questions.length - 1;
+  if (isLast) {
+    // do not auto-advance; show submit button if all answered
+    const allAnswered = answers.every(a => a !== null);
+    $("submitBtn").classList.toggle("hidden", !allAnswered);
+    return;
+  }
+  locked = true;
+  setTimeout(() => {
+    locked = false;
+    current++;
+    renderQuestion();
+  }, 400);
+}
+
+function prev() {
+  if (current > 0) { current--; renderQuestion(); }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// normal CDF via erf approximation
+function normalCdf(x, mean, sd) {
+  const z = (x - mean) / (sd * Math.SQRT2);
+  return 0.5 * (1 + erf(z));
+}
+function erf(x) {
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function computeResult() {
+  let score = 0, correct = 0;
+  const byDiff = { easy:{c:0,n:0}, medium:{c:0,n:0}, hard:{c:0,n:0}, trap:{c:0,n:0} };
+  const wrong = [];
+  questions.forEach((q, idx) => {
+    byDiff[q.difficulty].n++;
+    if (answers[idx] === q.answer) { score += q.points; correct++; byDiff[q.difficulty].c++; }
+    else wrong.push(idx);
+  });
+  return { score, correct, wrong, byDiff };
+}
+
+function gradeIndex(score) {
+  if (score >= 600) return 0;
+  if (score >= 500) return 1;
+  if (score >= 380) return 2;
+  if (score >= 250) return 3;
+  return 4;
+}
+
+function renderResult() {
+  const t = i18n[lang];
+  const { score, correct, wrong, byDiff } = computeResult();
+  const total = questions.reduce((s,q)=>s+q.points,0);
+  const pct = Math.max(0, Math.min(100, Math.round(normalCdf(score, 301.5, 100.5) * 100)));
+  const gi = gradeIndex(score);
+
+  let html = `<h2>${t.rTitle}</h2>`;
+  html += `<div class="score-big">${score} / ${total}</div>`;
+  html += `<div class="grade">${t.grades[gi]}</div>`;
+  html += `<div class="stat-grid">
+    <div class="stat"><div class="k">${t.rCorrect}</div><div class="v">${correct} / 40</div></div>
+    <div class="stat"><div class="k">${t.rWrong}</div><div class="v">${40 - correct} / 40</div></div>
+  </div>`;
+  html += `<div class="section-h">${t.rByDiff}</div>`;
+  html += `<div class="stat-grid">
+    <div class="stat"><div class="k">${t.dEasy}</div><div class="v">${byDiff.easy.c} / ${byDiff.easy.n}</div></div>
+    <div class="stat"><div class="k">${t.dMedium}</div><div class="v">${byDiff.medium.c} / ${byDiff.medium.n}</div></div>
+    <div class="stat"><div class="k">${t.dHard}</div><div class="v">${byDiff.hard.c} / ${byDiff.hard.n}</div></div>
+    <div class="stat"><div class="k">${t.dTrap}</div><div class="v">${byDiff.trap.c} / ${byDiff.trap.n}</div></div>
+  </div>`;
+  html += `<div class="percentile">${t.percentile(pct)}</div>`;
+
+  html += `<div class="section-h">${t.reviewH}</div>`;
+  if (wrong.length === 0) {
+    html += `<div class="review-item">${t.allCorrect}</div>`;
+  } else {
+    wrong.forEach(idx => {
+      const q = questions[idx];
+      const data = q[lang];
+      const userIdx = answers[idx];
+      const userTxt = userIdx === null ? "—" : `${t.labels[userIdx]}. ${escapeHtml(data.options[userIdx])}`;
+      const corrTxt = `${t.labels[q.answer]}. ${escapeHtml(data.options[q.answer])}`;
+      html += `<div class="review-item">
+        <div class="review-q">${escapeHtml(data.question)}</div>
+        <div class="review-line mark-wrong">${t.yourAns}: ${userTxt}</div>
+        <div class="review-line mark-correct">${t.correctAns}: ${corrTxt}</div>
+        <div class="review-exp">${escapeHtml(data.explanation)}</div>
+      </div>`;
+    });
+  }
+
+  html += `<div class="result-actions">
+    <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+    <button class="btn" id="copyBtn">${t.copy}</button>
+  </div>`;
+
+  $("resultView").innerHTML = html;
+  $("retryBtn").onclick = retry;
+  $("copyBtn").onclick = () => {
+    const text = t.summary(score, correct);
+    navigator.clipboard.writeText(text).then(() => {
+      $("copyBtn").textContent = t.copied;
+      setTimeout(() => { $("copyBtn").textContent = t.copy; }, 1500);
+    });
+  };
+}
+
+function submit() {
+  $("quizView").classList.add("hidden");
+  $("resultView").classList.remove("hidden");
+  $("barFill").style.width = "100%";
+  window.scrollTo(0, 0);
+  renderResult();
+}
+
+function retry() {
+  for (let i = 0; i < answers.length; i++) answers[i] = null;
+  current = 0;
+  $("resultView").classList.add("hidden");
+  $("quizView").classList.remove("hidden");
+  updateBar();
+  renderQuestion(true);
+  window.scrollTo(0, 0);
+}
+
+// wire up
+$("langBtn").onclick = toggleLang;
+$("themeBtn").onclick = toggleTheme;
+$("prevBtn").onclick = prev;
+$("submitBtn").onclick = submit;
+
+initTheme();
+applyStaticText();
+renderQuestion(true);
+updateBar();
+</script>
+</body>
+</html>

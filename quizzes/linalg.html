@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>線性代數互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --option-bg: #FFFFFF;
+    --option-hover: #F3F4F6;
+    --track: #E5E7EB;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --option-bg: #1A1A1A;
+    --option-hover: #1F2937;
+    --track: #374151;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    transition: background-color 0.2s, color 0.2s;
+    min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .header-inner {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .title { font-size: 17px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .btn:hover { background: var(--option-hover); }
+  main { max-width: 760px; margin: 0 auto; padding: 28px 20px 110px; }
+  .progress-text { color: var(--text-secondary); font-size: 14px; margin-bottom: 18px; }
+  .question-card { transition: opacity 0.25s ease; }
+  .question-card.fade { opacity: 0; }
+  .question-text { font-size: 20px; font-weight: 600; margin-bottom: 22px; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    background: var(--option-bg);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.15s, border-color 0.15s;
+    text-align: left;
+    width: 100%;
+    color: var(--text);
+    font-family: inherit;
+    line-height: 1.5;
+  }
+  .option:hover { background: var(--option-hover); }
+  .option.selected { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+  .option-label { font-weight: 700; flex-shrink: 0; }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 26px; gap: 12px; }
+  .nav-btn {
+    font-family: inherit;
+    font-size: 15px;
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .nav-btn:hover { background: var(--option-hover); }
+  .nav-btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .nav-btn:disabled { opacity: 0; pointer-events: none; }
+  .nav-btn.hidden { visibility: hidden; }
+  .progress-bar-wrap {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 6px;
+    background: var(--track);
+  }
+  .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s ease; }
+
+  /* Results */
+  .results h2 { font-size: 24px; margin-bottom: 20px; }
+  .score-big { font-size: 44px; font-weight: 800; color: var(--accent); }
+  .score-sub { color: var(--text-secondary); font-size: 15px; margin-bottom: 24px; }
+  .grade { font-size: 22px; font-weight: 700; margin: 8px 0 6px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0; }
+  .stat-box { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .stat-label { color: var(--text-secondary); font-size: 13px; }
+  .stat-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .percentile { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 16px; }
+  .diff-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+  .diff-table td { padding: 8px 4px; border-bottom: 1px solid var(--border); font-size: 15px; }
+  .diff-table td:last-child { text-align: right; font-weight: 600; }
+  .review-title { font-size: 18px; font-weight: 700; margin: 28px 0 14px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; }
+  .review-q { font-weight: 600; margin-bottom: 10px; }
+  .review-line { font-size: 15px; margin: 4px 0; }
+  .mark-wrong { color: var(--wrong); font-weight: 600; }
+  .mark-correct { color: var(--correct); font-weight: 600; }
+  .review-expl { color: var(--text-secondary); font-size: 14px; margin-top: 8px; }
+  .result-actions { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; }
+  .all-correct { color: var(--correct); font-weight: 600; margin: 20px 0; }
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: 1fr; }
+    .question-text { font-size: 18px; }
+    .title { font-size: 15px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="title" id="appTitle">線性代數互動測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="quizView">
+    <div class="progress-text" id="progressText"></div>
+    <div class="question-card" id="questionCard"></div>
+    <div class="nav-row">
+      <button class="nav-btn" id="prevBtn"></button>
+      <button class="nav-btn primary" id="nextBtn"></button>
+    </div>
+  </div>
+  <div id="resultView" style="display:none;"></div>
+</main>
+
+<div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+
+<script>
+const questions = [
+  // ---- presentation order: difficulties mixed ----
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{question:"單位矩陣 Iₙ 的定義是下列何者？",
+      options:["主對角線元素皆為 1、其餘元素皆為 0 的方陣","主對角線元素皆為 0、其餘元素皆為 1 的方陣","所有位置的元素皆等於 1 的方陣","第一列元素皆為 1、其餘元素皆為 0 的方陣"],
+      explanation:"單位矩陣主對角線為 1、其餘為 0，滿足 AI=IA=A。"},
+    en:{question:"Which is the definition of the identity matrix Iₙ?",
+      options:["A square matrix with 1s on the main diagonal and 0s elsewhere","A square matrix with 0s on the main diagonal and 1s elsewhere","A square matrix in which every entry equals 1","A square matrix whose first row is all 1s and the rest 0s"],
+      explanation:"The identity has 1s on the diagonal, 0s elsewhere; AI=IA=A."} },
+
+  { id:2, difficulty:"medium", points:15, answer:2,
+    zh:{question:"二階方陣 [[a, b], [c, d]] 的行列式為何？",
+      options:["ab − cd","ac − bd","ad − bc","ad + bc"],
+      explanation:"二階行列式 = 主對角乘積 − 副對角乘積 = ad − bc。"},
+    en:{question:"What is the determinant of the 2×2 matrix [[a, b], [c, d]]?",
+      options:["ab − cd","ac − bd","ad − bc","ad + bc"],
+      explanation:"A 2×2 determinant is ad − bc (main minus anti-diagonal)."} },
+
+  { id:3, difficulty:"hard", points:25, answer:1,
+    zh:{question:"設 A 為 m×n 矩陣，秩—零度定理描述下列哪個關係？",
+      options:["rank(A) + nullity(A) = m","rank(A) + nullity(A) = n","rank(A) × nullity(A) = n","rank(A) − nullity(A) = n"],
+      explanation:"秩 + 零度 = 行數（變數個數）n。"},
+    en:{question:"For an m×n matrix A, which relation does the Rank–Nullity Theorem state?",
+      options:["rank(A) + nullity(A) = m","rank(A) + nullity(A) = n","rank(A) × nullity(A) = n","rank(A) − nullity(A) = n"],
+      explanation:"Rank plus nullity equals n, the number of columns."} },
+
+  { id:4, difficulty:"medium", points:15, answer:3,
+    zh:{question:"矩陣乘積 AB 要能成立，A 與 B 的維度須滿足什麼條件？",
+      options:["A 的列數等於 B 的行數","A 與 B 兩者都必須是方陣","A 的列數等於 B 的列數","A 的行數等於 B 的列數"],
+      explanation:"AB 須 A 的行數（直）等於 B 的列數（橫）。"},
+    en:{question:"For the product AB to be defined, what must hold about the sizes of A and B?",
+      options:["The number of rows of A equals the columns of B","Both A and B must be square matrices","The number of rows of A equals the rows of B","The number of columns of A equals the rows of B"],
+      explanation:"For AB, the columns of A must equal the rows of B."} },
+
+  { id:5, difficulty:"trap", points:19, answer:3,
+    zh:{question:"對可乘的矩陣 A、B，乘積的轉置 (AB)ᵀ 等於下列何者？",
+      options:["AᵀBᵀ","AB","BA","BᵀAᵀ"],
+      explanation:"轉置會反序：(AB)ᵀ = BᵀAᵀ，常被誤寫成 AᵀBᵀ。"},
+    en:{question:"For conformable matrices A and B, the transpose of the product (AB)ᵀ equals which one?",
+      options:["AᵀBᵀ","AB","BA","BᵀAᵀ"],
+      explanation:"Transpose reverses order: (AB)ᵀ = BᵀAᵀ, not AᵀBᵀ."} },
+
+  { id:6, difficulty:"easy", points:10, answer:1,
+    zh:{question:"兩個 n 維向量做內積（點積）後得到的結果是什麼？",
+      options:["一個 n 維的向量","一個純量（單一數值）","一個 n×n 的矩陣","一個 2n 維的向量"],
+      explanation:"內積把兩向量對應相乘再相加，結果是一個純量。"},
+    en:{question:"What kind of result does the dot product of two n-dimensional vectors give?",
+      options:["An n-dimensional vector","A scalar (a single number)","An n×n matrix","A 2n-dimensional vector"],
+      explanation:"The dot product multiplies and sums components, giving a scalar."} },
+
+  { id:7, difficulty:"medium", points:15, answer:0,
+    zh:{question:"一個方陣可逆（存在反矩陣）的充要條件是什麼？",
+      options:["它的行列式不等於零","它的所有元素皆不為零","它的主對角線元素皆為正","它的跡（trace）不等於零"],
+      explanation:"方陣可逆 ⟺ 行列式 det ≠ 0。"},
+    en:{question:"What is the necessary and sufficient condition for a square matrix to be invertible?",
+      options:["Its determinant is not equal to zero","All of its entries are nonzero numbers","Its main-diagonal entries are positive","Its trace is not equal to zero"],
+      explanation:"A matrix is invertible iff its determinant is nonzero."} },
+
+  { id:8, difficulty:"hard", points:25, answer:2,
+    zh:{question:"一個上三角矩陣的特徵值是下列何者？",
+      options:["它每一列元素的總和","它主對角線元素的乘積","它主對角線上的各個元素","它行列式的所有因數"],
+      explanation:"三角矩陣的特徵值即為主對角線上的各個元素。"},
+    en:{question:"What are the eigenvalues of an upper-triangular matrix?",
+      options:["The sum of the entries in each of its rows","The product of its main-diagonal entries","The individual entries on its main diagonal","All the divisors of its determinant"],
+      explanation:"A triangular matrix's eigenvalues are its diagonal entries."} },
+
+  { id:9, difficulty:"medium", points:15, answer:1,
+    zh:{question:"矩陣的「秩」(rank) 最精確的描述是下列何者？",
+      options:["矩陣中非零元素的總個數","線性獨立的列（或行）的最大數目","主對角線上非零元素的個數","化簡後出現的零列的數目"],
+      explanation:"秩 = 線性獨立列（或行）的最大數目，即列空間維度。"},
+    en:{question:"Which most precisely describes the rank of a matrix?",
+      options:["The total number of nonzero entries in the matrix","The maximum number of linearly independent rows or columns","The number of nonzero entries on the main diagonal","The number of zero rows appearing after reduction"],
+      explanation:"Rank is the maximum number of independent rows or columns."} },
+
+  { id:10, difficulty:"easy", points:10, answer:2,
+    zh:{question:"向量空間 Rⁿ 的維度是多少？",
+      options:["維度為 1","維度為 2n","維度為 n","維度為 n²"],
+      explanation:"Rⁿ 的標準基有 n 個向量，故維度為 n。"},
+    en:{question:"What is the dimension of the vector space Rⁿ?",
+      options:["The dimension is 1","The dimension is 2n","The dimension is n","The dimension is n²"],
+      explanation:"The standard basis of Rⁿ has n vectors, so its dimension is n."} },
+
+  { id:11, difficulty:"hard", points:25, answer:3,
+    zh:{question:"n 階方陣 A 可對角化（diagonalizable）的充要條件是什麼？",
+      options:["A 的行列式不等於零","A 是一個對稱矩陣","A 的特徵值兩兩相異","A 擁有 n 個線性獨立的特徵向量"],
+      explanation:"可對角化 ⟺ 有 n 個線性獨立特徵向量；相異特徵值只是充分條件。"},
+    en:{question:"What is the necessary and sufficient condition for an n×n matrix A to be diagonalizable?",
+      options:["The determinant of A is not equal to zero","A is a symmetric matrix","The eigenvalues of A are pairwise distinct","A has n linearly independent eigenvectors"],
+      explanation:"Diagonalizable iff A has n independent eigenvectors; distinct eigenvalues is only sufficient."} },
+
+  { id:12, difficulty:"medium", points:15, answer:2,
+    zh:{question:"一組向量「線性獨立」的定義是什麼？",
+      options:["其中任兩個向量都互相垂直","其中沒有任何一個是零向量","使線性組合為零的係數只有全零解","它們能張成整個向量空間"],
+      explanation:"線性獨立 ⟺ c₁v₁+…+cₙvₙ=0 僅有全零解。"},
+    en:{question:"What is the definition of a linearly independent set of vectors?",
+      options:["Every pair among the vectors is mutually perpendicular","None of the vectors in the set is the zero vector","The only coefficients making their combination zero are all zero","They are able to span the entire vector space"],
+      explanation:"Independence: the only solution to Σcᵢvᵢ=0 is all cᵢ=0."} },
+
+  { id:13, difficulty:"trap", points:19, answer:3,
+    zh:{question:"在 R³ 空間中任取 4 個向量，關於它們的線性關係，下列何者必定成立？",
+      options:["它們一定能張成整個 R³","它們一定兩兩互相正交","它們一定彼此線性獨立","它們一定彼此線性相依"],
+      explanation:"R³ 維度為 3，超過 3 個向量必線性相依；數量多不代表能張成。"},
+    en:{question:"Take any 4 vectors in R³. Which statement about them must be true?",
+      options:["They must span the whole of R³","They must be pairwise orthogonal to one another","They must be linearly independent of each other","They must be linearly dependent on each other"],
+      explanation:"In R³ more than 3 vectors are always dependent, and need not span."} },
+
+  { id:14, difficulty:"easy", points:10, answer:3,
+    zh:{question:"兩個矩陣可以相加的條件是什麼？",
+      options:["兩個矩陣都是方陣即可相加","第一個的行數等於第二個的列數","兩個矩陣的元素總數相等即可","兩個矩陣的列數與行數完全相同"],
+      explanation:"矩陣相加須維度完全相同，逐元素相加。"},
+    en:{question:"What is the condition for two matrices to be addable?",
+      options:["It suffices that both matrices are square","The columns of the first equal the rows of the second","It suffices that they have the same total entry count","The two matrices have identical numbers of rows and columns"],
+      explanation:"Addition requires identical dimensions; entries add elementwise."} },
+
+  { id:15, difficulty:"medium", points:15, answer:3,
+    zh:{question:"對方陣 A 而言，純量 λ 是其「特徵值」(eigenvalue) 的定義為？",
+      options:["存在非零向量 v 使得 Av = v + λ","存在非零向量 v 使得 Av = λ + v","對於所有向量 v 皆有 Av = λv","存在非零向量 v 使得 Av = λv"],
+      explanation:"特徵值滿足 Av = λv，其中 v 為非零特徵向量。"},
+    en:{question:"For a square matrix A, what is the definition of a scalar λ being an eigenvalue?",
+      options:["There is a nonzero vector v with Av = v + λ","There is a nonzero vector v with Av = λ + v","For every vector v it holds that Av = λv","There is a nonzero vector v with Av = λv"],
+      explanation:"An eigenvalue satisfies Av = λv for some nonzero v."} },
+
+  { id:16, difficulty:"hard", points:25, answer:0,
+    zh:{question:"Cayley–Hamilton 定理的內容是下列何者？",
+      options:["每個方陣都滿足自己的特徵方程式","每個方陣都可被對角化為三角形式","每個方陣的特徵值都必定是實數","每個方陣都等於其特徵值的乘積"],
+      explanation:"Cayley–Hamilton：將 A 代入自身特徵多項式會得到零矩陣。"},
+    en:{question:"What does the Cayley–Hamilton theorem state?",
+      options:["Every square matrix satisfies its own characteristic equation","Every square matrix can be diagonalized into triangular form","Every square matrix has eigenvalues that are all real","Every square matrix equals the product of its eigenvalues"],
+      explanation:"A matrix satisfies its own characteristic polynomial."} },
+
+  { id:17, difficulty:"medium", points:15, answer:0,
+    zh:{question:"兩個非零向量「互相正交」(orthogonal) 的判斷條件是什麼？",
+      options:["它們兩者的內積等於零","它們兩者的內積等於一","它們兩者的長度（範數）相等","它們兩者互為對方的純量倍"],
+      explanation:"兩向量正交 ⟺ 其內積為零。"},
+    en:{question:"What is the test for two nonzero vectors to be mutually orthogonal?",
+      options:["Their dot product is equal to zero","Their dot product is equal to one","Their lengths (norms) are equal to each other","Each one is a scalar multiple of the other"],
+      explanation:"Orthogonal vectors have a dot product of zero."} },
+
+  { id:18, difficulty:"easy", points:10, answer:0,
+    zh:{question:"矩陣的「轉置」(transpose) 是指下列何種運算？",
+      options:["將矩陣的列與行互相對調","將矩陣的每個元素取倒數","將矩陣沿主對角線取負號","將矩陣的列順序前後顛倒"],
+      explanation:"轉置把第 i 列第 j 行的元素移到第 j 列第 i 行。"},
+    en:{question:"What operation does the transpose of a matrix refer to?",
+      options:["Interchanging the rows and columns of the matrix","Taking the reciprocal of every entry of the matrix","Negating the matrix across its main diagonal","Reversing the order of the rows of the matrix"],
+      explanation:"Transpose moves entry (i,j) to position (j,i)."} },
+
+  { id:19, difficulty:"medium", points:15, answer:1,
+    zh:{question:"對兩個同階方陣 A、B，下列哪一個行列式性質是正確的？",
+      options:["det(A + B) = det(A) + det(B)","det(AB) = det(A) · det(B)","det(AB) = det(A) + det(B)","det(A + B) = det(A) · det(B)"],
+      explanation:"行列式對乘法可分配：det(AB)=det(A)·det(B)。"},
+    en:{question:"For two square matrices A and B of the same size, which determinant property is correct?",
+      options:["det(A + B) = det(A) + det(B)","det(AB) = det(A) · det(B)","det(AB) = det(A) + det(B)","det(A + B) = det(A) · det(B)"],
+      explanation:"The determinant is multiplicative: det(AB)=det(A)det(B)."} },
+
+  { id:20, difficulty:"hard", points:25, answer:1,
+    zh:{question:"矩陣 [[4, 1], [2, 3]] 的特徵值為下列何者？",
+      options:["λ = 1 與 λ = 6","λ = 2 與 λ = 5","λ = 3 與 λ = 4","λ = −2 與 λ = 5"],
+      explanation:"解特徵方程 λ²−7λ+10=0，得 λ = 2 與 5。"},
+    en:{question:"What are the eigenvalues of the matrix [[4, 1], [2, 3]]?",
+      options:["λ = 1 and λ = 6","λ = 2 and λ = 5","λ = 3 and λ = 4","λ = −2 and λ = 5"],
+      explanation:"Solving λ²−7λ+10=0 gives λ = 2 and 5."} },
+
+  { id:21, difficulty:"trap", points:19, answer:0,
+    zh:{question:"關於行列式的加法，下列哪一個敘述是正確的？",
+      options:["一般而言 det(A+B) 不等於 det(A)+det(B)","對任意方陣 det(A+B) 恆等於 det(A)+det(B)","僅當 A、B 皆對稱時 det(A+B)=det(A)+det(B)","僅當 A、B 皆可逆時 det(A+B)=det(A)+det(B)"],
+      explanation:"行列式對加法不具線性，det(A+B)≠det(A)+det(B)（常見誤解）。"},
+    en:{question:"Regarding the addition of determinants, which statement is correct?",
+      options:["In general det(A+B) does not equal det(A)+det(B)","For any square matrices det(A+B) always equals det(A)+det(B)","det(A+B)=det(A)+det(B) holds only when A,B are symmetric","det(A+B)=det(A)+det(B) holds only when A,B are invertible"],
+      explanation:"The determinant is not additive; det(A+B)≠det(A)+det(B) in general."} },
+
+  { id:22, difficulty:"easy", points:10, answer:1,
+    zh:{question:"向量空間中的「零向量」具有什麼性質？",
+      options:["與任意向量內積後會得到該向量本身","與任意向量相加後會維持該向量不變","與任意向量相加後會得到零純量","與任意向量相乘後會得到單位向量"],
+      explanation:"零向量是加法單位元素，v + 0 = v。"},
+    en:{question:"What property does the zero vector in a vector space have?",
+      options:["Its dot product with any vector returns that same vector","Adding it to any vector leaves that vector unchanged","Adding it to any vector yields the zero scalar value","Multiplying it with any vector gives a unit vector"],
+      explanation:"The zero vector is the additive identity: v + 0 = v."} },
+
+  { id:23, difficulty:"medium", points:15, answer:2,
+    zh:{question:"矩陣 A 的「零空間」(null space) 是指下列哪個集合？",
+      options:["所有使得 Ax = x 成立的向量 x","所有可以被寫成 Ax 形式的向量","所有使得 Ax = 0 成立的向量 x","所有由 A 的列所張成的向量"],
+      explanation:"零空間（核）= {x : Ax = 0}。"},
+    en:{question:"The null space of a matrix A refers to which set?",
+      options:["All vectors x that satisfy the equation Ax = x","All vectors that can be written in the form Ax","All vectors x that satisfy the equation Ax = 0","All vectors that are spanned by the rows of A"],
+      explanation:"The null space (kernel) is {x : Ax = 0}."} },
+
+  { id:24, difficulty:"hard", points:25, answer:2,
+    zh:{question:"若一個方陣有兩列完全相同，則它的行列式必定為何值？",
+      options:["等於那兩列元素的總和","等於 1","等於 0","等於該矩陣的跡"],
+      explanation:"有兩列相同（線性相依），行列式必為 0。"},
+    en:{question:"If a square matrix has two identical rows, what must its determinant equal?",
+      options:["Equal to the sum of those two rows' entries","Equal to 1","Equal to 0","Equal to the trace of that matrix"],
+      explanation:"Two identical rows make the determinant zero."} },
+
+  { id:25, difficulty:"medium", points:15, answer:3,
+    zh:{question:"「對稱矩陣」(symmetric matrix) 滿足下列哪一個等式？",
+      options:["A = −A","A = A⁻¹","AᵀA = I","A = Aᵀ"],
+      explanation:"對稱矩陣等於自身的轉置：A = Aᵀ。"},
+    en:{question:"A symmetric matrix satisfies which of the following equalities?",
+      options:["A = −A","A = A⁻¹","AᵀA = I","A = Aᵀ"],
+      explanation:"A symmetric matrix equals its own transpose: A = Aᵀ."} },
+
+  { id:26, difficulty:"easy", points:10, answer:2,
+    zh:{question:"「對角矩陣」(diagonal matrix) 的定義為何？",
+      options:["主對角線元素全部相等的方陣","主對角線元素全部為零的方陣","主對角線以外元素全部為零的方陣","上三角部分元素全部為零的方陣"],
+      explanation:"對角矩陣只有主對角線位置可有非零值。"},
+    en:{question:"What is the definition of a diagonal matrix?",
+      options:["A square matrix whose diagonal entries are all equal","A square matrix whose diagonal entries are all zero","A square matrix whose off-diagonal entries are all zero","A square matrix whose upper-triangular entries are all zero"],
+      explanation:"A diagonal matrix can have nonzero values only on its diagonal."} },
+
+  { id:27, difficulty:"medium", points:15, answer:0,
+    zh:{question:"一組向量的「生成空間」(span) 是指什麼？",
+      options:["由它們所有線性組合構成的集合","由它們之中最長的那個向量決定","由它們兩兩之間內積構成的集合","由它們所有排列方式構成的集合"],
+      explanation:"生成空間 = 該組向量所有線性組合所成的集合。"},
+    en:{question:"What does the span of a set of vectors refer to?",
+      options:["The set of all linear combinations of those vectors","The set determined by the longest of those vectors","The set of all pairwise dot products among them","The set of all possible orderings of those vectors"],
+      explanation:"The span is the set of all their linear combinations."} },
+
+  { id:28, difficulty:"hard", points:25, answer:3,
+    zh:{question:"Gram–Schmidt 正交化程序的主要功能是什麼？",
+      options:["求出一個方陣的所有特徵值","將一個方陣分解成兩個三角矩陣","把任意矩陣化簡為列簡化梯形式","由獨立向量造出一組正交的基底"],
+      explanation:"Gram–Schmidt 把線性獨立向量轉成正交（或單範正交）基底。"},
+    en:{question:"What is the main function of the Gram–Schmidt process?",
+      options:["To find all of the eigenvalues of a square matrix","To factor a square matrix into two triangular matrices","To reduce any matrix to row-reduced echelon form","To build an orthogonal basis from independent vectors"],
+      explanation:"Gram–Schmidt converts independent vectors into an orthogonal basis."} },
+
+  { id:29, difficulty:"medium", points:15, answer:1,
+    zh:{question:"向量空間的一組「基底」(basis) 必須同時滿足哪兩個條件？",
+      options:["互相正交且每個向量長度皆為一","線性獨立且能生成整個向量空間","元素個數最多且兩兩互相正交","線性獨立且每個向量皆為單位向量"],
+      explanation:"基底須同時線性獨立且能生成整個空間。"},
+    en:{question:"A basis of a vector space must satisfy which two conditions together?",
+      options:["Mutually orthogonal and each of unit length","Linearly independent and spanning the whole space","Maximal in count and mutually orthogonal in pairs","Linearly independent and each being a unit vector"],
+      explanation:"A basis is linearly independent and spans the space."} },
+
+  { id:30, difficulty:"easy", points:10, answer:3,
+    zh:{question:"將矩陣 A 乘以純量 k 的運算結果是什麼？",
+      options:["只將主對角線的每個元素乘以 k","只將第一列的每個元素乘以 k","將矩陣的每個元素都加上 k","將矩陣的每個元素都乘以 k"],
+      explanation:"純量乘法是對矩陣每個元素同乘 k。"},
+    en:{question:"What is the result of multiplying a matrix A by a scalar k?",
+      options:["Multiply only each main-diagonal entry by k","Multiply only each entry of the first row by k","Add the value k to every entry of the matrix","Multiply every single entry of the matrix by k"],
+      explanation:"Scalar multiplication multiplies every entry by k."} },
+
+  { id:31, difficulty:"trap", points:19, answer:1,
+    zh:{question:"若 λ 是方陣 A 的一個特徵值，則關於 A² 的特徵值，下列何者正確？",
+      options:["A² 必定有一個特徵值為 2λ","A² 必定有一個特徵值為 λ²","A² 必定有一個特徵值為 λ","A² 必定有一個特徵值為 √λ"],
+      explanation:"若 Av=λv，則 A²v=λ²v，特徵值為 λ²（常被誤認為 2λ）。"},
+    en:{question:"If λ is an eigenvalue of a square matrix A, which statement about the eigenvalues of A² is correct?",
+      options:["A² must have an eigenvalue equal to 2λ","A² must have an eigenvalue equal to λ²","A² must have an eigenvalue equal to λ","A² must have an eigenvalue equal to √λ"],
+      explanation:"If Av=λv then A²v=λ²v, so the eigenvalue is λ² (not 2λ)."} },
+
+  { id:32, difficulty:"hard", points:25, answer:0,
+    zh:{question:"根據譜定理（Spectral Theorem），實對稱矩陣具有下列哪個性質？",
+      options:["特徵值皆為實數且可被正交對角化","特徵值皆為正數且該矩陣必定可逆","特徵值皆為複數且彼此兩兩相異","特徵值皆為零或一且該矩陣必奇異"],
+      explanation:"實對稱矩陣特徵值為實數，且可由正交矩陣對角化。"},
+    en:{question:"By the Spectral Theorem, a real symmetric matrix has which property?",
+      options:["Its eigenvalues are real and it is orthogonally diagonalizable","Its eigenvalues are positive and the matrix is invertible","Its eigenvalues are complex and all distinct from each other","Its eigenvalues are zero or one and the matrix is singular"],
+      explanation:"A real symmetric matrix has real eigenvalues and is orthogonally diagonalizable."} },
+
+  { id:33, difficulty:"medium", points:15, answer:2,
+    zh:{question:"我們說一個線性方程組是「相容的」(consistent)，意思是？",
+      options:["它恰好只有唯一一組解","它的係數矩陣是一個方陣","它至少存在著一組解","它的解當中沒有自由變數"],
+      explanation:"相容指至少有一組解（可能唯一，也可能無窮多）。"},
+    en:{question:"When we say a system of linear equations is consistent, it means?",
+      options:["It has exactly one unique solution only","Its coefficient matrix is a square matrix","It has at least one solution existing","Its solution contains no free variables"],
+      explanation:"Consistent means at least one solution exists."} },
+
+  { id:34, difficulty:"easy", points:10, answer:0,
+    zh:{question:"下列何者是「方陣」(square matrix) 的定義？",
+      options:["列數與行數彼此相等的矩陣","所有元素皆為正數的矩陣","行列式不等於零的矩陣","能夠求出反矩陣的矩陣"],
+      explanation:"方陣指列數 = 行數，與是否可逆無關。"},
+    en:{question:"Which is the definition of a square matrix?",
+      options:["A matrix whose row and column counts are equal","A matrix in which every entry is a positive number","A matrix whose determinant is not equal to zero","A matrix for which an inverse can be found"],
+      explanation:"Square means rows = columns, regardless of invertibility."} },
+
+  { id:35, difficulty:"medium", points:15, answer:3,
+    zh:{question:"n 階單位矩陣 Iₙ 的行列式值為何？",
+      options:["行列式為 0","行列式為 n","行列式為 n²","行列式為 1"],
+      explanation:"單位矩陣為三角矩陣，行列式 = 對角線乘積 = 1。"},
+    en:{question:"What is the determinant of the n×n identity matrix Iₙ?",
+      options:["The determinant is 0","The determinant is n","The determinant is n²","The determinant is 1"],
+      explanation:"The identity is triangular; its determinant is 1."} },
+
+  { id:36, difficulty:"hard", points:25, answer:1,
+    zh:{question:"一個實對稱矩陣為「正定」(positive definite) 的等價條件是什麼？",
+      options:["它的所有元素都是正數","它的所有特徵值都是正數","它的行列式為正且跡為正","它的主對角線元素都是正數"],
+      explanation:"正定 ⟺ 所有特徵值皆 > 0（等價於對任意非零 x，xᵀAx>0）。"},
+    en:{question:"What is an equivalent condition for a real symmetric matrix to be positive definite?",
+      options:["All of its entries are positive numbers","All of its eigenvalues are positive numbers","Its determinant is positive and its trace is positive","All of its main-diagonal entries are positive numbers"],
+      explanation:"Positive definite iff all eigenvalues are positive (xᵀAx>0)."} },
+
+  { id:37, difficulty:"medium", points:15, answer:0,
+    zh:{question:"對 n 階方陣 A 與純量 k，下列哪一個行列式關係正確？",
+      options:["det(kA) = kⁿ · det(A)","det(kA) = k · det(A)","det(kA) = kⁿ⁻¹ · det(A)","det(kA) = nk · det(A)"],
+      explanation:"每一列同乘 k，共 n 列，故可提出因數 kⁿ。"},
+    en:{question:"For an n×n matrix A and a scalar k, which determinant relation is correct?",
+      options:["det(kA) = kⁿ · det(A)","det(kA) = k · det(A)","det(kA) = kⁿ⁻¹ · det(A)","det(kA) = nk · det(A)"],
+      explanation:"Scaling all n rows by k pulls out a factor of kⁿ."} },
+
+  { id:38, difficulty:"easy", points:10, answer:1,
+    zh:{question:"一個方陣的「跡」(trace) 是指什麼？",
+      options:["它所有位置元素的總和","它主對角線元素的總和","它主對角線元素的乘積","它行列式展開後的常數項"],
+      explanation:"跡 = 主對角線元素之和。"},
+    en:{question:"What is the trace of a square matrix?",
+      options:["The sum of all the entries of the matrix","The sum of the entries on the main diagonal","The product of the entries on the main diagonal","The constant term of the determinant expansion"],
+      explanation:"The trace is the sum of the main-diagonal entries."} },
+
+  { id:39, difficulty:"trap", points:19, answer:2,
+    zh:{question:"關於可逆方陣與其特徵值的關係，下列哪個敘述是正確的？",
+      options:["可逆矩陣必定有一個特徵值等於零","可逆矩陣的特徵值必定全部為正數","可逆矩陣的特徵值必定全部都不為零","可逆矩陣的特徵值必定全部為實數"],
+      explanation:"0 為特徵值 ⟺ 矩陣奇異；故可逆矩陣的特徵值皆非零。"},
+    en:{question:"Regarding an invertible matrix and its eigenvalues, which statement is correct?",
+      options:["An invertible matrix must have an eigenvalue of zero","An invertible matrix must have all-positive eigenvalues","An invertible matrix must have all-nonzero eigenvalues","An invertible matrix must have all eigenvalues be real"],
+      explanation:"0 is an eigenvalue iff the matrix is singular; invertible means all nonzero."} },
+
+  { id:40, difficulty:"hard", points:25, answer:2,
+    zh:{question:"若一個 3×3 矩陣的特徵值為 1、2、3，則其行列式為何？",
+      options:["行列式等於 2","行列式等於 1","行列式等於 6","行列式等於 36"],
+      explanation:"行列式 = 所有特徵值的乘積 = 1×2×3 = 6。"},
+    en:{question:"If a 3×3 matrix has eigenvalues 1, 2, and 3, what is its determinant?",
+      options:["The determinant equals 2","The determinant equals 1","The determinant equals 6","The determinant equals 36"],
+      explanation:"The determinant equals the product of the eigenvalues: 1×2×3=6."} }
+];
+
+const i18n = {
+  zh: {
+    title: "線性代數互動測驗",
+    langBtn: "English",
+    progress: (c, t) => `第 ${c} / ${t} 題`,
+    prev: "上一題",
+    next: "下一題",
+    submit: "提交測驗",
+    optionLabels: ["A", "B", "C", "D"],
+    resultTitle: "測驗結果",
+    scoreSub: (c, t) => `總分 ${c} / ${t}`,
+    correctCount: "正確題數",
+    wrongCount: "錯誤題數",
+    byDifficulty: "各難度正確率",
+    diffEasy: "簡單",
+    diffMedium: "中等",
+    diffHard: "困難",
+    diffTrap: "陷阱",
+    percentile: (p) => `你的成績超越了約 ${p}% 的測試者`,
+    grades: { expert: "🏆 頂尖專家", advanced: "⭐ 進階掌握", intermediate: "📘 中等水準", basic: "📗 基礎尚可", needs: "📕 需要加強" },
+    reviewTitle: "錯題回顧",
+    yourAnswer: "你的選擇",
+    correctAnswer: "正確答案",
+    allCorrect: "太厲害了！你全部答對了，沒有錯題。",
+    retry: "重新測驗",
+    copy: "複製結果",
+    copied: "已複製！",
+    copySummary: (score, total, correct, q) => `我在「線性代數互動測驗」得到 ${score}/${total} 分，答對 ${correct}/${q} 題。`,
+    themeDark: "🌙 深色",
+    themeLight: "☀️ 淺色"
+  },
+  en: {
+    title: "Linear Algebra Interactive Quiz",
+    langBtn: "繁體中文",
+    progress: (c, t) => `Question ${c} / ${t}`,
+    prev: "Previous",
+    next: "Next",
+    submit: "Submit Quiz",
+    optionLabels: ["A", "B", "C", "D"],
+    resultTitle: "Quiz Results",
+    scoreSub: (c, t) => `Total Score ${c} / ${t}`,
+    correctCount: "Correct",
+    wrongCount: "Incorrect",
+    byDifficulty: "Accuracy by Difficulty",
+    diffEasy: "Easy",
+    diffMedium: "Medium",
+    diffHard: "Hard",
+    diffTrap: "Trap",
+    percentile: (p) => `You scored higher than about ${p}% of test-takers`,
+    grades: { expert: "🏆 Top Expert", advanced: "⭐ Advanced", intermediate: "📘 Intermediate", basic: "📗 Basic", needs: "📕 Needs Improvement" },
+    reviewTitle: "Review of Incorrect Answers",
+    yourAnswer: "Your answer",
+    correctAnswer: "Correct answer",
+    allCorrect: "Outstanding! You answered every question correctly.",
+    retry: "Retake Quiz",
+    copy: "Copy Results",
+    copied: "Copied!",
+    copySummary: (score, total, correct, q) => `I scored ${score}/${total} on the Linear Algebra Quiz, with ${correct}/${q} correct.`,
+    themeDark: "🌙 Dark",
+    themeLight: "☀️ Light"
+  }
+};
+
+const TOTAL_POINTS = 670;
+const MEAN = TOTAL_POINTS * 0.45;   // 301.5
+const SD = TOTAL_POINTS * 0.15;     // 100.5
+
+let lang = "zh";
+let answers = new Array(questions.length).fill(null);
+let current = 0;
+let submitted = false;
+
+// theme
+function initTheme() {
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+}
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  const btn = document.getElementById("themeBtn");
+  btn.textContent = t === "dark" ? i18n[lang].themeLight : i18n[lang].themeDark;
+}
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+}
+
+function t() { return i18n[lang]; }
+
+function renderQuestion() {
+  const q = questions[current];
+  const data = q[lang];
+  const card = document.getElementById("questionCard");
+  card.classList.add("fade");
+  setTimeout(() => {
+    let html = `<div class="question-text">${current + 1}. ${data.question}</div><div class="options">`;
+    data.options.forEach((opt, idx) => {
+      const sel = answers[current] === idx ? " selected" : "";
+      html += `<button class="option${sel}" data-idx="${idx}"><span class="option-label">${t().optionLabels[idx]}.</span><span>${opt}</span></button>`;
+    });
+    html += `</div>`;
+    card.innerHTML = html;
+    card.querySelectorAll(".option").forEach(el => {
+      el.addEventListener("click", () => selectOption(parseInt(el.dataset.idx)));
+    });
+    card.classList.remove("fade");
+  }, 180);
+  updateNav();
+  updateProgress();
+}
+
+function selectOption(idx) {
+  if (answers[current] === idx) {
+    // already selected; just advance behaviour
+  }
+  answers[current] = idx;
+  const card = document.getElementById("questionCard");
+  card.querySelectorAll(".option").forEach(el => {
+    el.classList.toggle("selected", parseInt(el.dataset.idx) === idx);
+  });
+  updateNav();
+  setTimeout(() => {
+    if (current < questions.length - 1) {
+      current++;
+      renderQuestion();
+    } else {
+      // last question: do not auto-submit, just reveal submit button
+      updateNav();
+    }
+  }, 400);
+}
+
+function updateNav() {
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  prevBtn.textContent = t().prev;
+  prevBtn.classList.toggle("hidden", current === 0);
+
+  const isLast = current === questions.length - 1;
+  const answered = answers[current] !== null;
+  if (isLast) {
+    nextBtn.textContent = t().submit;
+    nextBtn.classList.toggle("hidden", !answered);
+    nextBtn.onclick = showResults;
+  } else {
+    nextBtn.textContent = t().next;
+    nextBtn.classList.toggle("hidden", !answered);
+    nextBtn.onclick = () => { current++; renderQuestion(); };
+  }
+  prevBtn.onclick = () => { if (current > 0) { current--; renderQuestion(); } };
+}
+
+function updateProgress() {
+  document.getElementById("progressText").textContent = t().progress(current + 1, questions.length);
+  const pct = ((current + 1) / questions.length) * 100;
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+
+// normal CDF via erf approximation
+function erf(x) {
+  const t = 1 / (1 + 0.3275911 * Math.abs(x));
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return x >= 0 ? y : -y;
+}
+function normalCdf(x, mean, sd) {
+  return 0.5 * (1 + erf((x - mean) / (sd * Math.SQRT2)));
+}
+
+function computeScore() {
+  let score = 0, correct = 0;
+  const byDiff = { easy: { c: 0, n: 0 }, medium: { c: 0, n: 0 }, hard: { c: 0, n: 0 }, trap: { c: 0, n: 0 } };
+  questions.forEach((q, i) => {
+    byDiff[q.difficulty].n++;
+    if (answers[i] === q.answer) {
+      score += q.points;
+      correct++;
+      byDiff[q.difficulty].c++;
+    }
+  });
+  return { score, correct, wrong: questions.length - correct, byDiff };
+}
+
+function gradeFor(score) {
+  const g = t().grades;
+  if (score >= 600) return g.expert;
+  if (score >= 500) return g.advanced;
+  if (score >= 380) return g.intermediate;
+  if (score >= 250) return g.basic;
+  return g.needs;
+}
+
+function showResults() {
+  submitted = true;
+  document.getElementById("quizView").style.display = "none";
+  document.getElementById("resultView").style.display = "block";
+  document.getElementById("progressFill").style.width = "100%";
+  renderResults();
+}
+
+function renderResults() {
+  const r = computeScore();
+  const pct = Math.round(normalCdf(r.score, MEAN, SD) * 100);
+  const L = t();
+  const view = document.getElementById("resultView");
+  let html = `<div class="results">`;
+  html += `<h2>${L.resultTitle}</h2>`;
+  html += `<div class="score-big">${r.score} / ${TOTAL_POINTS}</div>`;
+  html += `<div class="grade">${gradeFor(r.score)}</div>`;
+  html += `<div class="score-sub">${L.scoreSub(r.score, TOTAL_POINTS)}</div>`;
+
+  html += `<div class="stat-grid">`;
+  html += `<div class="stat-box"><div class="stat-label">${L.correctCount}</div><div class="stat-value">${r.correct} / ${questions.length}</div></div>`;
+  html += `<div class="stat-box"><div class="stat-label">${L.wrongCount}</div><div class="stat-value">${r.wrong} / ${questions.length}</div></div>`;
+  html += `</div>`;
+
+  html += `<div class="percentile">${L.percentile(pct)}</div>`;
+
+  html += `<div class="review-title" style="margin-top:6px">${L.byDifficulty}</div>`;
+  html += `<table class="diff-table">`;
+  html += `<tr><td>${L.diffEasy}</td><td>${r.byDiff.easy.c} / ${r.byDiff.easy.n}</td></tr>`;
+  html += `<tr><td>${L.diffMedium}</td><td>${r.byDiff.medium.c} / ${r.byDiff.medium.n}</td></tr>`;
+  html += `<tr><td>${L.diffHard}</td><td>${r.byDiff.hard.c} / ${r.byDiff.hard.n}</td></tr>`;
+  html += `<tr><td>${L.diffTrap}</td><td>${r.byDiff.trap.c} / ${r.byDiff.trap.n}</td></tr>`;
+  html += `</table>`;
+
+  // wrong review
+  const wrongs = questions.filter((q, i) => answers[i] !== q.answer);
+  if (wrongs.length === 0) {
+    html += `<div class="all-correct">${L.allCorrect}</div>`;
+  } else {
+    html += `<div class="review-title">${L.reviewTitle}</div>`;
+    questions.forEach((q, i) => {
+      if (answers[i] === q.answer) return;
+      const data = q[lang];
+      const userIdx = answers[i];
+      const userText = userIdx === null ? "—" : `${L.optionLabels[userIdx]}. ${data.options[userIdx]}`;
+      const correctText = `${L.optionLabels[q.answer]}. ${data.options[q.answer]}`;
+      html += `<div class="review-item">`;
+      html += `<div class="review-q">${i + 1}. ${data.question}</div>`;
+      html += `<div class="review-line"><span class="mark-wrong">✗ ${L.yourAnswer}：</span>${userText}</div>`;
+      html += `<div class="review-line"><span class="mark-correct">✓ ${L.correctAnswer}：</span>${correctText}</div>`;
+      html += `<div class="review-expl">${data.explanation}</div>`;
+      html += `</div>`;
+    });
+  }
+
+  html += `<div class="result-actions">`;
+  html += `<button class="nav-btn primary" id="retryBtn">${L.retry}</button>`;
+  html += `<button class="nav-btn" id="copyBtn">${L.copy}</button>`;
+  html += `</div>`;
+  html += `</div>`;
+  view.innerHTML = html;
+
+  document.getElementById("retryBtn").onclick = retry;
+  document.getElementById("copyBtn").onclick = () => copyResults(r);
+}
+
+function copyResults(r) {
+  const L = t();
+  const pct = Math.round(normalCdf(r.score, MEAN, SD) * 100);
+  let text = L.copySummary(r.score, TOTAL_POINTS, r.correct, questions.length);
+  text += "\n" + gradeFor(r.score);
+  text += "\n" + L.percentile(pct);
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById("copyBtn");
+    const orig = btn.textContent;
+    btn.textContent = L.copied;
+    setTimeout(() => { btn.textContent = orig; }, 1500);
+  });
+}
+
+function retry() {
+  answers = new Array(questions.length).fill(null);
+  current = 0;
+  submitted = false;
+  document.getElementById("resultView").style.display = "none";
+  document.getElementById("quizView").style.display = "block";
+  renderQuestion();
+}
+
+function applyLang() {
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  document.getElementById("appTitle").textContent = t().title;
+  document.title = t().title;
+  document.getElementById("langBtn").textContent = t().langBtn;
+  // refresh theme button label
+  const cur = document.documentElement.getAttribute("data-theme");
+  document.getElementById("themeBtn").textContent = cur === "dark" ? t().themeLight : t().themeDark;
+  if (submitted) renderResults();
+  else renderQuestion();
+}
+
+document.getElementById("langBtn").onclick = () => {
+  lang = lang === "zh" ? "en" : "zh";
+  applyLang();
+};
+document.getElementById("themeBtn").onclick = toggleTheme;
+
+initTheme();
+renderQuestion();
+</script>
+</body>
+</html>

@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電路學互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --track: #E5E7EB;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+  }
+  html[data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --track: #374151;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    padding-bottom: 16px; border-bottom: 1px solid var(--border);
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 14px; font-size: 14px; cursor: pointer;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn-primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent); opacity: 0.9; }
+  .progress-text { color: var(--text-secondary); font-size: 14px; margin: 18px 0 8px; }
+  .qcard { flex: 1; opacity: 1; transition: opacity 0.25s ease; }
+  .qcard.fade { opacity: 0; }
+  .question { font-size: 18px; font-weight: 600; margin: 8px 0 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    border: 1px solid var(--border); border-radius: 10px;
+    padding: 14px 16px; cursor: pointer; font-size: 15px;
+    background: var(--bg); color: var(--text);
+    transition: background 0.15s ease, border-color 0.15s ease;
+    display: flex; gap: 10px; align-items: flex-start; text-align: left;
+    font-family: inherit; width: 100%;
+  }
+  .option:hover { background: var(--hover); }
+  .option.selected { border-color: var(--accent); background: var(--hover); }
+  .option .letter { font-weight: 700; color: var(--accent); flex-shrink: 0; }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 12px; }
+  .progressbar-track { background: var(--track); height: 6px; border-radius: 999px; margin-top: 20px; overflow: hidden; }
+  .progressbar-fill { background: var(--accent); height: 100%; width: 0; transition: width 0.3s ease; }
+  /* results */
+  .result-score { font-size: 40px; font-weight: 800; margin: 8px 0; }
+  .result-sub { color: var(--text-secondary); margin-bottom: 4px; }
+  .grade { font-size: 22px; font-weight: 700; margin: 16px 0; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0; }
+  .stat {
+    border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;
+  }
+  .stat .label { color: var(--text-secondary); font-size: 13px; }
+  .stat .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
+  .percentile {
+    border: 1px solid var(--border); border-radius: 10px; padding: 16px;
+    margin: 18px 0; font-size: 16px; text-align: center;
+  }
+  .section-title { font-size: 16px; font-weight: 700; margin: 28px 0 12px; }
+  .review-item { border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .review-line { font-size: 14px; margin: 3px 0; }
+  .review-line.wrong { color: var(--wrong); }
+  .review-line.correct { color: var(--correct); }
+  .review-exp { color: var(--text-secondary); font-size: 13px; margin-top: 8px; }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+  .hidden { display: none !important; }
+  .copied-note { color: var(--correct); font-size: 13px; margin-top: 8px; }
+  @media (max-width: 480px) {
+    .title { font-size: 16px; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .question { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">電路學互動測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </header>
+
+  <!-- QUIZ VIEW -->
+  <div id="quizView">
+    <div class="progress-text" id="progressText">第 1 / 40 題</div>
+    <div class="qcard" id="qcard">
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+      <span></span>
+    </div>
+    <div class="progressbar-track"><div class="progressbar-fill" id="pbFill"></div></div>
+  </div>
+
+  <!-- RESULT VIEW -->
+  <div id="resultView" class="hidden">
+    <div class="progress-text" id="resultHeading">測驗結果</div>
+    <div class="result-score" id="scoreLine"></div>
+    <div class="result-sub" id="correctLine"></div>
+    <div class="result-sub" id="wrongLine"></div>
+    <div class="grade" id="gradeLine"></div>
+    <div class="stat-grid" id="diffGrid"></div>
+    <div class="percentile" id="percentileLine"></div>
+    <div class="section-title" id="reviewTitle">錯題回顧</div>
+    <div id="reviewBox"></div>
+    <div class="result-actions">
+      <button class="btn btn-primary" id="retryBtn">重新測驗</button>
+      <button class="btn" id="copyBtn">複製結果</button>
+    </div>
+    <div class="copied-note hidden" id="copiedNote">已複製到剪貼簿</div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"一個電阻兩端電壓為 12 V，通過電流為 4 A，其電阻值為多少？",
+      options:["3 Ω","48 Ω","0.33 Ω","16 Ω"], explanation:"R=V/I=12/4=3 Ω。" },
+    en:{ question:"A resistor has 12 V across it and 4 A through it. What is its resistance?",
+      options:["3 Ω","48 Ω","0.33 Ω","16 Ω"], explanation:"R=V/I=12/4=3 Ω." } },
+
+  { id:2, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"6 Ω 與 3 Ω 兩電阻並聯，等效電阻為多少？",
+      options:["9 Ω","4.5 Ω","2 Ω","18 Ω"], explanation:"並聯=(6×3)/(6+3)=2 Ω。" },
+    en:{ question:"Two resistors, 6 Ω and 3 Ω, are in parallel. What is the equivalent resistance?",
+      options:["9 Ω","4.5 Ω","2 Ω","18 Ω"], explanation:"Parallel=(6×3)/(6+3)=2 Ω." } },
+
+  { id:3, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"某電路在 a-b 端開路電壓為 20 V、短路電流為 5 A，其戴維寧等效電阻為多少？",
+      options:["100 Ω","4 Ω","0.25 Ω","25 Ω"], explanation:"R_th=V_oc/I_sc=20/5=4 Ω。" },
+    en:{ question:"A network has an open-circuit voltage of 20 V and short-circuit current of 5 A at a-b. Its Thevenin resistance is?",
+      options:["100 Ω","4 Ω","0.25 Ω","25 Ω"], explanation:"R_th=V_oc/I_sc=20/5=4 Ω." } },
+
+  { id:4, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"2 A 電流通過 5 Ω 電阻，所消耗的功率為多少？",
+      options:["10 W","2.5 W","0.4 W","20 W"], explanation:"P=I²R=4×5=20 W。" },
+    en:{ question:"A current of 2 A flows through a 5 Ω resistor. The power dissipated is?",
+      options:["10 W","2.5 W","0.4 W","20 W"], explanation:"P=I²R=4×5=20 W." } },
+
+  { id:5, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"12 V 電源串聯 2 Ω 與 4 Ω 電阻，迴路電流為多少？",
+      options:["2 A","6 A","0.5 A","3 A"], explanation:"I=V/R總=12/6=2 A。" },
+    en:{ question:"A 12 V source is in series with 2 Ω and 4 Ω resistors. The loop current is?",
+      options:["2 A","6 A","0.5 A","3 A"], explanation:"I=V/R_total=12/6=2 A." } },
+
+  { id:6, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"在直流穩態下，理想電容器的行為相當於下列何者？",
+      options:["短路，電流自由通過","開路，沒有電流流過","固定電阻 R=1/C","理想電壓源"],
+      explanation:"穩態時電容充滿電，電流為零，相當於開路。" },
+    en:{ question:"In DC steady state, an ideal capacitor behaves like which of the following?",
+      options:["A short circuit, current flows freely","An open circuit, no current flows","A fixed resistor R=1/C","An ideal voltage source"],
+      explanation:"At steady state the capacitor is fully charged; current is zero, so it acts as an open circuit." } },
+
+  { id:7, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"RC 充電電路中 R=10 kΩ、C=100 µF，其時間常數 τ 為多少？",
+      options:["0.001 s","10 s","0.1 s","1 s"], explanation:"τ=RC=10⁴×10⁻⁴=1 s。" },
+    en:{ question:"In an RC charging circuit with R=10 kΩ and C=100 µF, the time constant τ is?",
+      options:["0.001 s","10 s","0.1 s","1 s"], explanation:"τ=RC=10⁴×10⁻⁴=1 s." } },
+
+  { id:8, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"12 V 跨接於串聯的 4 Ω 與 8 Ω 電阻，8 Ω 電阻上的電壓為多少？",
+      options:["4 V","6 V","8 V","12 V"], explanation:"分壓 V=12×8/(4+8)=8 V。" },
+    en:{ question:"12 V is applied across series 4 Ω and 8 Ω resistors. The voltage across the 8 Ω resistor is?",
+      options:["4 V","6 V","8 V","12 V"], explanation:"Divider V=12×8/(4+8)=8 V." } },
+
+  { id:9, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"電壓為 10 V、電流為 2 A 的元件，所消耗的功率為多少？",
+      options:["20 W","5 W","12 W","0.2 W"], explanation:"P=VI=10×2=20 W。" },
+    en:{ question:"A component with 10 V across it and 2 A through it consumes what power?",
+      options:["20 W","5 W","12 W","0.2 W"], explanation:"P=VI=10×2=20 W." } },
+
+  { id:10, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"6 A 電流注入並聯的 2 Ω 與 4 Ω，流過 2 Ω 的電流為多少？",
+      options:["2 A","4 A","3 A","6 A"], explanation:"分流 I=6×4/(2+4)=4 A。" },
+    en:{ question:"6 A flows into parallel 2 Ω and 4 Ω resistors. The current through the 2 Ω branch is?",
+      options:["2 A","4 A","3 A","6 A"], explanation:"Divider I=6×4/(2+4)=4 A." } },
+
+  { id:11, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"串聯 RL 電路 R=3 Ω、電感電抗 4 Ω，其阻抗大小為多少？",
+      options:["7 Ω","1 Ω","12 Ω","5 Ω"], explanation:"|Z|=√(R²+X²)=√(9+16)=5 Ω。" },
+    en:{ question:"A series RL circuit has R=3 Ω and inductive reactance 4 Ω. The impedance magnitude is?",
+      options:["7 Ω","1 Ω","12 Ω","5 Ω"], explanation:"|Z|=√(R²+X²)=√(9+16)=5 Ω." } },
+
+  { id:12, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"3 Ω 與 5 Ω 電阻串聯，總電阻為多少？",
+      options:["1.9 Ω","15 Ω","8 Ω","2 Ω"], explanation:"串聯相加=3+5=8 Ω。" },
+    en:{ question:"A 3 Ω and a 5 Ω resistor are in series. The total resistance is?",
+      options:["1.9 Ω","15 Ω","8 Ω","2 Ω"], explanation:"Series add=3+5=8 Ω." } },
+
+  { id:13, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"某節點流入 3 A，其中一條支路流出 1 A，另一支路流出的電流為多少？",
+      options:["2 A","4 A","1 A","3 A"], explanation:"依 KCL 流入=流出，3−1=2 A。" },
+    en:{ question:"At a node, 3 A flows in and one branch carries 1 A out. The other branch's outgoing current is?",
+      options:["2 A","4 A","1 A","3 A"], explanation:"By KCL, in=out, 3−1=2 A." } },
+
+  { id:14, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"理想電流表（安培計）的內部電阻與接法應為何？",
+      options:["無限大，與電路並聯","等於零，與電路串聯","等於負載電阻值","約 1 kΩ 的固定值"],
+      explanation:"理想安培計內阻為零並串聯，才不影響電路電流。" },
+    en:{ question:"What internal resistance and connection should an ideal ammeter have?",
+      options:["Infinite, connected in parallel","Zero, connected in series","Equal to the load resistance","A fixed value of about 1 kΩ"],
+      explanation:"An ideal ammeter has zero resistance and is connected in series, so it does not alter the current." } },
+
+  { id:15, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"串聯 RLC 電路 L=1 mH、C=10 µF，其諧振角頻率 ω₀ 為多少？",
+      options:["100 rad/s","1000 rad/s","100000 rad/s","10000 rad/s"], explanation:"ω₀=1/√(LC)=1/√(10⁻⁸)=10⁴ rad/s。" },
+    en:{ question:"A series RLC circuit has L=1 mH and C=10 µF. Its resonant angular frequency ω₀ is?",
+      options:["100 rad/s","1000 rad/s","100000 rad/s","10000 rad/s"], explanation:"ω₀=1/√(LC)=1/√(10⁻⁸)=10⁴ rad/s." } },
+
+  { id:16, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"峰值為 100 V 的正弦電壓，其均方根（RMS）值約為多少？",
+      options:["100 V","50 V","70.7 V","141 V"], explanation:"V_rms=V_peak/√2≈70.7 V。" },
+    en:{ question:"A sinusoidal voltage with a 100 V peak has an RMS value of approximately?",
+      options:["100 V","50 V","70.7 V","141 V"], explanation:"V_rms=V_peak/√2≈70.7 V." } },
+
+  { id:17, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"9 V 電壓跨接於 3 Ω 電阻，通過的電流為多少？",
+      options:["3 A","27 A","0.33 A","6 A"], explanation:"I=V/R=9/3=3 A。" },
+    en:{ question:"With 9 V across a 3 Ω resistor, the current is?",
+      options:["3 A","27 A","0.33 A","6 A"], explanation:"I=V/R=9/3=3 A." } },
+
+  { id:18, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"電壓與電流相位差為 60° 的負載，其功率因數為多少？",
+      options:["0.866","0.5","0.707","1.0"], explanation:"pf=cos60°=0.5。" },
+    en:{ question:"For a load with a 60° phase difference between voltage and current, the power factor is?",
+      options:["0.866","0.5","0.707","1.0"], explanation:"pf=cos60°=0.5." } },
+
+  { id:19, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"戴維寧等效電阻為 8 Ω 的電源，欲使負載獲得最大功率，負載電阻應為多少？",
+      options:["0 Ω（短路）","16 Ω","8 Ω","無限大（開路）"], explanation:"最大功率傳輸時 R_L=R_th=8 Ω。" },
+    en:{ question:"For a source with a Thevenin resistance of 8 Ω, the load resistance for maximum power transfer is?",
+      options:["0 Ω (short)","16 Ω","8 Ω","Infinite (open)"], explanation:"For max power transfer, R_L=R_th=8 Ω." } },
+
+  { id:20, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"三個 6 Ω 電阻並聯，等效電阻為多少？",
+      options:["18 Ω","6 Ω","3 Ω","2 Ω"], explanation:"相同電阻並聯 R/n=6/3=2 Ω。" },
+    en:{ question:"Three 6 Ω resistors are connected in parallel. The equivalent resistance is?",
+      options:["18 Ω","6 Ω","3 Ω","2 Ω"], explanation:"Equal resistors in parallel R/n=6/3=2 Ω." } },
+
+  { id:21, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"2 A 電流通過 5 Ω 電阻，其兩端的電壓為多少？",
+      options:["10 V","2.5 V","0.4 V","7 V"], explanation:"V=IR=2×5=10 V。" },
+    en:{ question:"A current of 2 A flows through a 5 Ω resistor. The voltage across it is?",
+      options:["10 V","2.5 V","0.4 V","7 V"], explanation:"V=IR=2×5=10 V." } },
+
+  { id:22, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"某負載視在功率為 100 VA、功率因數為 0.8（落後），其實功率為多少？",
+      options:["125 W","80 W","60 W","100 W"], explanation:"P=S×cosθ=100×0.8=80 W。" },
+    en:{ question:"A load has 100 VA apparent power and a power factor of 0.8 (lagging). Its real power is?",
+      options:["125 W","80 W","60 W","100 W"], explanation:"P=S×cosθ=100×0.8=80 W." } },
+
+  { id:23, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"兩個 4 µF 電容器串聯，等效電容為多少？",
+      options:["8 µF","4 µF","2 µF","16 µF"], explanation:"電容串聯=(4×4)/(4+4)=2 µF。" },
+    en:{ question:"Two 4 µF capacitors are connected in series. The equivalent capacitance is?",
+      options:["8 µF","4 µF","2 µF","16 µF"], explanation:"Capacitors in series=(4×4)/(4+4)=2 µF." } },
+
+  { id:24, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"關於重疊定理（疊加原理）的敘述，下列何者正確？",
+      options:["可直接疊加各電源單獨產生的功率","僅適用於含非線性元件的電路","計算時須將電壓源以開路取代","各電源單獨作用：電壓源短路、電流源開路後疊加"],
+      explanation:"疊加只適用線性量（電壓、電流），功率不可直接相加。" },
+    en:{ question:"Which statement about the superposition theorem is correct?",
+      options:["Power from each source can be added directly","It applies only to circuits with nonlinear parts","Voltage sources must be replaced by open circuits","Zero each source (short V-sources, open I-sources), then sum"],
+      explanation:"Superposition applies only to linear quantities (voltage, current); power cannot be added directly." } },
+
+  { id:25, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"電容的國際單位（SI）為下列何者？",
+      options:["法拉（Farad）","亨利（Henry）","歐姆（Ohm）","韋伯（Weber）"], explanation:"電容的單位為法拉（F）。" },
+    en:{ question:"The SI unit of capacitance is which of the following?",
+      options:["Farad","Henry","Ohm","Weber"], explanation:"The unit of capacitance is the farad (F)." } },
+
+  { id:26, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"2 mH 與 3 mH 電感器串聯（無互感），其等效電感為多少？",
+      options:["1.2 mH","5 mH","6 mH","1 mH"], explanation:"電感串聯相加=2+3=5 mH。" },
+    en:{ question:"A 2 mH and a 3 mH inductor are in series (no mutual coupling). The equivalent inductance is?",
+      options:["1.2 mH","5 mH","6 mH","1 mH"], explanation:"Inductors in series add: 2+3=5 mH." } },
+
+  { id:27, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"視在功率 100 VA、功率因數 0.8 的負載，其無效功率（虛功率）為多少？",
+      options:["80 VAR","100 VAR","60 VAR","0 VAR"], explanation:"Q=S×sinθ=100×0.6=60 VAR。" },
+    en:{ question:"For a load with 100 VA apparent power and 0.8 power factor, the reactive power is?",
+      options:["80 VAR","100 VAR","60 VAR","0 VAR"], explanation:"Q=S×sinθ=100×0.6=60 VAR." } },
+
+  { id:28, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"10 V 電壓源串聯 5 Ω，其等效的諾頓電流源大小為多少？",
+      options:["50 A","0.5 A","5 A","2 A"], explanation:"I_N=V/R=10/5=2 A，並聯電阻仍為 5 Ω。" },
+    en:{ question:"A 10 V source in series with 5 Ω. The equivalent Norton current source magnitude is?",
+      options:["50 A","0.5 A","5 A","2 A"], explanation:"I_N=V/R=10/5=2 A, with the 5 Ω now in parallel." } },
+
+  { id:29, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"電感的國際單位（SI）為下列何者？",
+      options:["亨利（Henry）","法拉（Farad）","西門子（Siemens）","焦耳（Joule）"], explanation:"電感的單位為亨利（H）。" },
+    en:{ question:"The SI unit of inductance is which of the following?",
+      options:["Henry","Farad","Siemens","Joule"], explanation:"The unit of inductance is the henry (H)." } },
+
+  { id:30, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"電容 C=2 µF 兩端電壓為 100 V，其儲存的能量為多少？",
+      options:["0.2 J","0.01 J","0.1 J","1 J"], explanation:"E=½CV²=½×2×10⁻⁶×10⁴=0.01 J。" },
+    en:{ question:"A capacitor C=2 µF charged to 100 V stores how much energy?",
+      options:["0.2 J","0.01 J","0.1 J","1 J"], explanation:"E=½CV²=½×2×10⁻⁶×10⁴=0.01 J." } },
+
+  { id:31, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"均方根電壓 10 V 跨接於 5 Ω 電阻，其平均功率為多少？",
+      options:["50 W","2 W","20 W","100 W"], explanation:"P=V_rms²/R=100/5=20 W。" },
+    en:{ question:"An RMS voltage of 10 V across a 5 Ω resistor delivers what average power?",
+      options:["50 W","2 W","20 W","100 W"], explanation:"P=V_rms²/R=100/5=20 W." } },
+
+  { id:32, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"20 V 電壓下通過 4 A 電流的元件，其電阻為多少？",
+      options:["80 Ω","0.2 Ω","24 Ω","5 Ω"], explanation:"R=V/I=20/4=5 Ω。" },
+    en:{ question:"A component with 20 V across it and 4 A through it has what resistance?",
+      options:["80 Ω","0.2 Ω","24 Ω","5 Ω"], explanation:"R=V/I=20/4=5 Ω." } },
+
+  { id:33, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"對稱正弦電流在一個完整週期內的平均值為多少？",
+      options:["等於零","等於峰值的 0.637 倍","等於峰值除以 √2","等於峰值本身"],
+      explanation:"完整週期正負對稱，平均值為零；0.637 倍是半週期平均。" },
+    en:{ question:"The average value of a symmetric sinusoidal current over one complete period is?",
+      options:["Equal to zero","0.637 times the peak value","The peak value divided by √2","Equal to the peak value itself"],
+      explanation:"Over a full period the positive and negative halves cancel, so the average is zero (0.637 is the half-cycle average)." } },
+
+  { id:34, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"一個 4 Ω 電阻，其電導值為多少？",
+      options:["4 S","0.25 S","1 S","16 S"], explanation:"G=1/R=1/4=0.25 S。" },
+    en:{ question:"What is the conductance of a 4 Ω resistor?",
+      options:["4 S","0.25 S","1 S","16 S"], explanation:"G=1/R=1/4=0.25 S." } },
+
+  { id:35, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"RL 電路 L=2 H、R=4 Ω，其電流建立的時間常數為多少？",
+      options:["8 s","2 s","0.5 s","1 s"], explanation:"τ=L/R=2/4=0.5 s。" },
+    en:{ question:"An RL circuit has L=2 H and R=4 Ω. The time constant for current buildup is?",
+      options:["8 s","2 s","0.5 s","1 s"], explanation:"τ=L/R=2/4=0.5 s." } },
+
+  { id:36, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"電容 5 µF 充電至 10 V，所儲存的電荷為多少？",
+      options:["0.5 µC","2 µC","15 µC","50 µC"], explanation:"Q=CV=5×10=50 µC。" },
+    en:{ question:"A 5 µF capacitor charged to 10 V stores how much charge?",
+      options:["0.5 µC","2 µC","15 µC","50 µC"], explanation:"Q=CV=5×10=50 µC." } },
+
+  { id:37, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"克希荷夫電壓定律（KVL）描述的是下列何者？",
+      options:["任一封閉迴路的電壓代數和為零","任一節點的電流代數和為零","電阻值與通過電流成正比","功率等於電壓乘以電流"],
+      explanation:"KVL：任一封閉迴路的電壓代數和為零。" },
+    en:{ question:"Kirchhoff's Voltage Law (KVL) states which of the following?",
+      options:["The algebraic sum of voltages around any loop is zero","The algebraic sum of currents at any node is zero","Resistance is proportional to the current through it","Power equals voltage multiplied by current"],
+      explanation:"KVL: the algebraic sum of voltages around any closed loop is zero." } },
+
+  { id:38, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"在直流穩態下，理想電感器的行為相當於下列何者？",
+      options:["開路，沒有電流流過","短路，壓降為零","固定電阻 R=ωL","理想電流源"],
+      explanation:"穩態時電感電流恆定，壓降為零，相當於短路。" },
+    en:{ question:"In DC steady state, an ideal inductor behaves like which of the following?",
+      options:["An open circuit, no current flows","A short circuit, zero voltage drop","A fixed resistor R=ωL","An ideal current source"],
+      explanation:"At steady state the inductor current is constant, so its voltage drop is zero, acting as a short circuit." } },
+
+  { id:39, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"電感 2 H 中電流的變化率為 3 A/s，其兩端的感應電壓為多少？",
+      options:["0.67 V","1.5 V","6 V","5 V"], explanation:"v=L(di/dt)=2×3=6 V。" },
+    en:{ question:"An inductor of 2 H has a current changing at 3 A/s. The induced voltage across it is?",
+      options:["0.67 V","1.5 V","6 V","5 V"], explanation:"v=L(di/dt)=2×3=6 V." } },
+
+  { id:40, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"在角頻率 ω=1000 rad/s 下，電容 C=10 µF 的電抗大小為多少？",
+      options:["0.01 Ω","10 Ω","1000 Ω","100 Ω"], explanation:"X_C=1/(ωC)=1/(1000×10⁻⁵)=100 Ω。" },
+    en:{ question:"At an angular frequency ω=1000 rad/s, the reactance magnitude of a 10 µF capacitor is?",
+      options:["0.01 Ω","10 Ω","1000 Ω","100 Ω"], explanation:"X_C=1/(ωC)=1/(1000×10⁻⁵)=100 Ω." } }
+];
+
+const T = {
+  zh: {
+    appTitle: "電路學互動測驗",
+    langBtn: "English",
+    progress: (a,b) => `第 ${a} / ${b} 題`,
+    prev: "上一題",
+    submit: "提交測驗",
+    resultHeading: "測驗結果",
+    score: (s,t) => `總分：${s} / ${t}`,
+    correct: (c,t) => `正確題數：${c} / ${t}`,
+    wrong: (w,t) => `錯誤題數：${w} / ${t}`,
+    diff: { easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱" },
+    percentile: (p) => `你的成績超越了約 ${p}% 的測試者`,
+    reviewTitle: "錯題回顧",
+    allCorrect: "太厲害了，全部答對，沒有錯題！",
+    yourAns: "你的選擇",
+    correctAns: "正確答案",
+    retry: "重新測驗",
+    copy: "複製結果",
+    copied: "已複製到剪貼簿",
+    grades: {
+      top:"🏆 頂尖專家（Top Expert）", adv:"⭐ 進階掌握（Advanced）",
+      inter:"📘 中等水準（Intermediate）", basic:"📗 基礎尚可（Basic）", need:"📕 需要加強（Needs Improvement）"
+    },
+    summary: (s,t,c,p,g) => `電路學互動測驗\n總分：${s} / ${t}\n正確：${c} / 40\n超越約 ${p}% 的測試者\n等級：${g}`
+  },
+  en: {
+    appTitle: "Circuit Theory Interactive Quiz",
+    langBtn: "中文",
+    progress: (a,b) => `Question ${a} / ${b}`,
+    prev: "Previous",
+    submit: "Submit Quiz",
+    resultHeading: "Your Results",
+    score: (s,t) => `Total Score: ${s} / ${t}`,
+    correct: (c,t) => `Correct: ${c} / ${t}`,
+    wrong: (w,t) => `Incorrect: ${w} / ${t}`,
+    diff: { easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap" },
+    percentile: (p) => `You scored higher than about ${p}% of test takers`,
+    reviewTitle: "Review of Incorrect Answers",
+    allCorrect: "Excellent! Every answer was correct — nothing to review!",
+    yourAns: "Your answer",
+    correctAns: "Correct answer",
+    retry: "Retake Quiz",
+    copy: "Copy Results",
+    copied: "Copied to clipboard",
+    grades: {
+      top:"🏆 Top Expert", adv:"⭐ Advanced",
+      inter:"📘 Intermediate", basic:"📗 Basic", need:"📕 Needs Improvement"
+    },
+    summary: (s,t,c,p,g) => `Circuit Theory Quiz\nTotal: ${s} / ${t}\nCorrect: ${c} / 40\nHigher than about ${p}% of test takers\nGrade: ${g}`
+  }
+};
+
+const TOTAL = 670;
+let lang = "zh";
+let current = 0;
+let answers = new Array(questions.length).fill(null);
+
+// theme
+const root = document.documentElement;
+function applyTheme(theme) {
+  root.setAttribute("data-theme", theme);
+  document.getElementById("themeBtn").textContent =
+    theme === "dark" ? (lang==="zh"?"☀️ 淺色":"☀️ Light") : (lang==="zh"?"🌙 深色":"🌙 Dark");
+}
+const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+let theme = prefersDark ? "dark" : "light";
+applyTheme(theme);
+
+document.getElementById("themeBtn").addEventListener("click", () => {
+  theme = theme === "dark" ? "light" : "dark";
+  applyTheme(theme);
+});
+
+document.getElementById("langBtn").addEventListener("click", () => {
+  lang = lang === "zh" ? "en" : "zh";
+  applyStaticText();
+  if (resultShown) renderResult(); else renderQuestion();
+});
+
+function applyStaticText() {
+  const t = T[lang];
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  document.getElementById("appTitle").textContent = t.appTitle;
+  document.getElementById("langBtn").textContent = t.langBtn;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+  document.getElementById("resultHeading").textContent = t.resultHeading;
+  document.getElementById("reviewTitle").textContent = t.reviewTitle;
+  document.getElementById("retryBtn").textContent = t.retry;
+  document.getElementById("copyBtn").textContent = t.copy;
+  applyTheme(theme);
+}
+
+const letters = ["A","B","C","D"];
+let locked = false;
+
+function renderQuestion() {
+  const t = T[lang];
+  const q = questions[current];
+  const data = q[lang];
+  document.getElementById("progressText").textContent = t.progress(current+1, questions.length);
+  document.getElementById("questionText").textContent = data.question;
+  const box = document.getElementById("optionsBox");
+  box.innerHTML = "";
+  data.options.forEach((opt, i) => {
+    const el = document.createElement("button");
+    el.className = "option" + (answers[current] === i ? " selected" : "");
+    el.innerHTML = `<span class="letter">${letters[i]}</span><span>${opt}</span>`;
+    el.addEventListener("click", () => selectOption(i));
+    box.appendChild(el);
+  });
+  document.getElementById("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
+  const submitBtn = document.getElementById("submitBtn");
+  if (current === questions.length - 1 && answers[current] !== null) {
+    submitBtn.classList.remove("hidden");
+  } else {
+    submitBtn.classList.add("hidden");
+  }
+  const pct = ((current+1) / questions.length) * 100;
+  document.getElementById("pbFill").style.width = pct + "%";
+}
+
+function selectOption(i) {
+  if (locked) return;
+  answers[current] = i;
+  // refresh selected state
+  const opts = document.querySelectorAll("#optionsBox .option");
+  opts.forEach((o, idx) => o.classList.toggle("selected", idx === i));
+
+  if (current === questions.length - 1) {
+    document.getElementById("submitBtn").classList.remove("hidden");
+    return; // no auto-advance on last question
+  }
+  locked = true;
+  setTimeout(() => {
+    const card = document.getElementById("qcard");
+    card.classList.add("fade");
+    setTimeout(() => {
+      current++;
+      renderQuestion();
+      card.classList.remove("fade");
+      locked = false;
+    }, 250);
+  }, 400);
+}
+
+document.getElementById("prevBtn").addEventListener("click", () => {
+  if (current > 0) {
+    const card = document.getElementById("qcard");
+    card.classList.add("fade");
+    setTimeout(() => {
+      current--;
+      renderQuestion();
+      card.classList.remove("fade");
+    }, 250);
+  }
+});
+
+document.getElementById("submitBtn").addEventListener("click", () => {
+  resultShown = true;
+  renderResult();
+});
+
+// normal CDF via erf approximation
+function normalCDF(x, mean, sd) {
+  const z = (x - mean) / (sd * Math.sqrt(2));
+  return 0.5 * (1 + erf(z));
+}
+function erf(x) {
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592, a2=-0.284496736, a3=1.421413741, a4=-1.453152027, a5=1.061405429, p=0.3275911;
+  const tt = 1/(1+p*x);
+  const y = 1 - (((((a5*tt+a4)*tt)+a3)*tt+a2)*tt+a1)*tt*Math.exp(-x*x);
+  return sign*y;
+}
+
+function computeResults() {
+  let score=0, correctCount=0;
+  const diff = { easy:{c:0,n:0}, medium:{c:0,n:0}, hard:{c:0,n:0}, trap:{c:0,n:0} };
+  questions.forEach((q,i) => {
+    diff[q.difficulty].n++;
+    if (answers[i] === q.answer) { score += q.points; correctCount++; diff[q.difficulty].c++; }
+  });
+  return { score, correctCount, diff };
+}
+
+function gradeFor(score) {
+  const g = T[lang].grades;
+  if (score >= 600) return g.top;
+  if (score >= 500) return g.adv;
+  if (score >= 380) return g.inter;
+  if (score >= 250) return g.basic;
+  return g.need;
+}
+
+let resultShown = false;
+
+function renderResult() {
+  const t = T[lang];
+  document.getElementById("quizView").classList.add("hidden");
+  document.getElementById("resultView").classList.remove("hidden");
+  const { score, correctCount, diff } = computeResults();
+  const wrongCount = questions.length - correctCount;
+
+  document.getElementById("scoreLine").textContent = t.score(score, TOTAL);
+  document.getElementById("correctLine").textContent = t.correct(correctCount, questions.length);
+  document.getElementById("wrongLine").textContent = t.wrong(wrongCount, questions.length);
+  document.getElementById("gradeLine").textContent = gradeFor(score);
+
+  const grid = document.getElementById("diffGrid");
+  grid.innerHTML = "";
+  [["easy",10],["medium",15],["hard",10],["trap",5]].forEach(([k,n]) => {
+    const d = document.createElement("div");
+    d.className = "stat";
+    d.innerHTML = `<div class="label">${t.diff[k]}</div><div class="value">${diff[k].c} / ${n}</div>`;
+    grid.appendChild(d);
+  });
+
+  let pctl = normalCDF(score, TOTAL*0.45, TOTAL*0.15) * 100;
+  pctl = Math.max(0, Math.min(99.9, pctl));
+  document.getElementById("percentileLine").textContent = t.percentile(pctl.toFixed(1));
+
+  const reviewBox = document.getElementById("reviewBox");
+  reviewBox.innerHTML = "";
+  const wrongs = questions.map((q,i)=>({q,i})).filter(({q,i}) => answers[i] !== q.answer);
+  if (wrongs.length === 0) {
+    const p = document.createElement("div");
+    p.className = "review-exp";
+    p.textContent = t.allCorrect;
+    reviewBox.appendChild(p);
+  } else {
+    wrongs.forEach(({q,i}) => {
+      const data = q[lang];
+      const userIdx = answers[i];
+      const item = document.createElement("div");
+      item.className = "review-item";
+      const userText = userIdx === null
+        ? "—"
+        : `${letters[userIdx]}. ${data.options[userIdx]}`;
+      item.innerHTML =
+        `<div class="review-q">${i+1}. ${data.question}</div>` +
+        `<div class="review-line wrong">${t.yourAns}: ${userText}</div>` +
+        `<div class="review-line correct">${t.correctAns}: ${letters[q.answer]}. ${data.options[q.answer]}</div>` +
+        `<div class="review-exp">${data.explanation}</div>`;
+      reviewBox.appendChild(item);
+    });
+  }
+  window.scrollTo(0,0);
+}
+
+document.getElementById("retryBtn").addEventListener("click", () => {
+  current = 0;
+  answers = new Array(questions.length).fill(null);
+  resultShown = false;
+  locked = false;
+  document.getElementById("resultView").classList.add("hidden");
+  document.getElementById("quizView").classList.remove("hidden");
+  document.getElementById("copiedNote").classList.add("hidden");
+  renderQuestion();
+});
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const t = T[lang];
+  const { score, correctCount } = computeResults();
+  let pctl = normalCDF(score, TOTAL*0.45, TOTAL*0.15) * 100;
+  pctl = Math.max(0, Math.min(99.9, pctl)).toFixed(1);
+  const text = t.summary(score, TOTAL, correctCount, pctl, gradeFor(score));
+  navigator.clipboard.writeText(text).then(() => {
+    const note = document.getElementById("copiedNote");
+    note.textContent = t.copied;
+    note.classList.remove("hidden");
+    setTimeout(() => note.classList.add("hidden"), 2000);
+  }).catch(() => {
+    const note = document.getElementById("copiedNote");
+    note.textContent = t.copied;
+    note.classList.remove("hidden");
+  });
+});
+
+// init
+applyStaticText();
+renderQuestion();
+</script>
+</body>
+</html>

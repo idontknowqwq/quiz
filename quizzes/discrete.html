@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>離散數學互動測驗 · Discrete Mathematics Quiz</title>
+<style>
+:root{
+  --bg:#FFFFFF; --text:#1A1A1A; --muted:#6B7280; --border:#E5E7EB;
+  --accent:#2563EB; --accent-text:#FFFFFF; --track:#E5E7EB; --hover:#F3F4F6;
+  --correct:#16A34A; --wrong:#DC2626;
+}
+[data-theme="dark"]{
+  --bg:#111111; --text:#E5E7EB; --muted:#9CA3AF; --border:#374151;
+  --accent:#60A5FA; --accent-text:#111111; --track:#374151; --hover:#1F2937;
+  --correct:#4ADE80; --wrong:#F87171;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans TC",Roboto,Helvetica,Arial,sans-serif;
+  line-height:1.6;transition:background .2s ease,color .2s ease}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  flex-wrap:wrap;border-bottom:1px solid var(--border);padding-bottom:14px;margin-bottom:24px}
+.title{font-size:1.15rem;font-weight:700}
+.controls{display:flex;gap:8px}
+.btn{font:inherit;cursor:pointer;border:1px solid var(--border);background:var(--bg);
+  color:var(--text);border-radius:8px;padding:7px 12px;font-size:.85rem;
+  transition:background .15s ease,border-color .15s ease}
+.btn:hover{background:var(--hover)}
+.progress-text{font-size:.85rem;color:var(--muted);margin-bottom:14px}
+.qcard{transition:opacity .25s ease}
+.qcard.fade{opacity:0}
+.qnum{font-size:.8rem;color:var(--muted);margin-bottom:6px}
+.qtext{font-size:1.1rem;font-weight:600;margin-bottom:18px}
+.options{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:flex-start;gap:10px;text-align:left;font:inherit;
+  cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--text);
+  border-radius:10px;padding:12px 14px;font-size:.98rem;
+  transition:background .15s ease,border-color .15s ease}
+.opt:hover{background:var(--hover)}
+.opt .letter{flex:0 0 auto;font-weight:700;color:var(--muted)}
+.opt.selected{border-color:var(--accent);background:var(--hover)}
+.opt.selected .letter{color:var(--accent)}
+.nav{margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.btn.primary{background:var(--accent);color:var(--accent-text);border-color:var(--accent);font-weight:600}
+.btn.primary:hover{opacity:.9;background:var(--accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.barwrap{position:fixed;left:0;right:0;bottom:0;height:6px;background:var(--track)}
+.bar{height:100%;width:0;background:var(--accent);transition:width .25s ease}
+/* results */
+.results h2{font-size:1.4rem;margin-bottom:4px}
+.score{font-size:2.6rem;font-weight:800;margin:10px 0}
+.grade{font-size:1.2rem;font-weight:700;margin-bottom:16px}
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}
+.stat{border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.stat .k{font-size:.8rem;color:var(--muted)}
+.stat .v{font-size:1.25rem;font-weight:700}
+.percentile{border:1px solid var(--border);border-radius:10px;padding:14px;margin:14px 0;font-size:1rem}
+.review-title{font-weight:700;margin:24px 0 12px;font-size:1.1rem}
+.rev{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.rev .rq{font-weight:600;margin-bottom:8px}
+.rev .line{font-size:.92rem;margin:3px 0}
+.rev .yours{color:var(--wrong)}
+.rev .ans{color:var(--correct)}
+.rev .exp{color:var(--muted);font-size:.88rem;margin-top:8px}
+.resbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}
+.allcorrect{color:var(--correct);font-weight:600}
+@media(max-width:480px){.statgrid{grid-template-columns:1fr}.title{font-size:1rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">離散數學互動測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </header>
+  <main id="main"></main>
+</div>
+<div class="barwrap"><div class="bar" id="bar"></div></div>
+
+<script>
+const questions = [
+ {id:1,difficulty:"easy",points:10,answer:0,
+  zh:{question:"命題 ¬(p ∧ q) 等價於下列何者？",options:["¬p ∨ ¬q","¬p ∧ ¬q","p ∨ q","¬p → ¬q"],explanation:"笛摩根定律：¬(p∧q)=¬p∨¬q。"},
+  en:{question:"Which is equivalent to ¬(p ∧ q)?",options:["¬p ∨ ¬q","¬p ∧ ¬q","p ∨ q","¬p → ¬q"],explanation:"De Morgan's law: ¬(p∧q)=¬p∨¬q."}},
+ {id:2,difficulty:"medium",points:15,answer:2,
+  zh:{question:"條件命題 p → q 的逆否命題（contrapositive）為？",options:["q → p","¬p → ¬q","¬q → ¬p","p → ¬q"],explanation:"逆否命題與原命題等價。"},
+  en:{question:"The contrapositive of p → q is?",options:["q → p","¬p → ¬q","¬q → ¬p","p → ¬q"],explanation:"Contrapositive is equivalent to the original."}},
+ {id:3,difficulty:"trap",points:19,answer:1,
+  zh:{question:"當前件 p 為假時，條件命題 p → q 的真值為？",options:["為假","為真","視 q 而定","無法判定"],explanation:"前件為假時條件命題空真，恆為真。"},
+  en:{question:"When antecedent p is false, the conditional p → q is?",options:["False","True","Depends on q","Undetermined"],explanation:"A conditional with a false antecedent is vacuously true."}},
+ {id:4,difficulty:"easy",points:10,answer:3,
+  zh:{question:"含 4 個元素的集合，其冪集（power set）有多少個元素？",options:["8","12","32","16"],explanation:"2⁴ = 16。"},
+  en:{question:"A set with 4 elements has a power set of size?",options:["8","12","32","16"],explanation:"2^4 = 16."}},
+ {id:5,difficulty:"hard",points:25,answer:2,
+  zh:{question:"在含 3 個元素的集合上，共有多少個反身（reflexive）關係？",options:["8","32","64","512"],explanation:"反身關係數 = 2^(n²−n) = 2⁶ = 64。"},
+  en:{question:"How many reflexive relations exist on a 3-element set?",options:["8","32","64","512"],explanation:"Reflexive relations = 2^(n^2-n) = 2^6 = 64."}},
+ {id:6,difficulty:"medium",points:15,answer:0,
+  zh:{question:"至少需要多少人，才能保證有 3 人出生於同一個月份？",options:["25","13","24","36"],explanation:"鴿籠原理：2×12+1 = 25。"},
+  en:{question:"How many people guarantee that 3 share the same birth month?",options:["25","13","24","36"],explanation:"Pigeonhole: 2*12+1 = 25."}},
+ {id:7,difficulty:"easy",points:10,answer:3,
+  zh:{question:"一個無向圖有 10 條邊，則所有頂點的度數總和為？",options:["10","5","40","20"],explanation:"握手定理：度數和 = 2×邊數。"},
+  en:{question:"An undirected graph has 10 edges; the sum of all vertex degrees is?",options:["10","5","40","20"],explanation:"Handshaking theorem: sum of degrees = 2*edges."}},
+ {id:8,difficulty:"hard",points:25,answer:1,
+  zh:{question:"完全圖 K₅ 的著色數（chromatic number）為何？",options:["2","5","4","10"],explanation:"完全圖 Kₙ 需要 n 種顏色。"},
+  en:{question:"What is the chromatic number of the complete graph K₅?",options:["2","5","4","10"],explanation:"Complete graph K_n needs n colors."}},
+ {id:9,difficulty:"medium",points:15,answer:1,
+  zh:{question:"單字「LEVEL」的相異字母排列方式共有幾種？",options:["60","30","120","20"],explanation:"5!/(2!·2!) = 30。"},
+  en:{question:"How many distinct arrangements does the word \"LEVEL\" have?",options:["60","30","120","20"],explanation:"5!/(2!·2!) = 30."}},
+ {id:10,difficulty:"easy",points:10,answer:3,
+  zh:{question:"若 |A|=5、|B|=7、|A∩B|=3，則 |A∪B| 為？",options:["12","15","6","9"],explanation:"|A∪B| = |A|+|B|−|A∩B| = 9。"},
+  en:{question:"If |A|=5, |B|=7, |A∩B|=3, then |A∪B| is?",options:["12","15","6","9"],explanation:"|A∪B| = |A|+|B|−|A∩B| = 9."}},
+ {id:11,difficulty:"trap",points:19,answer:0,
+  zh:{question:"非空集合上的「空關係」（empty relation）不具備下列哪一性質？",options:["反身性（reflexive）","對稱性（symmetric）","遞移性（transitive）","反對稱性（antisymmetric）"],explanation:"空關係空真地對稱、遞移、反對稱，但在非空集合上不反身。"},
+  en:{question:"On a non-empty set, the empty relation lacks which property?",options:["Reflexivity","Symmetry","Transitivity","Antisymmetry"],explanation:"The empty relation is vacuously symmetric/transitive/antisymmetric but not reflexive."}},
+ {id:12,difficulty:"medium",points:15,answer:2,
+  zh:{question:"從 6 個相異物件中取出 2 個的組合數為？",options:["30","12","15","36"],explanation:"C(6,2) = 15。"},
+  en:{question:"The number of ways to choose 2 from 6 distinct objects is?",options:["30","12","15","36"],explanation:"C(6,2) = 15."}},
+ {id:13,difficulty:"hard",points:25,answer:3,
+  zh:{question:"遞迴關係 aₙ = 2aₙ₋₁、a₀ = 3，則 a₄ 之值為？",options:["24","16","96","48"],explanation:"aₙ = 3·2ⁿ，故 a₄ = 48。"},
+  en:{question:"For the recurrence aₙ = 2aₙ₋₁ with a₀ = 3, the value of a₄ is?",options:["24","16","96","48"],explanation:"aₙ = 3·2ⁿ, so a₄ = 48."}},
+ {id:14,difficulty:"easy",points:10,answer:1,
+  zh:{question:"12 與 18 的最大公因數（GCD）為？",options:["3","6","9","36"],explanation:"gcd(12,18) = 6。"},
+  en:{question:"The greatest common divisor (GCD) of 12 and 18 is?",options:["3","6","9","36"],explanation:"gcd(12,18) = 6."}},
+ {id:15,difficulty:"medium",points:15,answer:2,
+  zh:{question:"7² mod 5 的值為？",options:["2","1","4","3"],explanation:"49 mod 5 = 4。"},
+  en:{question:"The value of 7² mod 5 is?",options:["2","1","4","3"],explanation:"49 mod 5 = 4."}},
+ {id:16,difficulty:"hard",points:25,answer:0,
+  zh:{question:"n=3 時，正確配對的括號序列數（卡塔蘭數 C₃）為？",options:["5","6","4","8"],explanation:"卡塔蘭數 C₃ = 5。"},
+  en:{question:"For n=3, the number of valid parenthesis sequences (Catalan C₃) is?",options:["5","6","4","8"],explanation:"Catalan number C₃ = 5."}},
+ {id:17,difficulty:"medium",points:15,answer:0,
+  zh:{question:"一個函數為雙射（bijection）的充要條件是同時具備？",options:["單射與滿射","單射與遞增","滿射與連續","單調與有界"],explanation:"雙射 = 單射（injective）＋ 滿射（surjective）。"},
+  en:{question:"A function is a bijection if and only if it is both?",options:["Injective and surjective","Injective and increasing","Surjective and continuous","Monotonic and bounded"],explanation:"Bijection = injective + surjective."}},
+ {id:18,difficulty:"easy",points:10,answer:2,
+  zh:{question:"一棵有 7 個頂點的樹（tree）共有多少條邊？",options:["7","5","6","8"],explanation:"樹有 n−1 條邊。"},
+  en:{question:"A tree with 7 vertices has how many edges?",options:["7","5","6","8"],explanation:"A tree has n−1 edges."}},
+ {id:19,difficulty:"trap",points:19,answer:3,
+  zh:{question:"下列關於圖論的敘述，何者正確？",options:["歐拉圖必為漢米爾頓圖","漢米爾頓圖必定為歐拉圖","兩者互為充分必要條件","歐拉圖未必為漢米爾頓圖"],explanation:"歐拉性質與漢米爾頓性質彼此獨立。"},
+  en:{question:"Which statement about graphs is correct?",options:["An Eulerian graph must be Hamiltonian","A Hamiltonian graph must also be Eulerian","The two properties are fully equivalent","An Eulerian graph need not be Hamiltonian"],explanation:"Eulerian and Hamiltonian properties are independent."}},
+ {id:20,difficulty:"medium",points:15,answer:1,
+  zh:{question:"1 到 100 中，可被 2 或 5 整除的整數共有幾個？",options:["50","60","70","55"],explanation:"50 + 20 − 10 = 60。"},
+  en:{question:"Among 1 to 100, how many integers are divisible by 2 or 5?",options:["50","60","70","55"],explanation:"50 + 20 − 10 = 60."}},
+ {id:21,difficulty:"hard",points:25,answer:2,
+  zh:{question:"完全圖 K₄ 的生成樹（spanning tree）共有幾棵？",options:["8","12","16","64"],explanation:"凱萊公式 nⁿ⁻² = 4² = 16。"},
+  en:{question:"How many spanning trees does the complete graph K₄ have?",options:["8","12","16","64"],explanation:"Cayley's formula nⁿ⁻² = 4² = 16."}},
+ {id:22,difficulty:"easy",points:10,answer:0,
+  zh:{question:"依笛摩根定律，(A∪B)ᶜ 等於下列何者？",options:["Aᶜ ∩ Bᶜ","Aᶜ ∪ Bᶜ","A ∩ B","Aᶜ ∩ B"],explanation:"(A∪B)ᶜ = Aᶜ ∩ Bᶜ。"},
+  en:{question:"By De Morgan's law, (A∪B)ᶜ equals?",options:["Aᶜ ∩ Bᶜ","Aᶜ ∪ Bᶜ","A ∩ B","Aᶜ ∩ B"],explanation:"(A∪B)ᶜ = Aᶜ ∩ Bᶜ."}},
+ {id:23,difficulty:"medium",points:15,answer:1,
+  zh:{question:"關係 R = {(1,2),(2,3)} 要滿足遞移性，至少需再加入哪一對？",options:["(2,1)","(1,3)","(3,1)","(2,2)"],explanation:"遞移性要求 (1,2),(2,3) ⇒ (1,3)。"},
+  en:{question:"To make R = {(1,2),(2,3)} transitive, which pair must be added?",options:["(2,1)","(1,3)","(3,1)","(2,2)"],explanation:"Transitivity: (1,2),(2,3) ⇒ (1,3)."}},
+ {id:24,difficulty:"hard",points:25,answer:3,
+  zh:{question:"遞迴 aₙ = 5aₙ₋₁ − 6aₙ₋₂ 的特徵根（characteristic roots）為？",options:["1 與 6","−2 與 −3","5 與 6","2 與 3"],explanation:"x²−5x+6=0，根為 2 與 3。"},
+  en:{question:"The characteristic roots of aₙ = 5aₙ₋₁ − 6aₙ₋₂ are?",options:["1 and 6","−2 and −3","5 and 6","2 and 3"],explanation:"x²−5x+6=0 gives roots 2 and 3."}},
+ {id:25,difficulty:"medium",points:15,answer:1,
+  zh:{question:"依巴斯卡恆等式（Pascal's identity），C(n,k) 等於下列何者？",options:["C(n−1,k) + C(n,k−1)","C(n−1,k−1) + C(n−1,k)","C(n−1,k−1) × C(n−1,k)","C(n+1,k) − C(n,k−1)"],explanation:"巴斯卡恆等式：C(n,k)=C(n−1,k−1)+C(n−1,k)。"},
+  en:{question:"By Pascal's identity, C(n,k) equals?",options:["C(n−1,k) + C(n,k−1)","C(n−1,k−1) + C(n−1,k)","C(n−1,k−1) × C(n−1,k)","C(n+1,k) − C(n,k−1)"],explanation:"Pascal's identity: C(n,k)=C(n−1,k−1)+C(n−1,k)."}},
+ {id:26,difficulty:"easy",points:10,answer:3,
+  zh:{question:"下列哪一個數是質數（prime number）？",options:["21","27","15","17"],explanation:"17 僅有 1 與自身兩個因數。"},
+  en:{question:"Which of the following is a prime number?",options:["21","27","15","17"],explanation:"17 has only 1 and itself as divisors."}},
+ {id:27,difficulty:"trap",points:19,answer:2,
+  zh:{question:"最小的質數（prime number）是哪一個？",options:["1","3","2","0"],explanation:"1 不是質數，最小的質數為 2。"},
+  en:{question:"Which is the smallest prime number?",options:["1","3","2","0"],explanation:"1 is not prime; the smallest prime is 2."}},
+ {id:28,difficulty:"medium",points:15,answer:0,
+  zh:{question:"尤拉函數 φ(12)（小於 12 且與 12 互質的正整數個數）為？",options:["4","6","5","2"],explanation:"與 12 互質者為 1,5,7,11，共 4 個。"},
+  en:{question:"Euler's totient φ(12) (positive integers below 12 coprime to 12) is?",options:["4","6","5","2"],explanation:"Coprime to 12: 1,5,7,11 — four of them."}},
+ {id:29,difficulty:"hard",points:25,answer:3,
+  zh:{question:"連通平面圖有 6 個頂點、9 條邊，依尤拉公式其面數（faces）為？",options:["4","6","3","5"],explanation:"v − e + f = 2 ⇒ f = 5。"},
+  en:{question:"A connected planar graph has 6 vertices and 9 edges; by Euler's formula the number of faces is?",options:["4","6","3","5"],explanation:"v − e + f = 2 ⇒ f = 5."}},
+ {id:30,difficulty:"easy",points:10,answer:1,
+  zh:{question:"命題 p ∧ q 為真（true）的條件是？",options:["p 與 q 至少一真","p 與 q 皆為真","p 與 q 皆為假","p 與 q 真假相異"],explanation:"合取在兩者皆為真時才為真。"},
+  en:{question:"The conjunction p ∧ q is true when?",options:["At least one is true","Both p and q are true","Both p and q are false","They differ in truth value"],explanation:"A conjunction is true only when both are true."}},
+ {id:31,difficulty:"medium",points:15,answer:0,
+  zh:{question:"當 n 趨近無限大時，下列哪個函數成長最快？",options:["2ⁿ","n³","n log n","n²"],explanation:"指數函數成長快於任意多項式。"},
+  en:{question:"As n → ∞, which function grows the fastest?",options:["2ⁿ","n³","n log n","n²"],explanation:"Exponential growth beats any polynomial."}},
+ {id:32,difficulty:"hard",points:25,answer:2,
+  zh:{question:"從含 4 個元素的集合映到含 2 個元素集合的滿射（onto）函數共有幾個？",options:["16","8","14","12"],explanation:"2⁴ − 2 = 14。"},
+  en:{question:"How many onto functions are there from a 4-element set to a 2-element set?",options:["16","8","14","12"],explanation:"2⁴ − 2 = 14."}},
+ {id:33,difficulty:"medium",points:15,answer:2,
+  zh:{question:"下列度數序列（degree sequence）何者不可能存在於某簡單圖？",options:["(2, 2, 2, 2)","(3, 2, 2, 1)","(3, 3, 3, 1)","(1, 1, 1, 1)"],explanation:"三個度數為 3 的頂點會迫使第四點度數也為 3，矛盾。"},
+  en:{question:"Which degree sequence cannot belong to any simple graph?",options:["(2, 2, 2, 2)","(3, 2, 2, 1)","(3, 3, 3, 1)","(1, 1, 1, 1)"],explanation:"Three degree-3 vertices force the fourth to degree 3 — a contradiction."}},
+ {id:34,difficulty:"hard",points:25,answer:0,
+  zh:{question:"用數學歸納法證明 1+2+…+n = n(n+1)/2 時，歸納步驟須假設何者成立？",options:["命題對 n = k 成立","命題對所有 n 成立","命題對 n = k+1 成立","命題對 n = 1 成立"],explanation:"歸納假設：設 n=k 成立，再推得 n=k+1。"},
+  en:{question:"In proving 1+2+…+n = n(n+1)/2 by induction, the inductive step assumes what?",options:["The claim holds for n = k","The claim holds for all n","The claim holds for n = k+1","The claim holds for n = 1"],explanation:"Inductive hypothesis: assume n=k holds, then prove n=k+1."}},
+ {id:35,difficulty:"medium",points:15,answer:3,
+  zh:{question:"同餘方程式 3x ≡ 1 (mod 7) 的解為？",options:["x ≡ 2 (mod 7)","x ≡ 3 (mod 7)","x ≡ 4 (mod 7)","x ≡ 5 (mod 7)"],explanation:"3 × 5 = 15 ≡ 1 (mod 7)。"},
+  en:{question:"The solution of 3x ≡ 1 (mod 7) is?",options:["x ≡ 2 (mod 7)","x ≡ 3 (mod 7)","x ≡ 4 (mod 7)","x ≡ 5 (mod 7)"],explanation:"3 × 5 = 15 ≡ 1 (mod 7)."}},
+ {id:36,difficulty:"hard",points:25,answer:1,
+  zh:{question:"關於無限集合的基數（cardinality），下列敘述何者正確？",options:["有理數集為不可數集","實數集為不可數無限集","整數集基數大於有理數","所有無限集基數皆相同"],explanation:"由康托對角論證，實數集不可數。"},
+  en:{question:"Which statement about cardinality of infinite sets is correct?",options:["The set of rationals is uncountable","The set of reals is uncountable","Integers have larger cardinality than rationals","All infinite sets have equal cardinality"],explanation:"By Cantor's diagonal argument, the reals are uncountable."}},
+ {id:37,difficulty:"easy",points:10,answer:0,
+  zh:{question:"「單射（injective）」函數的定義是？",options:["不同輸入對應不同輸出","每個輸出皆被對應","輸入與輸出數目相等","函數連續且為遞增"],explanation:"單射：a ≠ b ⇒ f(a) ≠ f(b)。"},
+  en:{question:"The definition of an injective function is?",options:["Distinct inputs map to distinct outputs","Every output is mapped to","Inputs and outputs are equal in count","The function is continuous and increasing"],explanation:"Injective: a ≠ b ⇒ f(a) ≠ f(b)."}},
+ {id:38,difficulty:"medium",points:15,answer:2,
+  zh:{question:"從 3 種口味中可重複地選購 2 球冰淇淋，共有幾種組合？",options:["9","3","6","12"],explanation:"重複組合 C(3+2−1,2) = C(4,2) = 6。"},
+  en:{question:"Choosing 2 scoops (with repetition) from 3 flavors gives how many combinations?",options:["9","3","6","12"],explanation:"C(3+2−1,2) = C(4,2) = 6."}},
+ {id:39,difficulty:"trap",points:19,answer:1,
+  zh:{question:"下列關於關係性質的敘述，何者正確？",options:["對稱且遞移必定反身","對稱且遞移未必反身","反身且對稱必定遞移","反身且遞移必定對稱"],explanation:"空關係即為對稱且遞移但不反身的反例。"},
+  en:{question:"Which statement about relation properties is correct?",options:["Symmetric and transitive do imply reflexivity","Symmetric and transitive need not be reflexive","Reflexive and symmetric imply transitivity","Reflexive and transitive imply symmetry"],explanation:"The empty relation is a counterexample."}},
+ {id:40,difficulty:"medium",points:15,answer:3,
+  zh:{question:"費氏數列 F₁=1、F₂=1、Fₙ=Fₙ₋₁+Fₙ₋₂，則 F₇ 為？",options:["21","8","11","13"],explanation:"數列為 1,1,2,3,5,8,13，故 F₇ = 13。"},
+  en:{question:"For Fibonacci F₁=1, F₂=1, Fₙ=Fₙ₋₁+Fₙ₋₂, what is F₇?",options:["21","8","11","13"],explanation:"Sequence 1,1,2,3,5,8,13, so F₇ = 13."}}
+];
+
+const T = {
+  zh:{appTitle:"離散數學互動測驗",lang:"English",dark:"🌙 深色",light:"☀️ 淺色",
+    progress:(c,t)=>`第 ${c} / ${t} 題`,prev:"上一題",submit:"提交測驗",
+    resultTitle:"測驗結果",totalScore:"總分",correctCount:"正確題數",wrongCount:"錯誤題數",
+    byDiff:"各難度正確率",easy:"簡單",medium:"中等",hard:"困難",trap:"陷阱",
+    grade:"等級評定",percentile:p=>`你的成績超越了約 ${p}% 的測試者`,
+    reviewTitle:"錯題回顧",yours:"你的選擇",answer:"正確答案",
+    retry:"重新測驗",copy:"複製結果",copied:"已複製！",allCorrect:"全部答對，太厲害了！",
+    summary:(s,c)=>`離散數學測驗成績：${s} / 670　答對 ${c} / 40`},
+  en:{appTitle:"Discrete Mathematics Quiz",lang:"中文",dark:"🌙 Dark",light:"☀️ Light",
+    progress:(c,t)=>`Question ${c} / ${t}`,prev:"Previous",submit:"Submit Quiz",
+    resultTitle:"Results",totalScore:"Total Score",correctCount:"Correct",wrongCount:"Wrong",
+    byDiff:"Accuracy by Difficulty",easy:"Easy",medium:"Medium",hard:"Hard",trap:"Trap",
+    grade:"Grade",percentile:p=>`You scored higher than about ${p}% of test-takers`,
+    reviewTitle:"Review of Mistakes",yours:"Your choice",answer:"Correct answer",
+    retry:"Retry",copy:"Copy Result",copied:"Copied!",allCorrect:"All correct — outstanding!",
+    summary:(s,c)=>`Discrete Math Quiz: ${s} / 670, ${c} / 40 correct`}
+};
+const GRADES=[
+  {min:600,zh:"🏆 頂尖專家",en:"🏆 Top Expert"},
+  {min:500,zh:"⭐ 進階掌握",en:"⭐ Advanced"},
+  {min:380,zh:"📘 中等水準",en:"📘 Intermediate"},
+  {min:250,zh:"📗 基礎尚可",en:"📗 Basic"},
+  {min:0,zh:"📕 需要加強",en:"📕 Needs Improvement"}
+];
+const LETTERS=["A","B","C","D"],TOTAL=questions.length,MAXSCORE=670;
+let lang="zh",current=0,answers=new Array(TOTAL).fill(null),finished=false;
+
+const main=document.getElementById("main");
+const bar=document.getElementById("bar");
+const langBtn=document.getElementById("langBtn");
+const themeBtn=document.getElementById("themeBtn");
+const appTitle=document.getElementById("appTitle");
+
+// theme
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  themeBtn.textContent = t==="dark"?T[lang].light:T[lang].dark;
+}
+let theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark":"light";
+applyTheme(theme);
+themeBtn.onclick=()=>{theme=theme==="dark"?"light":"dark";applyTheme(theme);};
+langBtn.onclick=()=>{lang=lang==="zh"?"en":"zh";document.documentElement.lang=lang==="zh"?"zh-Hant":"en";refreshChrome();finished?renderResults():renderQuestion();};
+
+function refreshChrome(){
+  appTitle.textContent=T[lang].appTitle;
+  langBtn.textContent=T[lang].lang;
+  themeBtn.textContent=theme==="dark"?T[lang].light:T[lang].dark;
+}
+
+function setBar(){bar.style.width=((finished?TOTAL:current)/TOTAL*100)+"%";}
+
+function renderQuestion(){
+  finished=false;
+  const q=questions[current],d=q[lang];
+  setBar();
+  let html=`<div class="progress-text">${T[lang].progress(current+1,TOTAL)}</div>
+  <div class="qcard" id="qcard">
+    <div class="qnum">${current+1}</div>
+    <div class="qtext">${d.question}</div>
+    <div class="options">`;
+  d.options.forEach((o,i)=>{
+    const sel=answers[current]===i?" selected":"";
+    html+=`<button class="opt${sel}" data-i="${i}"><span class="letter">${LETTERS[i]}</span><span>${o}</span></button>`;
+  });
+  html+=`</div><div class="nav">
+    <button class="btn" id="prevBtn"${current===0?" disabled":""}>${T[lang].prev}</button>`;
+  if(current===TOTAL-1) html+=`<button class="btn primary" id="submitBtn"${answers[current]===null?" disabled":""}>${T[lang].submit}</button>`;
+  html+=`</div></div>`;
+  main.innerHTML=html;
+
+  main.querySelectorAll(".opt").forEach(b=>{
+    b.onclick=()=>selectOption(parseInt(b.dataset.i));
+  });
+  const prevBtn=document.getElementById("prevBtn");
+  if(prevBtn) prevBtn.onclick=()=>{if(current>0){current--;fadeTo(renderQuestion);}};
+  const submitBtn=document.getElementById("submitBtn");
+  if(submitBtn) submitBtn.onclick=()=>fadeTo(renderResults);
+}
+
+function selectOption(i){
+  answers[current]=i;
+  main.querySelectorAll(".opt").forEach((b,idx)=>b.classList.toggle("selected",idx===i));
+  if(current===TOTAL-1){
+    const sb=document.getElementById("submitBtn");
+    if(sb) sb.disabled=false;
+    return; // last question: wait for explicit submit
+  }
+  setTimeout(()=>{current++;fadeTo(renderQuestion);},400);
+}
+
+function fadeTo(fn){
+  const card=document.getElementById("qcard")||main.firstElementChild;
+  if(card){card.classList.add("fade");setTimeout(fn,200);} else fn();
+}
+
+// normal CDF via erf approximation
+function normalCdf(x,mean,sd){
+  const z=(x-mean)/(sd*Math.SQRT2);
+  // Abramowitz-Stegun erf
+  const t=1/(1+0.3275911*Math.abs(z));
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-z*z);
+  const erf=z>=0?y:-y;
+  return 0.5*(1+erf);
+}
+
+function renderResults(){
+  finished=true;setBar();
+  let score=0,correct=0;
+  const perDiff={easy:[0,0],medium:[0,0],hard:[0,0],trap:[0,0]};
+  questions.forEach((q,i)=>{
+    perDiff[q.difficulty][1]++;
+    if(answers[i]===q.answer){score+=q.points;correct++;perDiff[q.difficulty][0]++;}
+  });
+  const wrong=TOTAL-correct;
+  const pct=Math.max(0,Math.min(99.9,normalCdf(score,MAXSCORE*0.45,MAXSCORE*0.15)*100));
+  const pctStr=pct.toFixed(1);
+  const grade=GRADES.find(g=>score>=g.min);
+  const t=T[lang];
+
+  let html=`<div class="results">
+    <h2>${t.resultTitle}</h2>
+    <div class="score">${score} / ${MAXSCORE}</div>
+    <div class="grade">${grade[lang]}</div>
+    <div class="percentile">${t.percentile(pctStr)}</div>
+    <div class="statgrid">
+      <div class="stat"><div class="k">${t.correctCount}</div><div class="v">${correct} / ${TOTAL}</div></div>
+      <div class="stat"><div class="k">${t.wrongCount}</div><div class="v">${wrong} / ${TOTAL}</div></div>
+    </div>
+    <div class="review-title">${t.byDiff}</div>
+    <div class="statgrid">`;
+  ["easy","medium","hard","trap"].forEach(k=>{
+    html+=`<div class="stat"><div class="k">${t[k]}</div><div class="v">${perDiff[k][0]} / ${perDiff[k][1]}</div></div>`;
+  });
+  html+=`</div>`;
+
+  const wrongs=questions.filter((q,i)=>answers[i]!==q.answer);
+  html+=`<div class="review-title">${t.reviewTitle}</div>`;
+  if(wrongs.length===0){
+    html+=`<div class="rev allcorrect">${t.allCorrect}</div>`;
+  }else{
+    questions.forEach((q,i)=>{
+      if(answers[i]===q.answer)return;
+      const d=q[lang];
+      const your=answers[i]===null?"—":`${LETTERS[answers[i]]}. ${d.options[answers[i]]}`;
+      html+=`<div class="rev">
+        <div class="rq">${q.id}. ${d.question}</div>
+        <div class="line yours">${t.yours}：${your}</div>
+        <div class="line ans">${t.answer}：${LETTERS[q.answer]}. ${d.options[q.answer]}</div>
+        <div class="exp">${d.explanation}</div>
+      </div>`;
+    });
+  }
+  html+=`<div class="resbtns">
+    <button class="btn primary" id="retryBtn">${t.retry}</button>
+    <button class="btn" id="copyBtn">${t.copy}</button>
+  </div></div>`;
+  main.innerHTML=html;
+
+  document.getElementById("retryBtn").onclick=()=>{
+    current=0;answers=new Array(TOTAL).fill(null);finished=false;fadeTo(renderQuestion);
+  };
+  document.getElementById("copyBtn").onclick=()=>{
+    const txt=t.summary(score,correct)+" — "+grade[lang]+" | "+t.percentile(pctStr);
+    const btn=document.getElementById("copyBtn");
+    navigator.clipboard.writeText(txt).then(()=>{btn.textContent=t.copied;setTimeout(()=>btn.textContent=t.copy,1500);})
+      .catch(()=>{btn.textContent=t.copied;setTimeout(()=>btn.textContent=t.copy,1500);});
+  };
+}
+
+refreshChrome();
+renderQuestion();
+</script>
+</body>
+</html>

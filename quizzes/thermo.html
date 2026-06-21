@@ -1,0 +1,1659 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>熱力學測驗 | Thermodynamics Quiz</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --bg-card: #F9FAFB;
+    --text: #1A1A1A;
+    --text-sub: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-hover: #1D4ED8;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --option-hover: #EFF6FF;
+    --option-selected: #DBEAFE;
+    --btn-bg: #F3F4F6;
+    --btn-text: #374151;
+    --progress-bg: #E5E7EB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --bg-card: #1C1C1C;
+    --text: #E5E7EB;
+    --text-sub: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-hover: #93C5FD;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --option-hover: #1E3A5F;
+    --option-selected: #1E40AF;
+    --btn-bg: #374151;
+    --btn-text: #E5E7EB;
+    --progress-bg: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.2s, color 0.2s;
+  }
+  #app { max-width: 760px; margin: 0 auto; padding: 0 16px 40px; }
+
+  /* HEADER */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header-title { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+  .header-controls { display: flex; gap: 8px; align-items: center; }
+  .ctrl-btn {
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    border: 1px solid var(--border);
+    padding: 5px 12px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.15s;
+  }
+  .ctrl-btn:hover { background: var(--border); }
+  .progress-text { font-size: 0.85rem; color: var(--text-sub); white-space: nowrap; }
+
+  /* PROGRESS BAR */
+  .progress-bar-wrap {
+    background: var(--progress-bg);
+    border-radius: 4px;
+    height: 6px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    background: var(--accent);
+    height: 100%;
+    transition: width 0.3s;
+    border-radius: 4px;
+  }
+
+  /* QUESTION CARD */
+  .question-wrap {
+    opacity: 1;
+    transition: opacity 0.25s;
+  }
+  .question-wrap.fade-out { opacity: 0; }
+  .question-num {
+    font-size: 0.8rem;
+    color: var(--text-sub);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .question-text {
+    font-size: 1.1rem;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    color: var(--text);
+  }
+  .options-list { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    transition: background 0.15s, border-color 0.15s;
+    width: 100%;
+  }
+  .option-btn:hover:not(:disabled) {
+    background: var(--option-hover);
+    border-color: var(--accent);
+  }
+  .option-btn:disabled { cursor: default; }
+  .option-btn.selected {
+    background: var(--option-selected);
+    border-color: var(--accent);
+  }
+  .option-label {
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 20px;
+    flex-shrink: 0;
+  }
+
+  /* NAV BUTTONS */
+  .nav-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 28px;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .nav-btn {
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-btn:hover { background: var(--border); }
+  .nav-btn:disabled { opacity: 0.35; cursor: default; }
+  .submit-btn {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    padding: 10px 28px;
+  }
+  .submit-btn:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+  /* RESULTS */
+  #results { display: none; }
+  .result-header { text-align: center; padding: 32px 0 20px; }
+  .result-score { font-size: 3rem; font-weight: 800; color: var(--accent); }
+  .result-score-label { font-size: 1rem; color: var(--text-sub); margin-top: 4px; }
+  .result-grade { font-size: 1.6rem; font-weight: 700; margin: 16px 0 8px; }
+  .result-percentile { font-size: 0.95rem; color: var(--text-sub); margin-bottom: 24px; }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  @media (max-width: 500px) { .stats-grid { grid-template-columns: 1fr; } }
+  .stat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-num { font-size: 1.8rem; font-weight: 700; color: var(--accent); }
+  .stat-label { font-size: 0.82rem; color: var(--text-sub); margin-top: 4px; }
+
+  .difficulty-stats {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 24px;
+  }
+  .difficulty-stats h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; }
+  .diff-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.9rem;
+  }
+  .diff-row:last-child { border-bottom: none; }
+  .diff-bar-bg {
+    width: 120px;
+    height: 8px;
+    background: var(--progress-bg);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0 12px;
+  }
+  .diff-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+
+  /* REVIEW */
+  .review-section { margin-top: 8px; }
+  .review-section h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .review-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+  }
+  .review-q { font-size: 0.92rem; font-weight: 600; margin-bottom: 10px; line-height: 1.5; }
+  .review-option { font-size: 0.88rem; padding: 6px 0; display: flex; align-items: flex-start; gap: 8px; line-height: 1.45; }
+  .tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .tag-wrong { background: #FEE2E2; color: var(--wrong); }
+  .tag-correct { background: #DCFCE7; color: var(--correct); }
+  [data-theme="dark"] .tag-wrong { background: #450a0a; }
+  [data-theme="dark"] .tag-correct { background: #052e16; }
+  .review-explanation {
+    font-size: 0.85rem;
+    color: var(--text-sub);
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    line-height: 1.5;
+  }
+
+  .result-btns {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .result-btn {
+    flex: 1;
+    min-width: 140px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--btn-bg);
+    color: var(--btn-text);
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: center;
+  }
+  .result-btn:hover { background: var(--border); }
+  .result-btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+  .result-btn.primary:hover { background: var(--accent-hover); }
+
+  .copy-toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+  .copy-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-title" id="header-title">熱力學測驗</div>
+    <div class="header-controls">
+      <span class="progress-text" id="progress-text">第 1 / 40 題</span>
+      <button class="ctrl-btn" id="lang-btn" onclick="toggleLang()">English</button>
+      <button class="ctrl-btn" id="theme-btn" onclick="toggleTheme()">🌙 深色</button>
+    </div>
+  </header>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz">
+    <div class="question-wrap" id="question-wrap">
+      <div class="question-num" id="question-num"></div>
+      <div class="question-text" id="question-text"></div>
+      <div class="options-list" id="options-list"></div>
+      <div class="nav-row">
+        <button class="nav-btn" id="prev-btn" onclick="prevQuestion()">← <span class="t" data-zh="上一題" data-en="Previous"></span></button>
+        <button class="nav-btn submit-btn" id="submit-btn" style="display:none" onclick="submitQuiz()"><span class="t" data-zh="提交測驗" data-en="Submit Quiz"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results">
+    <div class="result-header">
+      <div class="result-score" id="result-score"></div>
+      <div class="result-score-label t" data-zh="總分 / 670 分" data-en="Total Score / 670"></div>
+      <div class="result-grade" id="result-grade"></div>
+      <div class="result-percentile" id="result-percentile"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-correct"></div>
+        <div class="stat-label t" data-zh="答對題數" data-en="Correct Answers"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-wrong"></div>
+        <div class="stat-label t" data-zh="答錯題數" data-en="Wrong Answers"></div>
+      </div>
+    </div>
+
+    <div class="difficulty-stats">
+      <h3 class="t" data-zh="各難度正確率" data-en="Score by Difficulty"></h3>
+      <div class="diff-row">
+        <span class="t" data-zh="簡單 Easy" data-en="Easy"></span>
+        <div class="diff-bar-bg"><div class="diff-bar-fill" id="bar-easy"></div></div>
+        <span id="stat-easy"></span>
+      </div>
+      <div class="diff-row">
+        <span class="t" data-zh="中等 Med" data-en="Medium"></span>
+        <div class="diff-bar-bg"><div class="diff-bar-fill" id="bar-med"></div></div>
+        <span id="stat-med"></span>
+      </div>
+      <div class="diff-row">
+        <span class="t" data-zh="困難 Hard" data-en="Hard"></span>
+        <div class="diff-bar-bg"><div class="diff-bar-fill" id="bar-hard"></div></div>
+        <span id="stat-hard"></span>
+      </div>
+      <div class="diff-row">
+        <span class="t" data-zh="陷阱 Trap" data-en="Trap"></span>
+        <div class="diff-bar-bg"><div class="diff-bar-fill" id="bar-trap"></div></div>
+        <span id="stat-trap"></span>
+      </div>
+    </div>
+
+    <div class="review-section">
+      <h3 id="review-title"></h3>
+      <div id="review-list"></div>
+    </div>
+
+    <div class="result-btns">
+      <button class="result-btn primary" onclick="restartQuiz()">
+        <span class="t" data-zh="🔄 重新測驗" data-en="🔄 Restart Quiz"></span>
+      </button>
+      <button class="result-btn" onclick="copyResult()">
+        <span class="t" data-zh="📋 複製結果" data-en="📋 Copy Result"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="copy-toast" id="copy-toast"></div>
+
+<script>
+// ─── THEME ───────────────────────────────────────────────────────────
+const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+let isDark = prefersDark;
+document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+function toggleTheme() {
+  isDark = !isDark;
+  document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+  document.getElementById('theme-btn').textContent = isDark ? '☀️ 淺色' : '🌙 深色';
+}
+document.getElementById('theme-btn').textContent = isDark ? '☀️ 淺色' : '🌙 深色';
+
+// ─── LANGUAGE ────────────────────────────────────────────────────────
+let lang = 'zh';
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  document.getElementById('lang-btn').textContent = lang === 'zh' ? 'English' : '中文';
+  applyLang();
+  renderQuestion();
+}
+function applyLang() {
+  document.querySelectorAll('.t').forEach(el => {
+    el.textContent = el.dataset[lang] || el.dataset.zh;
+  });
+  document.getElementById('header-title').textContent = lang === 'zh' ? '熱力學測驗' : 'Thermodynamics Quiz';
+  document.title = lang === 'zh' ? '熱力學測驗 | Thermodynamics Quiz' : 'Thermodynamics Quiz | 熱力學測驗';
+  updateProgressText();
+}
+
+// ─── QUESTION DATA ───────────────────────────────────────────────────
+const questionsRaw = [
+  // ── EASY (10 題, 10 分) ──
+  {
+    id: 1, difficulty: 'easy', points: 10,
+    zh: {
+      question: '下列何者為熱力學溫度的 SI 單位？',
+      options: [
+        '克耳文（K）——以絕對零度為起點的溫度單位',
+        '攝氏度（°C）——以水的冰點為起點的溫度單位',
+        '華氏度（°F）——以鹽水冰點為起點的溫度單位',
+        '蘭金（°R）——以絕對零度為起點的英制溫度單位'
+      ],
+      explanation: '熱力學溫度的 SI 單位是克耳文（K），以絕對零度（-273.15°C）為零點。'
+    },
+    en: {
+      question: 'Which of the following is the SI unit of thermodynamic temperature?',
+      options: [
+        'Kelvin (K) — temperature scale starting from absolute zero',
+        'Celsius (°C) — temperature scale starting from the freezing point of water',
+        'Fahrenheit (°F) — temperature scale starting from the freezing point of brine',
+        'Rankine (°R) — imperial temperature scale starting from absolute zero'
+      ],
+      explanation: 'The SI unit of thermodynamic temperature is the Kelvin (K), with zero at absolute zero (−273.15 °C).'
+    },
+    answer: 0
+  },
+  {
+    id: 2, difficulty: 'easy', points: 10,
+    zh: {
+      question: '熱力學第零定律描述的是什麼核心概念？',
+      options: [
+        '孤立系統的總能量守恆不隨時間改變',
+        '熱平衡具有遞移性：若A與B熱平衡、B與C熱平衡，則A與C亦熱平衡',
+        '孤立系統的熵在自發過程中只能增加不能減少',
+        '在有限步驟的操作內，絕對零度無法被精確達到'
+      ],
+      explanation: '熱力學第零定律確立了熱平衡的遞移性，也是溫度這個狀態函數的邏輯基礎。'
+    },
+    en: {
+      question: 'What core concept does the Zeroth Law of Thermodynamics describe?',
+      options: [
+        'The total energy of an isolated system is conserved and does not change over time',
+        'Thermal equilibrium is transitive: if A is in equilibrium with B, and B with C, then A is in equilibrium with C',
+        'The entropy of an isolated system can only increase during spontaneous processes',
+        'Absolute zero cannot be reached in a finite number of operational steps'
+      ],
+      explanation: 'The Zeroth Law establishes the transitivity of thermal equilibrium and is the logical foundation for temperature as a state function.'
+    },
+    answer: 1
+  },
+  {
+    id: 3, difficulty: 'easy', points: 10,
+    zh: {
+      question: '根據熱力學第一定律，下列敘述何者正確？',
+      options: [
+        '熱量只能從高溫物體自發地傳向低溫物體，方向不可逆',
+        '自發過程中，宇宙的總熵必然增加或維持不變',
+        '系統內能的變化量等於系統從環境吸收的熱量減去對外做的功',
+        '在相同溫度範圍內運作的熱機，卡諾循環的效率最高'
+      ],
+      explanation: '第一定律為能量守恆：ΔU = Q − W，內能變化量等於吸熱量減去對外做的功。'
+    },
+    en: {
+      question: 'According to the First Law of Thermodynamics, which statement is correct?',
+      options: [
+        'Heat spontaneously flows only from hot to cold objects and the direction is irreversible',
+        'In spontaneous processes, the total entropy of the universe must increase or remain constant',
+        'The change in internal energy equals the heat absorbed from the surroundings minus the work done on the surroundings',
+        'Among engines operating between the same temperatures, the Carnot cycle has the highest efficiency'
+      ],
+      explanation: 'The First Law is energy conservation: ΔU = Q − W; the change in internal energy equals heat absorbed minus work done on surroundings.'
+    },
+    answer: 2
+  },
+  {
+    id: 4, difficulty: 'easy', points: 10,
+    zh: {
+      question: '「熱（heat）」的最正確熱力學定義是什麼？',
+      options: [
+        '物體所包含的全部能量，涵蓋動能與位能的總和',
+        '分子無規則熱運動所具備的平均動能大小',
+        '系統對外界施力而產生位移時所傳遞的能量',
+        '僅因溫度差而驅動，跨越系統邊界傳遞的能量形式'
+      ],
+      explanation: '熱是因溫度差而在系統與環境邊界傳遞的能量，是過程量而非狀態量，物體本身不「含有」熱量。'
+    },
+    en: {
+      question: 'What is the most accurate thermodynamic definition of "heat"?',
+      options: [
+        'The total energy contained in a body, including both kinetic and potential energy',
+        'The average kinetic energy of molecules due to random thermal motion',
+        'Energy transferred when the system exerts a force causing displacement on the surroundings',
+        'Energy transferred across a system boundary driven solely by a temperature difference'
+      ],
+      explanation: 'Heat is energy transferred across a system boundary due to a temperature difference. It is a process quantity, not a state function; objects do not "contain" heat.'
+    },
+    answer: 3
+  },
+  {
+    id: 5, difficulty: 'easy', points: 10,
+    zh: {
+      question: '等溫過程（isothermal process）的特徵是什麼？',
+      options: [
+        '系統在過程進行中溫度維持恆定不變',
+        '系統在過程中與外界無任何熱量交換',
+        '系統的壓力在整個過程中維持恆定不變',
+        '系統的體積在整個過程中維持恆定不變'
+      ],
+      explanation: '等溫過程（isothermal）字面意義即溫度（thermo）不變（iso），系統溫度全程保持恆定。'
+    },
+    en: {
+      question: 'What is the defining characteristic of an isothermal process?',
+      options: [
+        'The temperature of the system remains constant throughout the process',
+        'There is no heat exchange between the system and its surroundings during the process',
+        'The pressure of the system remains constant throughout the process',
+        'The volume of the system remains constant throughout the process'
+      ],
+      explanation: 'An isothermal process is one in which the system temperature remains constant throughout (iso = same, thermo = temperature).'
+    },
+    answer: 0
+  },
+  {
+    id: 6, difficulty: 'easy', points: 10,
+    zh: {
+      question: '關於熵（entropy）的物理意義，下列描述何者最為恰當？',
+      options: [
+        '系統在特定條件下對外做最大功的能力大小',
+        '系統微觀狀態數 Ω 的對數量度，S = k_B ln Ω',
+        '系統儲存的熱量總含量，單位為焦耳',
+        '系統從環境累積吸收的總能量積分值'
+      ],
+      explanation: '玻爾茲曼關係式 S = k_B ln Ω 揭示熵是系統微觀狀態數的對數量度，反映系統的無序程度。'
+    },
+    en: {
+      question: 'Which description best captures the physical meaning of entropy?',
+      options: [
+        'The capacity of a system to do maximum work under given conditions',
+        'A logarithmic measure of the number of microstates Ω: S = k_B ln Ω',
+        'The total heat content stored in a system, measured in joules',
+        'The cumulative integral of all energy absorbed by the system from surroundings'
+      ],
+      explanation: "Boltzmann's relation S = k_B ln Ω reveals that entropy is a logarithmic measure of the number of microstates, reflecting the system's degree of disorder."
+    },
+    answer: 1
+  },
+  {
+    id: 7, difficulty: 'easy', points: 10,
+    zh: {
+      question: '絕熱過程（adiabatic process）的定義是什麼？',
+      options: [
+        '系統溫度全程保持不變，即 dT = 0 的過程',
+        '系統壓力全程保持不變，即 dP = 0 的過程',
+        '系統與外界之間完全沒有熱量交換，即 δQ = 0 的過程',
+        '系統體積全程保持不變，即 dV = 0 的過程'
+      ],
+      explanation: '絕熱過程（adiabatic）定義為系統與外界無任何熱量交換，δQ = 0，但溫度和壓力可以改變。'
+    },
+    en: {
+      question: 'Which of the following correctly defines an adiabatic process?',
+      options: [
+        'A process in which the system temperature remains constant: dT = 0',
+        'A process in which the system pressure remains constant: dP = 0',
+        'A process in which there is no heat exchange between system and surroundings: δQ = 0',
+        'A process in which the system volume remains constant: dV = 0'
+      ],
+      explanation: 'An adiabatic process is defined by zero heat transfer: δQ = 0. Temperature and pressure can still change.'
+    },
+    answer: 2
+  },
+  {
+    id: 8, difficulty: 'easy', points: 10,
+    zh: {
+      question: '在高溫熱源溫度 T_H 與低溫熱源溫度 T_L 之間運作的卡諾熱機，其熱效率公式為？',
+      options: [
+        'η = T_L / T_H（低溫與高溫之比）',
+        'η = (T_H + T_L) / T_H（兩溫度之和與高溫之比）',
+        'η = T_H / (T_H − T_L)（高溫與溫差之比）',
+        'η = 1 − T_L / T_H（1 減去低溫與高溫之比）'
+      ],
+      explanation: '卡諾效率 η = 1 − T_L/T_H，溫差越大效率越高，溫度必須使用絕對溫標（K）計算。'
+    },
+    en: {
+      question: 'What is the thermal efficiency formula for a Carnot engine operating between T_H and T_L?',
+      options: [
+        'η = T_L / T_H (ratio of cold to hot temperature)',
+        'η = (T_H + T_L) / T_H (sum of temperatures divided by hot temperature)',
+        'η = T_H / (T_H − T_L) (hot temperature divided by temperature difference)',
+        'η = 1 − T_L / T_H (one minus the ratio of cold to hot temperature)'
+      ],
+      explanation: 'Carnot efficiency: η = 1 − T_L/T_H. A larger temperature difference yields higher efficiency; temperatures must be in Kelvin.'
+    },
+    answer: 3
+  },
+  {
+    id: 9, difficulty: 'easy', points: 10,
+    zh: {
+      question: '熱力學第二定律關於孤立系統的熵，下列敘述何者正確？',
+      options: [
+        '孤立系統在自發過程中，熵只能增加或維持不變（dS ≥ 0）',
+        '孤立系統在任何過程中，熵都嚴格維持不變（dS = 0）',
+        '孤立系統在可逆過程中，熵必然增加（dS > 0）',
+        '孤立系統在自發過程中，熵可以自發地減少（dS < 0）'
+      ],
+      explanation: '第二定律：孤立系統的熵在自發（不可逆）過程中增加，在可逆過程中不變，總體 dS ≥ 0。'
+    },
+    en: {
+      question: 'Regarding the Second Law of Thermodynamics and entropy in isolated systems, which statement is correct?',
+      options: [
+        'In spontaneous processes, the entropy of an isolated system can only increase or remain unchanged (dS ≥ 0)',
+        'In any process, the entropy of an isolated system remains strictly constant (dS = 0)',
+        'In a reversible process, the entropy of an isolated system must increase (dS > 0)',
+        'In spontaneous processes, the entropy of an isolated system can spontaneously decrease (dS < 0)'
+      ],
+      explanation: 'Second Law: entropy of an isolated system increases in spontaneous (irreversible) processes and remains unchanged in reversible ones: dS ≥ 0.'
+    },
+    answer: 0
+  },
+  {
+    id: 10, difficulty: 'easy', points: 10,
+    zh: {
+      question: '熱力學絕對零度（absolute zero）約等於攝氏幾度？',
+      options: [
+        '約 −100 °C（標準大氣壓下乾冰的溫度）',
+        '約 −273.15 °C（開爾文溫標的零點）',
+        '約 −373.15 °C（開爾文溫標的負值）',
+        '約 −173.15 °C（液態氮的沸點）'
+      ],
+      explanation: '絕對零度定義為 0 K，換算為攝氏溫度約為 −273.15°C，是理論上的最低溫度。'
+    },
+    en: {
+      question: 'Absolute zero is approximately equal to how many degrees Celsius?',
+      options: [
+        'About −100 °C (the temperature of dry ice at standard pressure)',
+        'About −273.15 °C (the zero point of the Kelvin scale)',
+        'About −373.15 °C (a negative value on the Kelvin scale)',
+        'About −173.15 °C (the boiling point of liquid nitrogen)'
+      ],
+      explanation: 'Absolute zero is defined as 0 K, which converts to approximately −273.15 °C, the theoretical lowest possible temperature.'
+    },
+    answer: 1
+  },
+
+  // ── MEDIUM (15 題, 15 分) ──
+  {
+    id: 11, difficulty: 'medium', points: 15,
+    zh: {
+      question: '一莫耳理想氣體在溫度 T 下進行等溫可逆膨脹，體積從 V₁ 膨脹至 V₂，系統對外做的功為？',
+      options: [
+        'W = nR(V₂ − V₁)（直接用體積差乘以 nR）',
+        'W = nRT · (V₁/V₂)（溫度乘以體積比）',
+        'W = nRT ln(V₂/V₁)（溫度乘以體積比的自然對數）',
+        'W = nR(T₂ − T₁) · ln(V₂/V₁)（等溫故此項為零）'
+      ],
+      explanation: '等溫可逆過程：W = ∫PdV = nRT∫(dV/V) = nRT ln(V₂/V₁)，等溫時 T 為常數。'
+    },
+    en: {
+      question: 'One mole of ideal gas undergoes isothermal reversible expansion at temperature T from V₁ to V₂. What is the work done by the system?',
+      options: [
+        'W = nR(V₂ − V₁) (volume difference multiplied by nR)',
+        'W = nRT · (V₁/V₂) (temperature multiplied by the volume ratio)',
+        'W = nRT ln(V₂/V₁) (temperature multiplied by the natural log of volume ratio)',
+        'W = nR(T₂ − T₁) · ln(V₂/V₁) (this term equals zero because T is constant)'
+      ],
+      explanation: 'For an isothermal reversible process: W = ∫PdV = nRT∫(dV/V) = nRT ln(V₂/V₁), since T is constant.'
+    },
+    answer: 2
+  },
+  {
+    id: 12, difficulty: 'medium', points: 15,
+    zh: {
+      question: '克勞修斯不等式（Clausius inequality）對任意循環過程的數學表達式為？',
+      options: [
+        '∮(δQ/T) = 0，對所有循環過程均嚴格成立',
+        '∮(δQ/T) ≥ 0，對所有循環過程成立（可逆時取等號）',
+        '∮(δQ/T) ≤ 1，所有循環的積分值小於等於一',
+        '∮(δQ/T) ≤ 0，對所有循環過程成立（可逆時取等號）'
+      ],
+      explanation: '克勞修斯不等式：∮(δQ/T) ≤ 0，可逆循環時取等號（= 0），不可逆循環時嚴格小於零。'
+    },
+    en: {
+      question: 'Which expression correctly states the Clausius inequality for an arbitrary cyclic process?',
+      options: [
+        '∮(δQ/T) = 0, strictly valid for all cyclic processes',
+        '∮(δQ/T) ≥ 0, valid for all cycles (equality for reversible)',
+        '∮(δQ/T) ≤ 1, the integral for all cycles is at most one',
+        '∮(δQ/T) ≤ 0, valid for all cyclic processes (equality for reversible)'
+      ],
+      explanation: 'Clausius inequality: ∮(δQ/T) ≤ 0; equality holds for reversible cycles, strict inequality for irreversible ones.'
+    },
+    answer: 3
+  },
+  {
+    id: 13, difficulty: 'medium', points: 15,
+    zh: {
+      question: '計算系統從狀態 1 到狀態 2 的熵變 ΔS，正確的方法是？',
+      options: [
+        '沿任意一條可逆路徑積分 ΔS = ∫₁²(δQ_rev/T)，因熵是狀態函數，結果與路徑無關',
+        '直接用實際過程的熱量除以溫度 ΔS = Q_actual/T',
+        '沿不可逆路徑積分 ΔS = ∫₁²(δQ_irrev/T)，使用實際過程的熱量',
+        '只有在等溫過程中才能計算熵變，其他過程熵變無定義'
+      ],
+      explanation: '熵是狀態函數，ΔS 與路徑無關。計算時需沿可逆路徑積分：ΔS = ∫(δQ_rev/T)。'
+    },
+    en: {
+      question: 'What is the correct method to calculate the entropy change ΔS from state 1 to state 2?',
+      options: [
+        'Integrate along any reversible path: ΔS = ∫₁²(δQ_rev/T); since entropy is a state function, the result is path-independent',
+        'Divide the heat of the actual process by temperature: ΔS = Q_actual/T',
+        'Integrate along the irreversible path: ΔS = ∫₁²(δQ_irrev/T) using actual heat exchange',
+        'Entropy change can only be calculated for isothermal processes; it is undefined for other processes'
+      ],
+      explanation: 'Entropy is a state function, so ΔS is path-independent. Integrate along any reversible path: ΔS = ∫(δQ_rev/T).'
+    },
+    answer: 0
+  },
+  {
+    id: 14, difficulty: 'medium', points: 15,
+    zh: {
+      question: '焓（enthalpy）H 的熱力學定義式為何？',
+      options: [
+        'H = U − PV（內能減去壓力體積乘積）',
+        'H = U + PV（內能加上壓力體積乘積）',
+        'H = U + TS（內能加上溫度熵乘積）',
+        'H = U − TS（內能減去溫度熵乘積）'
+      ],
+      explanation: '焓定義為 H = U + PV，在等壓過程中系統吸收的熱量等於焓變 Q_p = ΔH。'
+    },
+    en: {
+      question: 'What is the thermodynamic definition of enthalpy H?',
+      options: [
+        'H = U − PV (internal energy minus the pressure-volume product)',
+        'H = U + PV (internal energy plus the pressure-volume product)',
+        'H = U + TS (internal energy plus the temperature-entropy product)',
+        'H = U − TS (internal energy minus the temperature-entropy product)'
+      ],
+      explanation: 'Enthalpy is defined as H = U + PV. At constant pressure, the heat absorbed equals the enthalpy change: Q_p = ΔH.'
+    },
+    answer: 1
+  },
+  {
+    id: 15, difficulty: 'medium', points: 15,
+    zh: {
+      question: '馬克士威關係式（Maxwell relations）是從哪裡推導得到的？',
+      options: [
+        '由理想氣體狀態方程式 PV = nRT 進行偏微分推導',
+        '由卡諾循環的效率分析與熱量比值關係推導',
+        '由四個熱力學特性函數（U, H, A, G）的恰當微分取混合二階偏微分推導',
+        '由統計力學的巨正則配分函數取對數展開推導'
+      ],
+      explanation: '馬克士威關係式源自 U、H、A、G 的恰當微分（exact differentials）的混合二階偏微分相等性質。'
+    },
+    en: {
+      question: 'Maxwell relations are derived from which source?',
+      options: [
+        'Partial differentiation of the ideal gas equation PV = nRT',
+        'Efficiency analysis of the Carnot cycle and heat ratios',
+        'The equality of mixed second partial derivatives of the four thermodynamic potentials (U, H, A, G)',
+        'Logarithmic expansion of the grand canonical partition function in statistical mechanics'
+      ],
+      explanation: 'Maxwell relations arise from the equality of mixed second partial derivatives of the thermodynamic potentials U, H, A, and G (which are exact differentials).'
+    },
+    answer: 2
+  },
+  {
+    id: 16, difficulty: 'medium', points: 15,
+    zh: {
+      question: '在等溫等壓的條件下，判斷化學反應或相變是否自發進行的熱力學判據是？',
+      options: [
+        '內能 U 的變化：ΔU < 0 則自發（等溫等壓條件下）',
+        '焓 H 的變化：ΔH < 0 則自發（等溫等壓條件下）',
+        '亥姆霍茲自由能 A 的變化：ΔA < 0 則自發（等溫等壓條件下）',
+        '吉布斯自由能 G 的變化：ΔG < 0 則自發（等溫等壓條件下）'
+      ],
+      explanation: '等溫等壓下，自發過程使 G 減小（ΔG < 0），G 達最小值時系統達平衡，ΔA < 0 適用於等溫等容。'
+    },
+    en: {
+      question: 'Under constant temperature and pressure, what thermodynamic criterion determines whether a process is spontaneous?',
+      options: [
+        'Internal energy U: the process is spontaneous if ΔU < 0 at constant T and P',
+        'Enthalpy H: the process is spontaneous if ΔH < 0 at constant T and P',
+        'Helmholtz free energy A: the process is spontaneous if ΔA < 0 at constant T and P',
+        'Gibbs free energy G: the process is spontaneous if ΔG < 0 at constant T and P'
+      ],
+      explanation: 'At constant T and P, a spontaneous process decreases G (ΔG < 0). Equilibrium is reached at minimum G. Note ΔA < 0 applies at constant T and V.'
+    },
+    answer: 3
+  },
+  {
+    id: 17, difficulty: 'medium', points: 15,
+    zh: {
+      question: '對於理想氣體，定壓熱容 C_p 與定容熱容 C_v 之間的定量關係為？',
+      options: [
+        'C_p − C_v = nR（n 莫耳的理想氣體，R 為氣體常數）',
+        'C_p − C_v = R/n（R 除以莫耳數）',
+        'C_p 與 C_v 之比 γ = C_p/C_v 是唯一有意義的關係',
+        'C_p = C_v（理想氣體的定壓與定容熱容相等）'
+      ],
+      explanation: '理想氣體：C_p − C_v = nR（per n moles）或寫成莫耳熱容 C_p,m − C_v,m = R。'
+    },
+    en: {
+      question: 'For an ideal gas, what is the quantitative relationship between C_p and C_v?',
+      options: [
+        'C_p − C_v = nR (for n moles of ideal gas, R is the gas constant)',
+        'C_p − C_v = R/n (R divided by the number of moles)',
+        'Only the ratio γ = C_p/C_v carries meaningful information about their relationship',
+        'C_p = C_v (constant-pressure and constant-volume heat capacities are equal for ideal gas)'
+      ],
+      explanation: 'For ideal gas: C_p − C_v = nR (total) or C_p,m − C_v,m = R (molar). This follows from the PV = nRT equation of state.'
+    },
+    answer: 0
+  },
+  {
+    id: 18, difficulty: 'medium', points: 15,
+    zh: {
+      question: '凡德瓦方程式（van der Waals equation）相較於理想氣體方程式，修正了哪兩個假設？',
+      options: [
+        '修正了氣體分子的質量以及分子間的碰撞頻率',
+        '修正了分子間的作用力（引力）以及分子本身佔有的體積',
+        '修正了氣體分子碰撞時的能量損失以及量子化能級',
+        '修正了氣體在高溫條件下的量子統計效應以及轉動自由度'
+      ],
+      explanation: '凡德瓦方程式 [P + a(n/V)²](V − nb) = nRT，a 修正分子間引力，b 修正分子本身體積。'
+    },
+    en: {
+      question: 'Compared to the ideal gas law, the van der Waals equation corrects for which two assumptions?',
+      options: [
+        'It corrects for the mass of gas molecules and their collision frequency',
+        'It corrects for intermolecular attractive forces and the finite volume of the molecules themselves',
+        'It corrects for energy loss during molecular collisions and quantized energy levels',
+        'It corrects for quantum statistical effects at high temperatures and rotational degrees of freedom'
+      ],
+      explanation: 'Van der Waals: [P + a(n/V)²](V − nb) = nRT. The term a corrects for intermolecular attractions; b corrects for the finite volume of molecules.'
+    },
+    answer: 1
+  },
+  {
+    id: 19, difficulty: 'medium', points: 15,
+    zh: {
+      question: '根據玻爾茲曼統計力學，系統的熱力學熵 S 與其微觀狀態數 Ω 的關係為？',
+      options: [
+        'S = k_B / Ω（玻爾茲曼常數除以狀態數）',
+        'S = k_B · Ω（玻爾茲曼常數乘以狀態數）',
+        'S = k_B ln Ω（玻爾茲曼常數乘以狀態數的自然對數）',
+        'S = k_B · Ω²（玻爾茲曼常數乘以狀態數的平方）'
+      ],
+      explanation: 'S = k_B ln Ω 是玻爾茲曼的核心公式，此式刻在他的墓碑上，連結了宏觀熵與微觀狀態數。'
+    },
+    en: {
+      question: 'According to Boltzmann statistical mechanics, what is the relationship between thermodynamic entropy S and the number of microstates Ω?',
+      options: [
+        'S = k_B / Ω (Boltzmann constant divided by the number of microstates)',
+        'S = k_B · Ω (Boltzmann constant multiplied by the number of microstates)',
+        'S = k_B ln Ω (Boltzmann constant multiplied by the natural logarithm of the number of microstates)',
+        'S = k_B · Ω² (Boltzmann constant multiplied by the square of the number of microstates)'
+      ],
+      explanation: 'S = k_B ln Ω is Boltzmann\'s fundamental formula, inscribed on his tombstone. It links macroscopic entropy to the number of microscopic states.'
+    },
+    answer: 2
+  },
+  {
+    id: 20, difficulty: 'medium', points: 15,
+    zh: {
+      question: '卡諾循環（Carnot cycle）由哪四個熱力過程依序正確組成？',
+      options: [
+        '等溫膨脹 → 絕熱膨脹 → 等溫壓縮 → 等容壓縮',
+        '等溫膨脹 → 等壓膨脹 → 等溫壓縮 → 等壓壓縮',
+        '絕熱膨脹 → 等溫膨脹 → 絕熱壓縮 → 等溫壓縮',
+        '等溫膨脹 → 絕熱膨脹 → 等溫壓縮 → 絕熱壓縮'
+      ],
+      explanation: '卡諾循環：等溫膨脹（吸熱）→ 絕熱膨脹 → 等溫壓縮（放熱）→ 絕熱壓縮，全為可逆過程。'
+    },
+    en: {
+      question: 'Which sequence of four thermodynamic processes correctly describes the Carnot cycle?',
+      options: [
+        'Isothermal expansion → Adiabatic expansion → Isothermal compression → Isochoric compression',
+        'Isothermal expansion → Isobaric expansion → Isothermal compression → Isobaric compression',
+        'Adiabatic expansion → Isothermal expansion → Adiabatic compression → Isothermal compression',
+        'Isothermal expansion → Adiabatic expansion → Isothermal compression → Adiabatic compression'
+      ],
+      explanation: 'Carnot cycle: isothermal expansion (heat absorbed) → adiabatic expansion → isothermal compression (heat released) → adiabatic compression; all steps reversible.'
+    },
+    answer: 3
+  },
+  {
+    id: 21, difficulty: 'medium', points: 15,
+    zh: {
+      question: '亥姆霍茲自由能（Helmholtz free energy）A 的熱力學定義式為何？',
+      options: [
+        'A = U − TS（內能減去溫度乘以熵）',
+        'A = U + TS（內能加上溫度乘以熵）',
+        'A = H − TS（焓減去溫度乘以熵，即吉布斯自由能）',
+        'A = H + TS（焓加上溫度乘以熵）'
+      ],
+      explanation: '亥姆霍茲自由能 A = U − TS，在等溫等容條件下，ΔA < 0 為自發過程的判據。'
+    },
+    en: {
+      question: 'What is the thermodynamic definition of the Helmholtz free energy A?',
+      options: [
+        'A = U − TS (internal energy minus temperature times entropy)',
+        'A = U + TS (internal energy plus temperature times entropy)',
+        'A = H − TS (enthalpy minus temperature times entropy, i.e., Gibbs free energy)',
+        'A = H + TS (enthalpy plus temperature times entropy)'
+      ],
+      explanation: 'Helmholtz free energy: A = U − TS. At constant T and V, ΔA < 0 is the criterion for a spontaneous process.'
+    },
+    answer: 0
+  },
+  {
+    id: 22, difficulty: 'medium', points: 15,
+    zh: {
+      question: '克勞修斯-克拉珀龍方程式（Clausius-Clapeyron equation）描述的物理關係是什麼？',
+      options: [
+        '相變發生時，系統熵的不連續跳躍量與相變焓的關係',
+        '相平衡曲線（如液－氣平衡線）的斜率 dP/dT 與相變焓及體積差的關係',
+        '液體的飽和蒸氣壓與絕對溫度成正比的線性關係',
+        '三相點附近氣、液、固三相共存的壓力與溫度精確條件'
+      ],
+      explanation: 'Clausius-Clapeyron：dP/dT = ΔH_vap/(TΔV)，描述兩相平衡曲線的斜率如何由相變焓與體積差決定。'
+    },
+    en: {
+      question: 'What physical relationship does the Clausius-Clapeyron equation describe?',
+      options: [
+        'The discontinuous jump in entropy during a phase transition and its relation to the phase transition enthalpy',
+        'The slope dP/dT of the phase equilibrium curve (e.g., liquid-vapor) and its relation to enthalpy and volume change',
+        'A linear proportionality between liquid vapor pressure and absolute temperature',
+        'The exact pressure and temperature conditions for three-phase coexistence near the triple point'
+      ],
+      explanation: 'Clausius-Clapeyron: dP/dT = ΔH_vap/(TΔV), describing how the slope of a two-phase equilibrium curve is determined by the latent heat and volume change.'
+    },
+    answer: 1
+  },
+  {
+    id: 23, difficulty: 'medium', points: 15,
+    zh: {
+      question: '對實際氣體，逸度（fugacity）f 與壓力 P 在壓力趨近於零時的極限行為為？',
+      options: [
+        '當 P → 0 時，f → 0（逸度與壓力同時趨近於零）',
+        '當 P → 0 時，f → ∞（逸度趨近無限大，表示逸逸傾向最強）',
+        '當 P → 0 時，f → P（逸度趨近於實際壓力，氣體趨近理想行為）',
+        '當 P → 0 時，f → RT/P（逸度趨近莫耳體積，不與壓力相等）'
+      ],
+      explanation: '逸度定義的邊界條件：lim(P→0) f/P = 1，即低壓時實際氣體趨近理想氣體，逸度趨近壓力。'
+    },
+    en: {
+      question: 'For a real gas, what is the limiting behavior of fugacity f as pressure P approaches zero?',
+      options: [
+        'As P → 0, f → 0 (fugacity and pressure both approach zero)',
+        'As P → 0, f → ∞ (fugacity diverges, indicating maximum escaping tendency)',
+        'As P → 0, f → P (fugacity approaches actual pressure; gas approaches ideal behavior)',
+        'As P → 0, f → RT/P (fugacity approaches molar volume, not equal to pressure)'
+      ],
+      explanation: 'The defining boundary condition of fugacity: lim(P→0) f/P = 1. At low pressure a real gas approaches ideal behavior, so fugacity approaches pressure.'
+    },
+    answer: 2
+  },
+  {
+    id: 24, difficulty: 'medium', points: 15,
+    zh: {
+      question: '在等溫等壓（T, P 固定）的條件下，組分 i 的化學勢（chemical potential）最常見的定義為？',
+      options: [
+        'μ_i = (∂U/∂n_i)_{S, V, n_{j≠i}}（等熵等容條件下內能對莫耳數的偏微分）',
+        'μ_i = (∂A/∂n_i)_{T, V, n_{j≠i}}（等溫等容條件下亥姆霍茲能對莫耳數的偏微分）',
+        'μ_i = (∂H/∂n_i)_{S, P, n_{j≠i}}（等熵等壓條件下焓對莫耳數的偏微分）',
+        'μ_i = (∂G/∂n_i)_{T, P, n_{j≠i}}（等溫等壓條件下吉布斯能對莫耳數的偏微分）'
+      ],
+      explanation: '化學勢在實用上最常定義為 μ_i = (∂G/∂n_i)_{T,P}，與等溫等壓相平衡和反應條件直接對應。'
+    },
+    en: {
+      question: 'Under constant temperature and pressure (T, P fixed), what is the most common definition of the chemical potential μ_i of component i?',
+      options: [
+        'μ_i = (∂U/∂n_i)_{S, V, n_{j≠i}} (partial derivative of internal energy w.r.t. moles at constant S, V)',
+        'μ_i = (∂A/∂n_i)_{T, V, n_{j≠i}} (partial derivative of Helmholtz energy w.r.t. moles at constant T, V)',
+        'μ_i = (∂H/∂n_i)_{S, P, n_{j≠i}} (partial derivative of enthalpy w.r.t. moles at constant S, P)',
+        'μ_i = (∂G/∂n_i)_{T, P, n_{j≠i}} (partial derivative of Gibbs energy w.r.t. moles at constant T, P)'
+      ],
+      explanation: 'In practice, chemical potential is most commonly defined as μ_i = (∂G/∂n_i)_{T,P}, directly applicable to phase equilibrium and reactions at constant T and P.'
+    },
+    answer: 3
+  },
+  {
+    id: 25, difficulty: 'medium', points: 15,
+    zh: {
+      question: '若在等溫等壓條件下，某過程的吉布斯自由能變化 ΔG < 0，此結果意味著？',
+      options: [
+        '此過程是自發的，系統會自動朝平衡方向進行而不需外界輸入功',
+        '此過程必然需要從環境吸收熱量（ΔH < 0），才能自發進行',
+        '此過程的熵變 ΔS 必然為負值，系統變得更有序',
+        '此過程的焓變 ΔH 必然為負值，為放熱過程'
+      ],
+      explanation: 'ΔG < 0 是等溫等壓下過程自發的充要條件，不限制 ΔH 或 ΔS 的正負，只要 ΔG = ΔH − TΔS < 0 即可。'
+    },
+    en: {
+      question: 'If ΔG < 0 for a process under constant temperature and pressure, what does this imply?',
+      options: [
+        'The process is spontaneous; the system proceeds toward equilibrium without requiring work input from surroundings',
+        'The process must absorb heat from the surroundings (ΔH < 0) to proceed spontaneously',
+        'The entropy change ΔS must be negative, meaning the system becomes more ordered',
+        'The enthalpy change ΔH must be negative, meaning the process is exothermic'
+      ],
+      explanation: 'ΔG < 0 is the necessary and sufficient condition for spontaneity at constant T and P. It imposes no sign restriction on ΔH or ΔS individually; only ΔG = ΔH − TΔS < 0 must hold.'
+    },
+    answer: 0
+  },
+
+  // ── HARD (10 題, 25 分) ──
+  {
+    id: 26, difficulty: 'hard', points: 25,
+    zh: {
+      question: '焦耳-湯姆孫係數（Joule-Thomson coefficient）定義為 μ_JT = (∂T/∂P)_H，對理想氣體而言此值為何？',
+      options: [
+        'μ_JT = C_p / V（正比於定壓熱容，反比於體積）',
+        'μ_JT = 0（理想氣體節流膨脹後溫度不發生變化）',
+        'μ_JT = R / C_p（只與氣體常數和定壓熱容有關）',
+        'μ_JT = T / P（正比於溫度，反比於壓力）'
+      ],
+      explanation: '理想氣體分子間無作用力，節流過程（等焓）不改變溫度，故 μ_JT = 0。實際氣體 μ_JT 可正可負。'
+    },
+    en: {
+      question: 'The Joule-Thomson coefficient is defined as μ_JT = (∂T/∂P)_H. What is its value for an ideal gas?',
+      options: [
+        'μ_JT = C_p / V (proportional to heat capacity, inversely proportional to volume)',
+        'μ_JT = 0 (no temperature change occurs during throttling of an ideal gas)',
+        'μ_JT = R / C_p (depends only on the gas constant and constant-pressure heat capacity)',
+        'μ_JT = T / P (proportional to temperature, inversely proportional to pressure)'
+      ],
+      explanation: 'Ideal gas molecules have no intermolecular forces, so throttling (isenthalpic) does not change temperature: μ_JT = 0. For real gases, μ_JT can be positive or negative.'
+    },
+    answer: 1
+  },
+  {
+    id: 27, difficulty: 'hard', points: 25,
+    zh: {
+      question: '純物質在臨界點（critical point）所需同時滿足的熱力學條件是什麼？',
+      options: [
+        '(∂P/∂V)_T = 0 且 (∂²P/∂V²)_T > 0（一階導為零，二階導大於零）',
+        '(∂P/∂V)_T > 0 且 (∂²P/∂V²)_T = 0（一階導大於零，二階導為零）',
+        '(∂P/∂V)_T = 0 且 (∂²P/∂V²)_T = 0（一階與二階偏導同時為零）',
+        '(∂P/∂V)_T < 0 且 (∂²P/∂V²)_T = 0（一階導小於零，二階導為零）'
+      ],
+      explanation: '臨界點是等溫線的反曲點，一階與二階偏導同時為零：(∂P/∂V)_T = (∂²P/∂V²)_T = 0，液氣差異消失。'
+    },
+    en: {
+      question: 'What thermodynamic conditions must be simultaneously satisfied at the critical point of a pure substance?',
+      options: [
+        '(∂P/∂V)_T = 0 and (∂²P/∂V²)_T > 0 (first derivative zero, second derivative positive)',
+        '(∂P/∂V)_T > 0 and (∂²P/∂V²)_T = 0 (first derivative positive, second derivative zero)',
+        '(∂P/∂V)_T = 0 and (∂²P/∂V²)_T = 0 (both first and second partial derivatives are zero)',
+        '(∂P/∂V)_T < 0 and (∂²P/∂V²)_T = 0 (first derivative negative, second derivative zero)'
+      ],
+      explanation: 'The critical point is an inflection point of the isotherm; both the first and second partial derivatives vanish: (∂P/∂V)_T = (∂²P/∂V²)_T = 0, where liquid and vapor become indistinguishable.'
+    },
+    answer: 2
+  },
+  {
+    id: 28, difficulty: 'hard', points: 25,
+    zh: {
+      question: '在馬克士威-玻爾茲曼速率分布中，氣體分子的最可能速率（most probable speed）正確公式為？',
+      options: [
+        'v_mp = √(3RT/M)（均方根速率，非最可能速率）',
+        'v_mp = √(8RT/πM)（平均速率，非最可能速率）',
+        'v_mp = √(3k_B T/m)（以分子質量表示的均方根速率）',
+        'v_mp = √(2RT/M)（對分布函數求導令其為零所得的最可能速率）'
+      ],
+      explanation: '對 Maxwell-Boltzmann 速率分布函數 f(v) 求導令為零，得最可能速率 v_mp = √(2RT/M)，小於均速 √(8RT/πM) 和均方根速率 √(3RT/M)。'
+    },
+    en: {
+      question: 'What is the correct formula for the most probable speed in the Maxwell-Boltzmann speed distribution?',
+      options: [
+        'v_mp = √(3RT/M) (root-mean-square speed, not the most probable)',
+        'v_mp = √(8RT/πM) (mean speed, not the most probable)',
+        'v_mp = √(3k_BT/m) (root-mean-square speed expressed with molecular mass)',
+        'v_mp = √(2RT/M) (obtained by setting the derivative of the distribution function to zero)'
+      ],
+      explanation: 'Setting df/dv = 0 for the Maxwell-Boltzmann distribution gives v_mp = √(2RT/M), which is less than the mean speed √(8RT/πM) and the rms speed √(3RT/M).'
+    },
+    answer: 3
+  },
+  {
+    id: 29, difficulty: 'hard', points: 25,
+    zh: {
+      question: '根據吉布斯相律（Gibbs phase rule），多組分多相系統的自由度 F 與獨立組分數 C 及相數 P 的關係（不考慮外場）為？',
+      options: [
+        'F = C − P + 2（標準吉布斯相律形式）',
+        'F = C + P − 2（符號位置相反的錯誤形式）',
+        'F = C × P / 2（乘積關係的錯誤形式）',
+        'F = C − P（省略了溫度和壓力兩個非組成變數）'
+      ],
+      explanation: '吉布斯相律：F = C − P + 2，其中 2 代表溫度和壓力兩個可調變量。單組分兩相平衡：F = 1，三相點：F = 0。'
+    },
+    en: {
+      question: 'According to the Gibbs phase rule, what is the relationship between degrees of freedom F, number of components C, and number of phases P (excluding external fields)?',
+      options: [
+        'F = C − P + 2 (the standard Gibbs phase rule)',
+        'F = C + P − 2 (incorrect form with reversed signs)',
+        'F = C × P / 2 (incorrect multiplicative form)',
+        'F = C − P (omits temperature and pressure as non-compositional variables)'
+      ],
+      explanation: 'Gibbs phase rule: F = C − P + 2, where the "+2" accounts for temperature and pressure as adjustable variables. Single-component two-phase equilibrium: F = 1; triple point: F = 0.'
+    },
+    answer: 0
+  },
+  {
+    id: 30, difficulty: 'hard', points: 25,
+    zh: {
+      question: '熱力學第三定律（能斯特定理）最完整的表述應包含哪兩個部分？',
+      options: [
+        '在絕對零度時，所有物質不論結構如何其熵值均等於零',
+        '在絕對零度時，完美晶體的熵為零；且絕對零度在有限步驟的操作中不可達到',
+        '在絕對零度時，所有化學反應的吉布斯自由能變化均趨近於零',
+        '在絕對零度時，所有物質的定容熱容 C_v 趨近於零，因此無法繼續冷卻'
+      ],
+      explanation: '第三定律有兩個等價表述：(1) 完美晶體在 0 K 時熵為零；(2) 絕對零度不可透過有限步驟達到（不可達性原理）。'
+    },
+    en: {
+      question: 'The complete statement of the Third Law of Thermodynamics (Nernst theorem) includes which two parts?',
+      options: [
+        'At absolute zero, the entropy of all substances equals zero, regardless of their structure',
+        'At absolute zero, the entropy of a perfect crystal is zero; and absolute zero cannot be reached in a finite number of steps',
+        'At absolute zero, the Gibbs free energy change of all chemical reactions approaches zero',
+        'At absolute zero, the constant-volume heat capacity C_v of all substances approaches zero, preventing further cooling'
+      ],
+      explanation: 'The Third Law has two equivalent statements: (1) the entropy of a perfect crystal at 0 K is zero; (2) absolute zero cannot be reached in a finite number of steps (unattainability principle).'
+    },
+    answer: 1
+  },
+  {
+    id: 31, difficulty: 'hard', points: 25,
+    zh: {
+      question: '對簡單可壓縮系統，熱力學穩定性要求的兩個條件是什麼？',
+      options: [
+        'C_v > 0 且 (∂P/∂V)_T > 0（定容熱容為正，等溫壓縮係數也為正）',
+        'C_p > 0 且 (∂P/∂V)_T = 0（定壓熱容為正，等溫曲線斜率為零）',
+        'C_v > 0 且 (∂P/∂V)_T < 0（定容熱容為正，等溫壓縮係數為負）',
+        'C_v < 0 且 (∂P/∂V)_T < 0（兩個穩定性條件均取反向，代表不穩定狀態）'
+      ],
+      explanation: '穩定性：(1) 熱穩定性 C_v > 0（升溫則內能增加）；(2) 機械穩定性 (∂P/∂V)_T < 0（壓縮時壓力增加）。'
+    },
+    en: {
+      question: 'For a simple compressible system, what are the two thermodynamic stability conditions?',
+      options: [
+        'C_v > 0 and (∂P/∂V)_T > 0 (positive heat capacity and positive isothermal compressibility coefficient)',
+        'C_p > 0 and (∂P/∂V)_T = 0 (positive heat capacity and zero slope of isotherm)',
+        'C_v > 0 and (∂P/∂V)_T < 0 (positive heat capacity and negative isothermal compressibility)',
+        'C_v < 0 and (∂P/∂V)_T < 0 (both conditions reversed, representing an unstable state)'
+      ],
+      explanation: 'Stability requires: (1) thermal stability C_v > 0 (internal energy increases with temperature); (2) mechanical stability (∂P/∂V)_T < 0 (pressure increases upon compression).'
+    },
+    answer: 2
+  },
+  {
+    id: 32, difficulty: 'hard', points: 25,
+    zh: {
+      question: '吉布斯自由能 G 透過勒讓德轉換（Legendre transform）與其他熱力學勢的完整等價關係，下列何者正確？',
+      options: [
+        'G = U + PV（僅從內能加上 PV 項，缺少 TS 轉換）',
+        'G = H − PV（從焓減去 PV 項，方向錯誤）',
+        'G = A + PV + TS（從亥姆霍茲加上兩個額外項，計算有誤）',
+        'G = H − TS = U + PV − TS（從焓做 TS 的勒讓德轉換，等價於從內能做兩次轉換）'
+      ],
+      explanation: 'G = H − TS = U + PV − TS，對自然變數 (T, P) 的勒讓德轉換；dG = −SdT + VdP + Σμᵢdnᵢ。'
+    },
+    en: {
+      question: 'Which expression correctly states the complete Legendre transform relationship of Gibbs free energy G to other thermodynamic potentials?',
+      options: [
+        'G = U + PV (adding only the PV term from internal energy, missing the TS transform)',
+        'G = H − PV (subtracting PV from enthalpy, direction is incorrect)',
+        'G = A + PV + TS (adding two extra terms to Helmholtz free energy, calculation error)',
+        'G = H − TS = U + PV − TS (Legendre transform of H via TS, equivalent to two transforms from U)'
+      ],
+      explanation: 'G = H − TS = U + PV − TS; this is the Legendre transform to natural variables (T, P); dG = −SdT + VdP + Σμᵢdnᵢ.'
+    },
+    answer: 3
+  },
+  {
+    id: 33, difficulty: 'hard', points: 25,
+    zh: {
+      question: '在正則系綜（canonical ensemble，NVT 系綜）中，系統處於能量為 E_i 的微觀狀態之機率正比於？',
+      options: [
+        'exp(−E_i / k_B T)（玻爾茲曼因子，能量越高機率越低）',
+        'exp(+E_i / k_B T)（反玻爾茲曼因子，能量越高機率越高）',
+        'E_i / (k_B T)（能量與溫度的比值，呈線性關係）',
+        'exp(−E_i² / k_B T)（能量平方的玻爾茲曼因子）'
+      ],
+      explanation: '正則系綜中，機率 p_i ∝ exp(−E_i/k_BT)（玻爾茲曼因子），配分函數 Z = Σ exp(−E_i/k_BT) 作歸一化。'
+    },
+    en: {
+      question: 'In the canonical ensemble (NVT ensemble), the probability that the system occupies a microstate with energy E_i is proportional to?',
+      options: [
+        'exp(−E_i / k_B T) (Boltzmann factor; higher energy → lower probability)',
+        'exp(+E_i / k_B T) (inverse Boltzmann factor; higher energy → higher probability)',
+        'E_i / (k_B T) (linear ratio of energy to thermal energy)',
+        'exp(−E_i² / k_B T) (Boltzmann factor with squared energy)'
+      ],
+      explanation: 'In the canonical ensemble, p_i ∝ exp(−E_i/k_BT) (Boltzmann factor). The partition function Z = Σ exp(−E_i/k_BT) normalizes the distribution.'
+    },
+    answer: 0
+  },
+  {
+    id: 34, difficulty: 'hard', points: 25,
+    zh: {
+      question: '在大正則系綜（grand canonical ensemble）中，系統的平均粒子數 ⟨N⟩ 如何從熱力學量求得？',
+      options: [
+        '⟨N⟩ = −(∂Ω/∂T)_{μ,V}（巨勢對溫度的偏微分取負）',
+        '⟨N⟩ = −(∂Ω/∂μ)_{T,V}（巨勢對化學勢的偏微分取負）',
+        '⟨N⟩ = −(∂Ω/∂V)_{T,μ}（巨勢對體積的偏微分取負）',
+        '⟨N⟩ = (∂Ω/∂P)_{T,μ}（巨勢對壓力的偏微分）'
+      ],
+      explanation: '巨勢 Ω = −PV = U − TS − μN，其自然變數為 (T, V, μ)，故 ⟨N⟩ = −(∂Ω/∂μ)_{T,V}。'
+    },
+    en: {
+      question: 'In the grand canonical ensemble, how is the average particle number ⟨N⟩ obtained from a thermodynamic potential?',
+      options: [
+        '⟨N⟩ = −(∂Ω/∂T)_{μ,V} (negative partial derivative of grand potential w.r.t. temperature)',
+        '⟨N⟩ = −(∂Ω/∂μ)_{T,V} (negative partial derivative of grand potential w.r.t. chemical potential)',
+        '⟨N⟩ = −(∂Ω/∂V)_{T,μ} (negative partial derivative of grand potential w.r.t. volume)',
+        '⟨N⟩ = (∂Ω/∂P)_{T,μ} (partial derivative of grand potential w.r.t. pressure)'
+      ],
+      explanation: 'Grand potential: Ω = −PV = U − TS − μN with natural variables (T, V, μ), so ⟨N⟩ = −(∂Ω/∂μ)_{T,V}.'
+    },
+    answer: 1
+  },
+  {
+    id: 35, difficulty: 'hard', points: 25,
+    zh: {
+      question: '對二元混合系統，旋節線（spinodal decomposition）相分離自發發生的熱力學條件是？',
+      options: [
+        '(∂²G_mix/∂x²)_{T,P} > 0（吉布斯混合能對組成的二階導數為正，系統穩定）',
+        '(∂²G_mix/∂x²)_{T,P} = 0（二階導數為零，系統位於旋節線臨界邊界）',
+        '(∂²G_mix/∂x²)_{T,P} < 0（二階導數為負，系統熱力學不穩定，自發相分離）',
+        '(∂G_mix/∂x)_{T,P} = 0（一階導數為零，系統位於吉布斯曲線的極值點）'
+      ],
+      explanation: '旋節線區域由 (∂²G/∂x²) < 0 定義，系統在任意小擾動下即自發分相；雙節線外則為亞穩定區域。'
+    },
+    en: {
+      question: 'For a binary mixture, what thermodynamic condition triggers spontaneous spinodal decomposition?',
+      options: [
+        '(∂²G_mix/∂x²)_{T,P} > 0 (positive second derivative: the system is thermodynamically stable)',
+        '(∂²G_mix/∂x²)_{T,P} = 0 (zero second derivative: the system sits on the spinodal boundary)',
+        '(∂²G_mix/∂x²)_{T,P} < 0 (negative second derivative: the system is unstable and phase-separates spontaneously)',
+        '(∂G_mix/∂x)_{T,P} = 0 (zero first derivative: the system is at an extremum of the Gibbs curve)'
+      ],
+      explanation: 'The spinodal region is defined by (∂²G/∂x²) < 0; the system phase-separates spontaneously under any infinitesimal perturbation. The metastable region lies between the spinodal and binodal lines.'
+    },
+    answer: 2
+  },
+
+  // ── TRAP (5 題, 19 分) ──
+  {
+    id: 36, difficulty: 'trap', points: 19,
+    zh: {
+      question: '關於熵的下列敘述，何者正確？',
+      options: [
+        '在任何真實物理過程中，宇宙的總熵必然嚴格增加，不可能維持不變',
+        '生物體能從食物攝取能量並維持高度有序的結構，這違反了熱力學第二定律',
+        '冰箱使內部食物降溫代表冰箱系統的熵在自發減少，是熵自發降低的反例',
+        '某系統的熵可以減少，只要環境的熵增加量足以補償，使宇宙總熵不減少即可'
+      ],
+      explanation: '陷阱：可逆過程宇宙熵不變（非增加）；生物體是開放系統不違反第二定律；冰箱總熵仍增加。D 正確：系統熵可減，但宇宙熵不減。'
+    },
+    en: {
+      question: 'Which of the following statements about entropy is correct?',
+      options: [
+        'In any real physical process, the total entropy of the universe must strictly increase and can never remain unchanged',
+        'Living organisms extract energy from food and maintain highly ordered structures, which violates the Second Law of Thermodynamics',
+        'A refrigerator lowers the temperature inside, meaning its internal entropy spontaneously decreases — a counterexample to the Second Law',
+        'The entropy of a system can decrease, as long as the surroundings gain at least as much entropy, keeping the total entropy of the universe non-decreasing'
+      ],
+      explanation: 'Trap: reversible processes leave total entropy unchanged (not strictly increased). Organisms are open systems and do not violate the Second Law. Refrigerators still increase total entropy. D is correct: system entropy can decrease if surroundings gain more.'
+    },
+    answer: 3
+  },
+  {
+    id: 37, difficulty: 'trap', points: 19,
+    zh: {
+      question: '關於「可逆過程（reversible process）」的敘述，下列何者正確？',
+      options: [
+        '可逆過程是一種理想化的極限情況，宇宙總熵變化為零，在現實中不可能完全實現',
+        '可逆過程代表系統可以沿原路返回初始狀態，因此系統對外做的功是所有過程中最少的',
+        '卡諾循環就是可逆循環，在現實工程中只要使用無摩擦軸承等精密零件就能完全實現',
+        '只要一個過程能讓系統恢復到完全相同的初始狀態，就符合可逆過程的定義'
+      ],
+      explanation: '陷阱：B 錯誤，可逆過程做功最多（非最少）；C 錯誤，卡諾循環在現實中不可完全實現；D 不充分，系統復原但環境改變仍為不可逆。A 正確。'
+    },
+    en: {
+      question: 'Which of the following statements about a reversible process is correct?',
+      options: [
+        'A reversible process is an idealized limit in which the total entropy change of the universe is zero; it cannot be fully realized in practice',
+        'A reversible process allows the system to return to its initial state along the same path, so it does the least work of all possible processes',
+        'The Carnot cycle is a reversible cycle and can be fully realized in practice using frictionless bearings and precision components',
+        'Any process that returns the system to exactly its original state satisfies the definition of a reversible process'
+      ],
+      explanation: 'Trap: B is wrong — reversible processes do maximum work (not minimum). C is wrong — the Carnot cycle cannot be fully realized. D is insufficient — if the surroundings change, the process is still irreversible. A is correct.'
+    },
+    answer: 0
+  },
+  {
+    id: 38, difficulty: 'trap', points: 19,
+    zh: {
+      question: '小美說：「溫度高的物體含有較多的熱量（heat）。」關於這個說法，下列評述何者正確？',
+      options: [
+        '此說法正確，溫度越高確實代表物體儲存的熱能越多，這是溫度的基本物理意義',
+        '此說法錯誤，「熱量」是能量在系統邊界傳遞的過程量，物體本身只具有「內能」而非「熱量」',
+        '此說法正確，只是應更精確地表述為「每個分子平均含有的熱量較多」',
+        '此說法錯誤，因為質量小的高溫物體可能比質量大的低溫物體含有更少的內能'
+      ],
+      explanation: '陷阱：熱量是過程量（energy in transit），物體不能「含有」熱量，只能含有內能。B 是核心概念錯誤的正確診斷。D 雖有道理但未點出根本錯誤所在。'
+    },
+    en: {
+      question: 'Xiao-Mei says: "An object at a higher temperature contains more heat." Which evaluation of this statement is correct?',
+      options: [
+        'The statement is correct; higher temperature does mean the object stores more thermal energy — that is the basic physical meaning of temperature',
+        'The statement is wrong; "heat" is a process quantity representing energy transfer across a boundary. Objects possess "internal energy," not "heat"',
+        'The statement is correct, but should be stated more precisely as "each molecule contains more heat on average"',
+        'The statement is wrong because a small high-temperature object may have less internal energy than a large low-temperature object'
+      ],
+      explanation: 'Trap: heat is a process quantity (energy in transit); objects cannot "contain" heat — they contain internal energy. B correctly identifies the fundamental conceptual error. D has merit but misses the root issue.'
+    },
+    answer: 1
+  },
+  {
+    id: 39, difficulty: 'trap', points: 19,
+    zh: {
+      question: '一莫耳單原子理想氣體在等壓過程中溫度從 T₁ 升至 T₂，其內能變化 ΔU 應使用哪個公式計算？',
+      options: [
+        'ΔU = C_p (T₂ − T₁)（等壓過程應使用定壓熱容計算內能變化）',
+        'ΔU = R(T₂ − T₁)（等壓過程的功等於內能的變化量）',
+        'ΔU = C_v (T₂ − T₁)（理想氣體內能只與溫度有關，與過程種類無關）',
+        'ΔU = 0（理想氣體在等壓過程中，壓力不影響內能，故內能不變）'
+      ],
+      explanation: '陷阱：等壓過程的熱量用 C_p，但內能 U 只依賴溫度，ΔU 恆用 C_v 計算。學生常混淆：等壓過程用 C_p 計算 Q，但 ΔU 仍用 C_v。'
+    },
+    en: {
+      question: 'One mole of monatomic ideal gas undergoes an isobaric (constant-pressure) process from T₁ to T₂. Which formula correctly gives the change in internal energy ΔU?',
+      options: [
+        'ΔU = C_p (T₂ − T₁) (use constant-pressure heat capacity for an isobaric process)',
+        'ΔU = R(T₂ − T₁) (the work done in an isobaric process equals the change in internal energy)',
+        'ΔU = C_v (T₂ − T₁) (internal energy of ideal gas depends only on temperature, not on the type of process)',
+        'ΔU = 0 (in an isobaric process, pressure does not affect internal energy, so it remains constant)'
+      ],
+      explanation: 'Trap: for an isobaric process, Q = C_p ΔT, but internal energy U depends only on T, so ΔU always uses C_v. Students often confuse using C_p for Q with using it for ΔU.'
+    },
+    answer: 2
+  },
+  {
+    id: 40, difficulty: 'trap', points: 19,
+    zh: {
+      question: '關於卡諾效率，下列哪個說法是正確的？',
+      options: [
+        '在相同高低溫熱源之間運作的所有熱機，其實際效率都等於卡諾效率',
+        '卡諾效率是理論上限，現代高效率工程熱機通常可達到卡諾效率的 95% 以上',
+        '使用新型高效工作流體（如新型冷媒或超臨界流體）可以突破卡諾效率的理論限制',
+        '卡諾效率是相同溫度條件下任何熱機效率的理論上限，現實熱機因不可逆損失必然低於此值'
+      ],
+      explanation: '陷阱：A 錯誤，實際熱機小於卡諾效率；B 錯誤，現實熱機遠低於 95% 卡諾效率；C 錯誤，卡諾效率只由溫度決定，與工作流體無關。D 正確。'
+    },
+    en: {
+      question: 'Which of the following statements about Carnot efficiency is correct?',
+      options: [
+        'All heat engines operating between the same high- and low-temperature reservoirs achieve exactly the Carnot efficiency',
+        'Carnot efficiency is the theoretical maximum; modern high-efficiency engineering heat engines typically reach 95% or more of Carnot efficiency',
+        'Using advanced working fluids (e.g., novel refrigerants or supercritical fluids) can surpass the theoretical Carnot efficiency limit',
+        'Carnot efficiency is the theoretical upper bound for any heat engine at given temperatures; real engines fall short due to irreversible losses'
+      ],
+      explanation: 'Trap: A is wrong — real engines are less efficient than Carnot. B is wrong — real engines are far below 95% of Carnot. C is wrong — Carnot efficiency depends only on temperatures, not the working fluid. D is correct.'
+    },
+    answer: 3
+  }
+];
+
+// ─── SHUFFLE ─────────────────────────────────────────────────────────
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ─── STATE ───────────────────────────────────────────────────────────
+let questions = shuffle(questionsRaw);
+let current = 0;
+let userAnswers = new Array(40).fill(null);
+let transitioning = false;
+
+// ─── RENDER ──────────────────────────────────────────────────────────
+function updateProgressText() {
+  const txt = lang === 'zh'
+    ? `第 ${current + 1} / 40 題`
+    : `Question ${current + 1} / 40`;
+  document.getElementById('progress-text').textContent = txt;
+}
+
+function renderQuestion() {
+  const q = questions[current];
+  const data = q[lang];
+  document.getElementById('question-num').textContent =
+    lang === 'zh' ? `第 ${current + 1} 題` : `Question ${current + 1}`;
+  document.getElementById('question-text').textContent = data.question;
+
+  const ol = document.getElementById('options-list');
+  ol.innerHTML = '';
+  const labels = ['A', 'B', 'C', 'D'];
+  data.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn' + (userAnswers[current] === i ? ' selected' : '');
+    btn.innerHTML = `<span class="option-label">${labels[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectOption(i);
+    ol.appendChild(btn);
+  });
+
+  const prevBtn = document.getElementById('prev-btn');
+  const submitBtn = document.getElementById('submit-btn');
+  prevBtn.disabled = current === 0;
+
+  const isLast = current === questions.length - 1;
+  const hasAnswer = userAnswers[current] !== null;
+  submitBtn.style.display = (isLast && hasAnswer) ? 'inline-flex' : 'none';
+
+  const pct = (current / 40) * 100;
+  document.getElementById('progress-bar').style.width = pct + '%';
+  updateProgressText();
+  applyLang();
+}
+
+function selectOption(idx) {
+  if (transitioning) return;
+  const prev = userAnswers[current];
+  userAnswers[current] = idx;
+
+  // Highlight selected
+  document.querySelectorAll('.option-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === idx);
+  });
+
+  const isLast = current === questions.length - 1;
+  if (isLast) {
+    document.getElementById('submit-btn').style.display = 'inline-flex';
+    return;
+  }
+
+  // Auto-advance after 0.4s
+  transitioning = true;
+  setTimeout(() => {
+    fadeTransition(() => {
+      current++;
+      renderQuestion();
+      transitioning = false;
+    });
+  }, 400);
+}
+
+function fadeTransition(cb) {
+  const wrap = document.getElementById('question-wrap');
+  wrap.classList.add('fade-out');
+  setTimeout(() => {
+    cb();
+    wrap.classList.remove('fade-out');
+  }, 200);
+}
+
+function prevQuestion() {
+  if (current === 0 || transitioning) return;
+  transitioning = true;
+  fadeTransition(() => {
+    current--;
+    renderQuestion();
+    transitioning = false;
+  });
+}
+
+// ─── RESULTS ─────────────────────────────────────────────────────────
+function normalCDF(x) {
+  // Approximation of the standard normal CDF
+  const t = 1 / (1 + 0.2316419 * Math.abs(x));
+  const d = 0.3989423 * Math.exp(-x * x / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.7814779 + t * (-1.8212560 + t * 1.3302744))));
+  return x > 0 ? 1 - p : p;
+}
+
+function submitQuiz() {
+  let totalScore = 0;
+  let correctCount = 0;
+  const byDiff = { easy: [0,0], medium: [0,0], hard: [0,0], trap: [0,0] };
+  const maxByDiff = { easy: 10, medium: 15, hard: 10, trap: 5 };
+
+  questions.forEach((q, i) => {
+    const ans = userAnswers[i];
+    const isCorrect = ans === q.answer;
+    byDiff[q.difficulty][1]++;
+    if (isCorrect) {
+      totalScore += q.points;
+      correctCount++;
+      byDiff[q.difficulty][0]++;
+    }
+  });
+
+  // Percentile
+  const mean = 670 * 0.45;
+  const sd = 670 * 0.15;
+  const z = (totalScore - mean) / sd;
+  const percentile = Math.round(normalCDF(z) * 100);
+
+  // Grade
+  let grade = '';
+  if (totalScore >= 600) grade = lang === 'zh' ? '🏆 頂尖專家' : '🏆 Top Expert';
+  else if (totalScore >= 500) grade = lang === 'zh' ? '⭐ 進階掌握' : '⭐ Advanced';
+  else if (totalScore >= 380) grade = lang === 'zh' ? '📘 中等水準' : '📘 Intermediate';
+  else if (totalScore >= 250) grade = lang === 'zh' ? '📗 基礎尚可' : '📗 Basic';
+  else grade = lang === 'zh' ? '📕 需要加強' : '📕 Needs Improvement';
+
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('progress-text').textContent = '';
+
+  document.getElementById('result-score').textContent = totalScore;
+  document.getElementById('result-grade').textContent = grade;
+  document.getElementById('result-percentile').textContent =
+    lang === 'zh'
+      ? `你的成績超越了約 ${percentile}% 的測試者`
+      : `Your score exceeds approximately ${percentile}% of test takers`;
+
+  document.getElementById('stat-correct').textContent = `${correctCount} / 40`;
+  document.getElementById('stat-wrong').textContent = `${40 - correctCount} / 40`;
+
+  const diffLabels = {
+    easy: lang === 'zh' ? '簡單' : 'Easy',
+    medium: lang === 'zh' ? '中等' : 'Medium',
+    hard: lang === 'zh' ? '困難' : 'Hard',
+    trap: lang === 'zh' ? '陷阱' : 'Trap'
+  };
+  ['easy','medium','hard','trap'].forEach(d => {
+    const [c, t] = byDiff[d];
+    document.getElementById(`stat-${d === 'medium' ? 'med' : d}`).textContent = `${c} / ${maxByDiff[d]}`;
+    document.getElementById(`bar-${d === 'medium' ? 'med' : d}`).style.width = (t > 0 ? (c/t)*100 : 0) + '%';
+  });
+
+  // Review
+  const reviewTitle = lang === 'zh' ? '❌ 錯題回顧' : '❌ Review Wrong Answers';
+  document.getElementById('review-title').textContent = reviewTitle;
+
+  const rl = document.getElementById('review-list');
+  rl.innerHTML = '';
+  const labels = ['A', 'B', 'C', 'D'];
+  let wrongCount = 0;
+
+  questions.forEach((q, i) => {
+    const userAns = userAnswers[i];
+    if (userAns === q.answer) return;
+    wrongCount++;
+    const data = q[lang];
+    const item = document.createElement('div');
+    item.className = 'review-item';
+
+    const qNum = lang === 'zh' ? `第 ${i+1} 題` : `Q${i+1}`;
+    const yourAns = lang === 'zh' ? '你的作答' : 'Your answer';
+    const corrAns = lang === 'zh' ? '正確答案' : 'Correct answer';
+    const explLabel = lang === 'zh' ? '解析：' : 'Explanation: ';
+
+    item.innerHTML = `
+      <div class="review-q">${qNum}. ${data.question}</div>
+      ${userAns !== null ? `
+      <div class="review-option">
+        <span class="tag tag-wrong">${yourAns}: ${labels[userAns]}</span>
+        <span>${data.options[userAns]}</span>
+      </div>` : ''}
+      <div class="review-option">
+        <span class="tag tag-correct">${corrAns}: ${labels[q.answer]}</span>
+        <span>${data.options[q.answer]}</span>
+      </div>
+      <div class="review-explanation">${explLabel}${data.explanation}</div>
+    `;
+    rl.appendChild(item);
+  });
+
+  if (wrongCount === 0) {
+    rl.innerHTML = `<p style="color:var(--correct);font-weight:700;text-align:center;padding:20px 0">${lang === 'zh' ? '🎉 全部答對！' : '🎉 Perfect score!'}</p>`;
+  }
+
+  document.getElementById('progress-bar').style.width = '100%';
+  applyLang();
+}
+
+function restartQuiz() {
+  questions = shuffle(questionsRaw);
+  current = 0;
+  userAnswers = new Array(40).fill(null);
+  transitioning = false;
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('quiz').style.display = 'block';
+  renderQuestion();
+}
+
+function copyResult() {
+  const score = document.getElementById('result-score').textContent;
+  const grade = document.getElementById('result-grade').textContent;
+  const percentile = document.getElementById('result-percentile').textContent;
+  const correct = document.getElementById('stat-correct').textContent;
+
+  const easyS = document.getElementById('stat-easy').textContent;
+  const medS = document.getElementById('stat-med').textContent;
+  const hardS = document.getElementById('stat-hard').textContent;
+  const trapS = document.getElementById('stat-trap').textContent;
+
+  const text = lang === 'zh'
+    ? `【熱力學測驗成績】\n總分：${score} / 670 分\n等級：${grade}\n答對：${correct}\n${percentile}\n簡單：${easyS} | 中等：${medS} | 困難：${hardS} | 陷阱：${trapS}`
+    : `[Thermodynamics Quiz Result]\nScore: ${score} / 670\nGrade: ${grade}\nCorrect: ${correct}\n${percentile}\nEasy: ${easyS} | Medium: ${medS} | Hard: ${hardS} | Trap: ${trapS}`;
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(lang === 'zh' ? '✅ 已複製結果！' : '✅ Result copied!');
+  }).catch(() => {
+    showToast(lang === 'zh' ? '複製失敗，請手動複製' : 'Copy failed, please copy manually');
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('copy-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────
+renderQuestion();
+applyLang();
+</script>
+</body>
+</html>

@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資料結構與演算法 測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --track: #E5E7EB;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --surface: #FFFFFF;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --muted: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --track: #374151;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --surface: #111111;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 20px 120px; }
+
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+  }
+  .bar {
+    max-width: 760px; margin: 0 auto; padding: 14px 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .title { font-size: 17px; font-weight: 700; margin: 0; flex: 1 1 auto; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 12px;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .btn:hover { background: var(--border); }
+  .progress-text { font-size: 13px; color: var(--muted); flex-basis: 100%; }
+
+  .card { padding-top: 28px; }
+  .qbox { opacity: 1; transition: opacity 0.25s ease; }
+  .qbox.fade { opacity: 0; }
+  .question { font-size: 19px; font-weight: 600; margin: 0 0 22px; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px;
+    font-size: 15px; cursor: pointer; text-align: left;
+    font-family: inherit; line-height: 1.5;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .option:hover { background: var(--track); }
+  .option .label { font-weight: 700; color: var(--muted); flex: 0 0 auto; }
+  .option.selected {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .option.selected .label { color: var(--accent-text); }
+
+  .nav { margin-top: 26px; display: flex; gap: 12px; }
+  .nav .btn { padding: 10px 18px; font-size: 14px; }
+  .btn-primary {
+    background: var(--accent); color: var(--accent-text);
+    border-color: var(--accent); font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent); opacity: 0.9; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .pbar-wrap {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 6px; background: var(--track);
+  }
+  .pbar { height: 100%; width: 0%; background: var(--accent); transition: width 0.25s ease; }
+
+  /* Results */
+  .results h2 { font-size: 24px; margin: 24px 0 4px; }
+  .score-big { font-size: 44px; font-weight: 800; margin: 6px 0; }
+  .grade { font-size: 22px; font-weight: 700; margin: 10px 0; }
+  .pct { font-size: 16px; color: var(--muted); margin: 4px 0 24px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 26px; }
+  .stat {
+    border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px;
+  }
+  .stat .k { font-size: 13px; color: var(--muted); }
+  .stat .v { font-size: 20px; font-weight: 700; }
+  .section-title { font-size: 18px; font-weight: 700; margin: 28px 0 14px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin: 0 0 10px; }
+  .review-line { font-size: 14px; margin: 4px 0; }
+  .your { color: var(--wrong); }
+  .correct-ans { color: var(--correct); }
+  .explain { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .hidden { display: none; }
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: 1fr; }
+    .question { font-size: 17px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <h1 class="title" id="appTitle">資料結構與演算法 測驗</h1>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙</button>
+    </div>
+    <div class="progress-text" id="progressText">第 1 / 40 題</div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="card" id="quizCard">
+    <div class="qbox" id="qbox">
+      <p class="question" id="questionText"></p>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+    </div>
+  </div>
+
+  <div class="results hidden" id="resultsCard"></div>
+</div>
+
+<div class="pbar-wrap"><div class="pbar" id="pbar"></div></div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{question:"在陣列中以索引存取單一元素的時間複雜度為何？", options:["O(1)","O(n)","O(log n)","O(n²)"], explanation:"陣列以基底位址加偏移量直接定位，故為常數時間。"},
+    en:{question:"What is the time complexity of accessing a single array element by index?", options:["O(1)","O(n)","O(log n)","O(n²)"], explanation:"Arrays use base address plus offset, giving constant time."} },
+
+  { id:2, difficulty:"medium", points:15, answer:1,
+    zh:{question:"評估後綴（postfix）運算式時，最適合使用哪種資料結構？", options:["佇列（queue）","堆疊（stack）","雜湊表（hash table）","堆積（heap）"], explanation:"後綴運算式以堆疊暫存運算元，遇運算子時彈出計算。"},
+    en:{question:"Which data structure best evaluates a postfix expression?", options:["A queue","A stack","A hash table","A heap"], explanation:"A stack holds operands and pops them when an operator appears."} },
+
+  { id:3, difficulty:"hard", points:25, answer:2,
+    zh:{question:"對 n 個元素建立二元堆積（build-heap）的最壞時間複雜度為何？", options:["O(n log n)","O(log n)","O(n)","O(n²)"], explanation:"由下而上建堆的緊密分析為線性時間。"},
+    en:{question:"What is the worst-case time to build a binary heap from n elements?", options:["O(n log n)","O(log n)","O(n)","O(n²)"], explanation:"The tight bottom-up analysis yields linear time."} },
+
+  { id:4, difficulty:"easy", points:10, answer:3,
+    zh:{question:"相較於陣列，鏈結串列（linked list）的主要優點是什麼？", options:["可在常數時間隨機存取元素","整體記憶體使用較為緊湊","對快取的局部性表現較佳","插入刪除時無需搬移其他元素"], explanation:"鏈結串列只需調整指標即可插入或刪除節點。"},
+    en:{question:"What is the main advantage of a linked list over an array?", options:["Constant-time random element access","More compact overall memory usage","Better locality for the CPU cache","Inserts and deletes shift nothing"], explanation:"Only pointers are adjusted to insert or delete a node."} },
+
+  { id:5, difficulty:"trap", points:19, answer:1,
+    zh:{question:"關於大 O 記號，下列敘述何者正確？", options:["它描述演算法的平均情況執行時間","它描述執行時間成長率的上界","它代表演算法實際的執行秒數","它只適用於遞迴演算法的分析"], explanation:"大 O 描述成長率上界，與實際秒數及平均情況無關。"},
+    en:{question:"Which statement about Big-O notation is correct?", options:["It describes the average-case running time","It describes an upper bound on growth rate","It represents the actual seconds of runtime","It applies only to recursive algorithms"], explanation:"Big-O bounds growth rate, not actual seconds or average case."} },
+
+  { id:6, difficulty:"medium", points:15, answer:0,
+    zh:{question:"下列何者是雜湊表處理碰撞（collision）的方法？", options:["鏈結法（separate chaining）","二分搜尋（binary search）","路徑壓縮（path compression）","記憶化（memoization）"], explanation:"鏈結法以串列儲存同一桶內的多個元素。"},
+    en:{question:"Which is a technique for resolving hash table collisions?", options:["Separate chaining","Binary searching","Path compression","Result memoization"], explanation:"Separate chaining stores colliding keys in a per-bucket list."} },
+
+  { id:7, difficulty:"hard", points:25, answer:3,
+    zh:{question:"Dijkstra 最短路徑演算法在何種情況下可能失效？", options:["圖中含有大量節點時","圖為無向且連通時","邊權重皆為正整數時","圖中存在負權重邊時"], explanation:"負權邊會破壞貪婪選擇的正確性，需改用 Bellman-Ford。"},
+    en:{question:"In which case can Dijkstra's shortest-path algorithm fail?", options:["When the graph has many nodes","When the graph is undirected","When all edge weights are positive","When negative-weight edges exist"], explanation:"Negative edges break the greedy choice; use Bellman-Ford instead."} },
+
+  { id:8, difficulty:"medium", points:15, answer:2,
+    zh:{question:"在陣列上執行二分搜尋（binary search）的前提條件為何？", options:["陣列元素必須皆為整數","陣列長度須為 2 的次方","陣列元素必須已排序","陣列不可含有重複元素"], explanation:"二分搜尋依賴有序性才能每次排除一半範圍。"},
+    en:{question:"What is the precondition for binary search on an array?", options:["All elements must be integers","The length must be a power of two","The elements must be sorted","No duplicate values are allowed"], explanation:"Binary search relies on order to discard half each step."} },
+
+  { id:9, difficulty:"easy", points:10, answer:1,
+    zh:{question:"佇列（queue）遵循何種存取原則？", options:["後進先出（LIFO）","先進先出（FIFO）","隨機順序存取","依優先權存取"], explanation:"佇列由尾端加入、前端移除，先進者先出。"},
+    en:{question:"Which access principle does a queue follow?", options:["Last-in, first-out (LIFO)","First-in, first-out (FIFO)","Random-order access","Priority-based access"], explanation:"A queue inserts at the rear and removes from the front."} },
+
+  { id:10, difficulty:"medium", points:15, answer:0,
+    zh:{question:"合併排序（merge sort）在最壞情況下的時間複雜度為何？", options:["O(n log n)","O(n²)","O(n)","O(log n)"], explanation:"每層合併為 O(n)，共有 log n 層。"},
+    en:{question:"What is the worst-case time complexity of merge sort?", options:["O(n log n)","O(n²)","O(n)","O(log n)"], explanation:"Each merge level costs O(n) across log n levels."} },
+
+  { id:11, difficulty:"hard", points:25, answer:2,
+    zh:{question:"未平衡的二元搜尋樹在最壞情況下搜尋的時間複雜度為何？", options:["O(log n)","O(1)","O(n)","O(n log n)"], explanation:"退化成鏈狀時樹高為 n，搜尋需線性時間。"},
+    en:{question:"What is the worst-case search time in an unbalanced binary search tree?", options:["O(log n)","O(1)","O(n)","O(n log n)"], explanation:"When degenerate into a chain, height is n, so search is linear."} },
+
+  { id:12, difficulty:"easy", points:10, answer:3,
+    zh:{question:"將元素加入堆疊頂端的操作通常稱為什麼？", options:["dequeue","peek","poll","push"], explanation:"push 推入、pop 彈出為堆疊的基本操作。"},
+    en:{question:"What is the operation that adds an element to the top of a stack called?", options:["dequeue","peek","poll","push"], explanation:"push adds and pop removes from the top of a stack."} },
+
+  { id:13, difficulty:"trap", points:19, answer:0,
+    zh:{question:"關於遞迴與迴圈，下列敘述何者正確？", options:["任何遞迴都可改寫為等價迴圈","遞迴一定比迴圈執行得更快速","遞迴過程完全不使用額外空間","只有遞迴才能走訪樹狀結構"], explanation:"遞迴可用顯式堆疊轉為迭代，兩者計算能力等價。"},
+    en:{question:"Which statement about recursion versus iteration is correct?", options:["Any recursion can be rewritten as a loop","Recursion always runs faster than a loop","Recursion uses no extra memory at all","Only recursion can traverse a tree"], explanation:"Recursion converts to iteration via an explicit stack; equally powerful."} },
+
+  { id:14, difficulty:"medium", points:15, answer:1,
+    zh:{question:"以鄰接矩陣表示含 V 個頂點的圖，其空間複雜度為何？", options:["O(V + E)","O(V²)","O(E²)","O(V log V)"], explanation:"鄰接矩陣需 V×V 的儲存空間，與邊數無關。"},
+    en:{question:"What is the space complexity of an adjacency matrix for a graph with V vertices?", options:["O(V + E)","O(V²)","O(E²)","O(V log V)"], explanation:"An adjacency matrix needs V×V storage regardless of edges."} },
+
+  { id:15, difficulty:"hard", points:25, answer:3,
+    zh:{question:"快速排序（quicksort）在何種情況下會退化為 O(n²)？", options:["當輸入的資料量非常龐大時","當樞紐每次都選到中位數時","當陣列中元素皆相異時","當每次樞紐都選到極值時"], explanation:"樞紐持續為最大或最小值時，分割極度不平均。"},
+    en:{question:"When does quicksort degrade to O(n²)?", options:["When the input is very large","When the pivot is always the median","When all elements are distinct","When the pivot is always an extreme"], explanation:"A pivot that is always the max or min makes partitions unbalanced."} },
+
+  { id:16, difficulty:"easy", points:10, answer:2,
+    zh:{question:"在樹狀結構中，葉節點（leaf node）的定義為何？", options:["位於樹最頂端的那個節點","擁有最多子節點的那個節點","沒有任何子節點的那個節點","連接兩棵子樹的那個節點"], explanation:"葉節點即沒有子節點的終端節點。"},
+    en:{question:"What is the definition of a leaf node in a tree?", options:["The node at the very top of the tree","The node holding the most children","The node having no children at all","The node joining two subtrees"], explanation:"A leaf is a terminal node with no children."} },
+
+  { id:17, difficulty:"medium", points:15, answer:0,
+    zh:{question:"在理想雜湊函式下，雜湊表查詢的平均時間複雜度為何？", options:["O(1)","O(n)","O(log n)","O(n log n)"], explanation:"分布均勻時，平均查詢為常數時間。"},
+    en:{question:"With an ideal hash function, what is the average lookup time in a hash table?", options:["O(1)","O(n)","O(log n)","O(n log n)"], explanation:"With even distribution, average lookup is constant time."} },
+
+  { id:18, difficulty:"hard", points:25, answer:1,
+    zh:{question:"深度優先搜尋（DFS）若以非遞迴方式實作，通常使用何種結構？", options:["優先佇列（priority queue）","堆疊（stack）","雜湊表（hash table）","佇列（queue）"], explanation:"DFS 以堆疊維護待走訪節點，與 BFS 用佇列相對。"},
+    en:{question:"When implemented iteratively, which structure does DFS typically use?", options:["A priority queue","A stack","A hash table","A queue"], explanation:"DFS keeps pending nodes on a stack, unlike BFS which uses a queue."} },
+
+  { id:19, difficulty:"medium", points:15, answer:3,
+    zh:{question:"排序演算法「穩定（stable）」一詞的含義為何？", options:["演算法不會發生記憶體溢位","時間複雜度不隨輸入而改變","排序結果一定為遞增順序","相等鍵值的相對順序被保留"], explanation:"穩定排序維持相同鍵值元素原有的先後次序。"},
+    en:{question:"What does it mean for a sorting algorithm to be stable?", options:["It never causes a memory overflow","Its time cost is input-independent","Its output is always ascending","Equal keys keep their relative order"], explanation:"A stable sort preserves the original order of equal-key elements."} },
+
+  { id:20, difficulty:"easy", points:10, answer:2,
+    zh:{question:"二元樹中每個節點最多可以有幾個子節點？", options:["最多一個","最多三個","最多兩個","沒有上限"], explanation:"二元樹每個節點最多有兩個子節點（左、右）。"},
+    en:{question:"At most how many children can a node have in a binary tree?", options:["At most one","At most three","At most two","No upper limit"], explanation:"Each node in a binary tree has at most two children (left, right)."} },
+
+  { id:21, difficulty:"trap", points:19, answer:1,
+    zh:{question:"關於動態陣列（dynamic array）尾端附加元素，下列敘述何者正確？", options:["每次附加都需要重新配置記憶體","其攤銷（amortized）成本為 O(1)","每次附加操作必定為 O(n) 時間","容量滿時會直接拒絕新元素"], explanation:"倍增擴容策略使尾端附加的均攤成本為常數時間。"},
+    en:{question:"Regarding appending to the end of a dynamic array, which is correct?", options:["Every append reallocates the memory","Its amortized cost is O(1) per append","Each append always costs O(n) time","It rejects new items once capacity fills"], explanation:"Doubling capacity makes the amortized append cost constant."} },
+
+  { id:22, difficulty:"medium", points:15, answer:0,
+    zh:{question:"在最小堆積（min-heap）中，下列性質何者必定成立？", options:["父節點的值不大於其子節點","左子節點的值小於右子節點","中序走訪會得到遞增序列","所有葉節點皆位於同一層"], explanation:"最小堆積僅保證父小於等於子，不保證兄弟間的順序。"},
+    en:{question:"Which property must hold in a min-heap?", options:["A parent is not greater than its child","The left child is below the right child","An in-order walk yields ascending order","All leaves lie on the same level"], explanation:"A min-heap only guarantees parent ≤ child, not sibling order."} },
+
+  { id:23, difficulty:"hard", points:25, answer:2,
+    zh:{question:"在自平衡二元搜尋樹（如 AVL 樹）中插入一個節點的時間複雜度為何？", options:["O(1)","O(n)","O(log n)","O(n log n)"], explanation:"樹高維持 O(log n)，插入含旋轉仍為對數時間。"},
+    en:{question:"What is the insertion time in a self-balancing BST such as an AVL tree?", options:["O(1)","O(n)","O(log n)","O(n log n)"], explanation:"Height stays O(log n), so insertion with rotations is logarithmic."} },
+
+  { id:24, difficulty:"easy", points:10, answer:3,
+    zh:{question:"下列何者最適合以佇列（queue）來建模？", options:["函式呼叫的返回順序","瀏覽器的上一頁功能","運算式的括號配對檢查","印表機的列印工作排程"], explanation:"列印工作先送先印，符合先進先出原則。"},
+    en:{question:"Which scenario is best modeled by a queue?", options:["The return order of function calls","A web browser's back-button history","Matching parentheses in expressions","A printer's job scheduling order"], explanation:"Print jobs are served first-come first-served, i.e. FIFO."} },
+
+  { id:25, difficulty:"medium", points:15, answer:1,
+    zh:{question:"在單向鏈結串列中搜尋特定值的時間複雜度為何？", options:["O(1)","O(n)","O(log n)","O(n²)"], explanation:"須從頭逐一走訪，最壞情況為線性時間。"},
+    en:{question:"What is the time complexity of searching for a value in a singly linked list?", options:["O(1)","O(n)","O(log n)","O(n²)"], explanation:"You must traverse from the head; worst case is linear."} },
+
+  { id:26, difficulty:"hard", points:25, answer:0,
+    zh:{question:"拓樸排序（topological sort）只能應用於哪一類圖？", options:["有向無環圖（DAG）","含負權的無向圖","任意含環的有向圖","邊權相等的完全圖"], explanation:"拓樸排序要求有向且無環，存在環時無法排序。"},
+    en:{question:"To which class of graph does topological sort apply?", options:["A directed acyclic graph (DAG)","An undirected graph with negatives","Any directed graph with cycles","A complete graph with equal weights"], explanation:"Topological sort requires a directed acyclic graph; cycles break it."} },
+
+  { id:27, difficulty:"easy", points:10, answer:2,
+    zh:{question:"雜湊函式（hash function）的主要用途是什麼？", options:["將資料依大小排序","壓縮資料以節省空間","將鍵映射到儲存位置","加密資料以保護隱私"], explanation:"雜湊函式把鍵轉換為陣列索引以快速定位。"},
+    en:{question:"What is the main purpose of a hash function?", options:["To sort data by their size","To compress data to save space","To map a key to a storage slot","To encrypt data for privacy"], explanation:"A hash function turns a key into an array index for fast lookup."} },
+
+  { id:28, difficulty:"medium", points:15, answer:3,
+    zh:{question:"在無權重圖上，廣度優先搜尋（BFS）可用來求得什麼？", options:["圖中的最大流量","最小生成樹的權重","所有節點的拓樸順序","兩節點間的最短路徑"], explanation:"無權圖中 BFS 依層擴展，首次抵達即為最短路徑。"},
+    en:{question:"On an unweighted graph, what can breadth-first search find?", options:["The maximum flow in the graph","The minimum spanning tree weight","A topological order of nodes","The shortest path between nodes"], explanation:"BFS expands level by level, so first arrival is the shortest path."} },
+
+  { id:29, difficulty:"trap", points:19, answer:0,
+    zh:{question:"一個迴圈跑 n 次、內含另一個跑 n 次的迴圈，但內層在條件成立時提早 break，整體最壞時間複雜度為何？", options:["O(n²)","O(n)","O(log n)","O(1)"], explanation:"最壞情況下 break 從未觸發，整體仍為平方時間。"},
+    en:{question:"An outer loop runs n times with an inner loop of n that may break early when a condition holds. What is the worst-case time?", options:["O(n²)","O(n)","O(log n)","O(1)"], explanation:"In the worst case the break never fires, so it stays quadratic."} },
+
+  { id:30, difficulty:"hard", points:25, answer:1,
+    zh:{question:"在動態規劃中，記憶化（memoization）主要解決什麼問題？", options:["減少程式所需的原始碼行數","避免重複計算相同的子問題","必然降低演算法的空間複雜度","保證一定能找到全域最佳解"], explanation:"記憶化儲存子問題結果，消除重疊子問題的重算。"},
+    en:{question:"In dynamic programming, what problem does memoization mainly solve?", options:["Reducing the lines of source code","Avoiding recomputing the same subproblems","Always lowering the space complexity","Guaranteeing a global optimum is found"], explanation:"Memoization caches subproblem results, ending redundant recomputation."} },
+
+  { id:31, difficulty:"medium", points:15, answer:2,
+    zh:{question:"雙向鏈結串列相較於單向鏈結串列的主要優點為何？", options:["占用的記憶體空間較少","可支援常數時間隨機存取","可由任一節點往兩方向走訪","搜尋的時間複雜度較低"], explanation:"多一個前驅指標可雙向走訪，但耗費較多空間。"},
+    en:{question:"What is the main advantage of a doubly over a singly linked list?", options:["It uses less memory overall","It supports constant-time random access","It can traverse both ways from a node","It lowers the search time complexity"], explanation:"An extra prev pointer enables bidirectional traversal at more space cost."} },
+
+  { id:32, difficulty:"easy", points:10, answer:3,
+    zh:{question:"下列何者是一種排序演算法？", options:["深度優先搜尋","二分搜尋","路徑壓縮","氣泡排序"], explanation:"氣泡排序為基本的比較式排序法。"},
+    en:{question:"Which of the following is a sorting algorithm?", options:["Depth-first search","Binary search","Path compression","Bubble sort"], explanation:"Bubble sort is a basic comparison-based sorting method."} },
+
+  { id:33, difficulty:"medium", points:15, answer:0,
+    zh:{question:"一個遞迴深度為 n 的演算法，其因呼叫堆疊而產生的空間複雜度至少為何？", options:["O(n)","O(1)","O(log n)","O(n²)"], explanation:"每層遞迴佔一個堆疊框，深度 n 即需 O(n) 空間。"},
+    en:{question:"For an algorithm with recursion depth n, what is the minimum space from the call stack?", options:["O(n)","O(1)","O(log n)","O(n²)"], explanation:"Each recursion level holds one stack frame, so depth n needs O(n)."} },
+
+  { id:34, difficulty:"hard", points:25, answer:1,
+    zh:{question:"當雜湊函式使所有鍵碰撞於同一桶時，查詢的最壞時間複雜度為何？", options:["O(1)","O(n)","O(log n)","O(n log n)"], explanation:"全部碰撞退化為單一串列，查詢需線性時間。"},
+    en:{question:"If a hash function makes all keys collide into one bucket, what is the worst-case lookup time?", options:["O(1)","O(n)","O(log n)","O(n log n)"], explanation:"Total collision degenerates to a single list, so lookup is linear."} },
+
+  { id:35, difficulty:"easy", points:10, answer:3,
+    zh:{question:"下列何者屬於非線性資料結構？", options:["堆疊（stack）","佇列（queue）","陣列（array）","樹（tree）"], explanation:"樹具有階層分支，屬於非線性結構。"},
+    en:{question:"Which of the following is a non-linear data structure?", options:["A stack","A queue","An array","A tree"], explanation:"A tree branches hierarchically, making it non-linear."} },
+
+  { id:36, difficulty:"medium", points:15, answer:2,
+    zh:{question:"優先佇列（priority queue）最常以何種資料結構實作？", options:["雜湊表（hash table）","雙向鏈結串列","二元堆積（binary heap）","平衡搜尋樹陣列"], explanation:"二元堆積支援 O(log n) 插入與取出極值。"},
+    en:{question:"Which structure most commonly implements a priority queue?", options:["A hash table","A doubly linked list","A binary heap","A balanced-tree array"], explanation:"A binary heap supports O(log n) insert and extreme extraction."} },
+
+  { id:37, difficulty:"hard", points:25, answer:0,
+    zh:{question:"任何以比較為基礎的排序演算法，其最壞情況下的時間複雜度下界為何？", options:["Ω(n log n)","Ω(n)","Ω(log n)","Ω(n²)"], explanation:"決策樹高度至少為 log(n!)，即 Ω(n log n)。"},
+    en:{question:"What is the worst-case lower bound for any comparison-based sorting algorithm?", options:["Ω(n log n)","Ω(n)","Ω(log n)","Ω(n²)"], explanation:"The decision tree height is at least log(n!), i.e. Ω(n log n)."} },
+
+  { id:38, difficulty:"trap", points:19, answer:1,
+    zh:{question:"關於鏈結串列的元素存取，下列敘述何者正確？", options:["可如陣列般以索引常數時間存取","存取第 k 個元素需要 O(k) 時間","任意位置元素的存取皆為 O(1)","反向存取一律比正向存取更快速"], explanation:"鏈結串列沒有索引，須從頭走訪 k 步才能抵達。"},
+    en:{question:"Regarding element access in a linked list, which statement is correct?", options:["It indexes in constant time like an array","Reaching the k-th element costs O(k) time","Any element's access is always O(1)","Reverse access is always faster than forward"], explanation:"A linked list has no index; reaching element k takes k steps."} },
+
+  { id:39, difficulty:"medium", points:15, answer:3,
+    zh:{question:"一棵含有 n 個節點的樹，恰好有多少條邊？", options:["n 條邊","n + 1 條邊","2n 條邊","n − 1 條邊"], explanation:"樹為連通且無環，邊數恆為節點數減一。"},
+    en:{question:"Exactly how many edges does a tree with n nodes have?", options:["n edges","n + 1 edges","2n edges","n − 1 edges"], explanation:"A tree is connected and acyclic, so edges equal nodes minus one."} },
+
+  { id:40, difficulty:"medium", points:15, answer:2,
+    zh:{question:"對二元搜尋樹進行中序走訪（in-order traversal）會得到什麼？", options:["隨機順序的節點序列","由根到葉的層級順序","鍵值遞增的排序序列","鍵值遞減的排序序列"], explanation:"BST 的中序走訪結果為鍵值遞增的排序序列。"},
+    en:{question:"What does an in-order traversal of a binary search tree produce?", options:["A randomly ordered node sequence","A root-to-leaf level ordering","An ascending sorted key sequence","A descending sorted key sequence"], explanation:"In-order traversal of a BST yields keys in ascending order."} },
+];
+
+const i18n = {
+  zh: {
+    title: "資料結構與演算法 測驗",
+    langBtn: "English",
+    progress: (a,b)=>`第 ${a} / ${b} 題`,
+    prev: "上一題",
+    submit: "提交測驗",
+    resultTitle: "測驗結果",
+    totalScore: "總分",
+    correctCount: "正確題數",
+    wrongCount: "錯誤題數",
+    byDifficulty: "各難度正確率",
+    easy: "簡單", medium: "中等", hard: "困難", trap: "陷阱",
+    percentile: (p)=>`你的成績超越了約 ${p}% 的測試者`,
+    grades: ["🏆 頂尖專家","⭐ 進階掌握","📘 中等水準","📗 基礎尚可","📕 需要加強"],
+    reviewTitle: "錯題回顧",
+    yourAns: "你的選擇",
+    correctAns: "正確答案",
+    noWrong: "太厲害了！沒有答錯任何題目。",
+    retry: "重新測驗",
+    copy: "複製結果",
+    copied: "已複製！",
+    copyText: (s,c)=>`我在「資料結構與演算法」測驗中獲得 ${s} / 670 分，答對 ${c} / 40 題。`
+  },
+  en: {
+    title: "Data Structures & Algorithms Quiz",
+    langBtn: "中文",
+    progress: (a,b)=>`Question ${a} / ${b}`,
+    prev: "Previous",
+    submit: "Submit Quiz",
+    resultTitle: "Your Results",
+    totalScore: "Total Score",
+    correctCount: "Correct",
+    wrongCount: "Incorrect",
+    byDifficulty: "Accuracy by Difficulty",
+    easy: "Easy", medium: "Medium", hard: "Hard", trap: "Trap",
+    percentile: (p)=>`You scored higher than about ${p}% of test takers`,
+    grades: ["🏆 Top Expert","⭐ Advanced","📘 Intermediate","📗 Basic","📕 Needs Improvement"],
+    reviewTitle: "Review of Incorrect Answers",
+    yourAns: "Your answer",
+    correctAns: "Correct answer",
+    noWrong: "Outstanding! You got every question right.",
+    retry: "Retake Quiz",
+    copy: "Copy Results",
+    copied: "Copied!",
+    copyText: (s,c)=>`I scored ${s} / 670 on the Data Structures & Algorithms quiz, answering ${c} / 40 correctly.`
+  }
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const LETTERS = ["A","B","C","D"];
+
+const el = id => document.getElementById(id);
+
+// theme
+function initTheme(){
+  const saved = matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  setTheme(saved);
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  el("themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
+}
+el("themeBtn").onclick = ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+};
+
+el("langBtn").onclick = ()=>{
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  applyLang();
+  if (el("resultsCard").classList.contains("hidden")) renderQuestion(false);
+  else renderResults();
+};
+
+function applyLang(){
+  const t = i18n[lang];
+  el("appTitle").textContent = t.title;
+  document.title = t.title;
+  el("langBtn").textContent = t.langBtn;
+  el("prevBtn").textContent = t.prev;
+  el("submitBtn").textContent = t.submit;
+}
+
+function renderQuestion(fade=true){
+  const t = i18n[lang];
+  const q = questions[current];
+  const data = q[lang];
+  const draw = ()=>{
+    el("questionText").textContent = data.question;
+    const box = el("optionsBox");
+    box.innerHTML = "";
+    data.options.forEach((opt, idx)=>{
+      const b = document.createElement("button");
+      b.className = "option" + (answers[current] === idx ? " selected" : "");
+      b.innerHTML = `<span class="label">${LETTERS[idx]}</span><span>${opt}</span>`;
+      b.onclick = ()=> selectOption(idx);
+      box.appendChild(b);
+    });
+    el("progressText").textContent = t.progress(current+1, questions.length);
+    el("prevBtn").disabled = current === 0;
+    const isLast = current === questions.length - 1;
+    el("submitBtn").classList.toggle("hidden", !(isLast && answers[current] !== null));
+    el("pbar").style.width = ((current) / (questions.length-1) * 100) + "%";
+    el("qbox").classList.remove("fade");
+  };
+  if (fade){
+    el("qbox").classList.add("fade");
+    setTimeout(draw, 200);
+  } else draw();
+}
+
+function selectOption(idx){
+  answers[current] = idx;
+  // show selection
+  const opts = el("optionsBox").children;
+  for (let i=0;i<opts.length;i++) opts[i].classList.toggle("selected", i===idx);
+  const isLast = current === questions.length - 1;
+  if (isLast){
+    el("submitBtn").classList.remove("hidden");
+    return;
+  }
+  setTimeout(()=>{ current++; renderQuestion(true); }, 400);
+}
+
+el("prevBtn").onclick = ()=>{ if(current>0){ current--; renderQuestion(true);} };
+el("submitBtn").onclick = ()=> showResults();
+
+// normal CDF
+function normalCDF(x, mean, sd){
+  const z = (x - mean) / (sd * Math.SQRT2);
+  return 0.5 * (1 + erf(z));
+}
+function erf(x){
+  const t = 1 / (1 + 0.3275911 * Math.abs(x));
+  const y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x);
+  return x >= 0 ? y : -y;
+}
+
+function computeResults(){
+  let score=0, correct=0;
+  const byDiff = {easy:[0,0], medium:[0,0], hard:[0,0], trap:[0,0]};
+  const wrong = [];
+  questions.forEach((q,i)=>{
+    byDiff[q.difficulty][1]++;
+    if (answers[i] === q.answer){ score += q.points; correct++; byDiff[q.difficulty][0]++; }
+    else wrong.push(i);
+  });
+  const mean = 670*0.45, sd = 670*0.15;
+  const pct = Math.round(normalCDF(score, mean, sd) * 100);
+  let grade;
+  if (score>=600) grade=0; else if(score>=500) grade=1; else if(score>=380) grade=2; else if(score>=250) grade=3; else grade=4;
+  return {score, correct, wrong: questions.length-correct, byDiff, pct, grade, wrongList: wrong};
+}
+
+function showResults(){
+  el("quizCard").classList.add("hidden");
+  el("resultsCard").classList.remove("hidden");
+  el("pbar").style.width = "100%";
+  renderResults();
+}
+
+function renderResults(){
+  const t = i18n[lang];
+  const r = computeResults();
+  const totalQ = questions.length;
+  let html = `<h2>${t.resultTitle}</h2>`;
+  html += `<div class="score-big">${r.score} / 670</div>`;
+  html += `<div class="grade">${t.grades[r.grade]}</div>`;
+  html += `<div class="pct">${t.percentile(r.pct)}</div>`;
+  html += `<div class="stat-grid">`;
+  html += `<div class="stat"><div class="k">${t.correctCount}</div><div class="v">${r.correct} / ${totalQ}</div></div>`;
+  html += `<div class="stat"><div class="k">${t.wrongCount}</div><div class="v">${r.wrong} / ${totalQ}</div></div>`;
+  html += `</div>`;
+  html += `<div class="section-title">${t.byDifficulty}</div>`;
+  html += `<div class="stat-grid">`;
+  ["easy","medium","hard","trap"].forEach(d=>{
+    html += `<div class="stat"><div class="k">${t[d]}</div><div class="v">${r.byDiff[d][0]} / ${r.byDiff[d][1]}</div></div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="section-title">${t.reviewTitle}</div>`;
+  if (r.wrongList.length === 0){
+    html += `<p class="review-line">${t.noWrong}</p>`;
+  } else {
+    r.wrongList.forEach(i=>{
+      const q = questions[i];
+      const data = q[lang];
+      const ya = answers[i];
+      const yourText = ya===null ? "—" : `${LETTERS[ya]}. ${data.options[ya]}`;
+      html += `<div class="review-item">`;
+      html += `<p class="review-q">${i+1}. ${data.question}</p>`;
+      html += `<p class="review-line your">${t.yourAns}: ${yourText}</p>`;
+      html += `<p class="review-line correct-ans">${t.correctAns}: ${LETTERS[q.answer]}. ${data.options[q.answer]}</p>`;
+      html += `<p class="explain">${data.explanation}</p>`;
+      html += `</div>`;
+    });
+  }
+
+  html += `<div class="nav">`;
+  html += `<button class="btn btn-primary" id="retryBtn">${t.retry}</button>`;
+  html += `<button class="btn" id="copyBtn">${t.copy}</button>`;
+  html += `</div>`;
+
+  el("resultsCard").innerHTML = html;
+  el("retryBtn").onclick = ()=>{
+    answers.fill(null);
+    current = 0;
+    el("resultsCard").classList.add("hidden");
+    el("quizCard").classList.remove("hidden");
+    renderQuestion(false);
+  };
+  el("copyBtn").onclick = ()=>{
+    const txt = t.copyText(r.score, r.correct);
+    navigator.clipboard.writeText(txt).then(()=>{
+      el("copyBtn").textContent = t.copied;
+      setTimeout(()=> el("copyBtn").textContent = t.copy, 1500);
+    });
+  };
+}
+
+initTheme();
+applyLang();
+renderQuestion(false);
+</script>
+</body>
+</html>

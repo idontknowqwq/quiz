@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電磁學互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --track: #E5E7EB;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --surface: #F9FAFB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --track: #374151;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --surface: #1B1B1B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", Roboto, sans-serif;
+    line-height: 1.6;
+    transition: background 0.2s, color 0.2s;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 8px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 12px; margin-bottom: 20px;
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px;
+    font-size: 14px; cursor: pointer; font-family: inherit;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .btn:hover { background: var(--surface); }
+  .btn-primary {
+    background: var(--accent); color: var(--accent-text);
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent); opacity: 0.9; }
+  .progress-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 14px; }
+  .qcard { animation: fade 0.35s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .question { font-size: 19px; font-weight: 600; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px;
+    cursor: pointer; font-size: 16px;
+    display: flex; align-items: flex-start; gap: 10px;
+    background: var(--bg);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .option:hover { background: var(--surface); }
+  .option .letter {
+    font-weight: 700; color: var(--text-secondary);
+    flex-shrink: 0; width: 20px;
+  }
+  .option.selected {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .option.selected .letter { color: var(--accent-text); }
+  .nav { display: flex; justify-content: space-between; margin-top: 24px; gap: 10px; }
+  .barwrap { height: 6px; background: var(--track); border-radius: 3px; margin-top: 28px; overflow: hidden; }
+  .bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+  .hidden { display: none !important; }
+
+  /* results */
+  .result h2 { font-size: 22px; margin-bottom: 16px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .grade { font-size: 24px; font-weight: 700; margin: 8px 0 4px; }
+  .stat-row {
+    display: flex; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+    font-size: 15px;
+  }
+  .stat-row .label { color: var(--text-secondary); }
+  .section-title { font-size: 17px; font-weight: 700; margin: 24px 0 12px; }
+  .review-item {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .review-q { font-weight: 600; margin-bottom: 10px; }
+  .review-line { font-size: 14px; padding: 4px 0; }
+  .mark-wrong { color: var(--wrong); }
+  .mark-correct { color: var(--correct); }
+  .review-exp { font-size: 13px; color: var(--text-secondary); margin-top: 8px; font-style: italic; }
+  .result-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+  .pct { font-size: 15px; color: var(--text-secondary); margin-top: 8px; }
+  @media (max-width: 480px) {
+    .title { font-size: 15px; }
+    .question { font-size: 17px; }
+    .option { font-size: 15px; }
+    .btn { padding: 6px 9px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">電磁學互動測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">EN</button>
+      <button class="btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <!-- QUIZ -->
+  <div id="quizView">
+    <div class="progress-text" id="progressText"></div>
+    <div class="qcard" id="qcard"></div>
+    <div class="nav">
+      <button class="btn" id="prevBtn"></button>
+      <button class="btn btn-primary hidden" id="submitBtn"></button>
+    </div>
+    <div class="barwrap"><div class="bar" id="bar"></div></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultView" class="result hidden"></div>
+</div>
+
+<script>
+const questions = [
+  {id:1,difficulty:"easy",points:10,answer:0,
+   zh:{question:"兩點電荷間的庫侖靜電力，與兩者距離的關係為何？",options:["與距離平方成反比","與距離平方成正比","與距離一次方成反比","與距離一次方成正比"],explanation:"庫侖力 F∝1/r²，與距離平方成反比。"},
+   en:{question:"How does the Coulomb force between two point charges depend on their separation?",options:["Inversely proportional to the square of distance","Directly proportional to the square of distance","Inversely proportional to the distance","Directly proportional to the distance"],explanation:"Coulomb force F∝1/r², an inverse-square law."}},
+
+  {id:2,difficulty:"medium",points:15,answer:2,
+   zh:{question:"平行板電容器持續接於固定電壓的電池，若將板間距離加倍，儲存的電能將如何變化？",options:["增為原本的兩倍","維持原本不變","減為原本的一半","減為原本的四分之一"],explanation:"電壓固定，C∝1/d，d加倍C減半，U=½CV²減半。"},
+   en:{question:"A parallel-plate capacitor stays connected to a fixed-voltage battery. If the plate separation is doubled, how does the stored energy change?",options:["Increases to twice the original","Stays the same as before","Decreases to half the original","Decreases to a quarter of original"],explanation:"V fixed, C∝1/d, doubling d halves C, so U=½CV² halves."}},
+
+  {id:3,difficulty:"hard",points:25,answer:1,
+   zh:{question:"在兩介質界面且無自由面電荷時，下列哪一個邊界條件正確？",options:["電場的法線分量必定連續","電場的切線分量必定連續","電位移的切線分量必定連續","磁場的法線分量必定不連續"],explanation:"切線E永遠連續；無自由面電荷時法線D連續而非法線E。"},
+   en:{question:"At an interface between two media with no free surface charge, which boundary condition is correct?",options:["The normal component of E must be continuous","The tangential component of E must be continuous","The tangential component of D must be continuous","The normal component of B must be discontinuous"],explanation:"Tangential E is always continuous; with no free charge, normal D (not E) is continuous."}},
+
+  {id:4,difficulty:"easy",points:10,answer:3,
+   zh:{question:"一帶電粒子沿著與磁場方向平行的方向運動，所受的磁力為何？",options:["最大，方向沿著磁場","最大，方向垂直磁場","等於 qvB，方向向上","為零，沒有磁力作用"],explanation:"F=qv×B，v平行B時叉積為零，磁力為零。"},
+   en:{question:"A charged particle moves in a direction parallel to the magnetic field. What magnetic force does it experience?",options:["Maximum, directed along the field","Maximum, perpendicular to field","Equal to qvB, directed upward","Zero, no magnetic force acts"],explanation:"F=qv×B; when v∥B the cross product is zero, so the force vanishes."}},
+
+  {id:5,difficulty:"trap",points:19,answer:0,
+   zh:{question:"關於一個靜止電荷置於均勻磁場中，下列敘述何者正確？",options:["不受磁力，因磁力正比於速度","受到指向磁場方向的磁力","受到正比於電荷的定值磁力","受力而沿磁場線方向加速"],explanation:"磁力F=qv×B，v=0則無力。陷阱：磁場不對靜止電荷施力。"},
+   en:{question:"A stationary charge is placed in a uniform magnetic field. Which statement is correct?",options:["No force, since force scales with speed","A force points along the field line","A constant force scaling with charge","A force accelerates it along the field"],explanation:"F=qv×B, and v=0 gives zero force. Trap: a field exerts no force on a charge at rest."}},
+
+  {id:6,difficulty:"medium",points:15,answer:3,
+   zh:{question:"一點電荷 q 位於某封閉曲面內部，若將曲面體積放大為兩倍（電荷仍在內），通過曲面的總電通量如何？",options:["增為原本的兩倍","減為原本的一半","變為原本的四分之一","維持原本完全不變"],explanation:"高斯定律Φ=q/ε₀，只取決於內含電荷，與曲面大小無關。"},
+   en:{question:"A point charge q sits inside a closed surface. If the surface volume is doubled (charge still inside), how does the total electric flux change?",options:["Increases to twice the original","Decreases to half the original","Becomes a quarter of original","Stays exactly the same as before"],explanation:"Gauss's law Φ=q/ε₀ depends only on enclosed charge, not on surface size."}},
+
+  {id:7,difficulty:"hard",points:25,answer:2,
+   zh:{question:"良導體中的趨膚深度（skin depth）隨頻率如何變化？",options:["與頻率的一次方成正比","與頻率的平方成正比","與頻率平方根成反比","與頻率完全無關係"],explanation:"δ=√(2/(ωμσ))，δ∝1/√f，頻率越高趨膚深度越小。"},
+   en:{question:"How does the skin depth in a good conductor vary with frequency?",options:["Directly proportional to frequency","Proportional to frequency squared","Inversely proportional to √frequency","Independent of the frequency entirely"],explanation:"δ=√(2/(ωμσ)), so δ∝1/√f; higher frequency means smaller skin depth."}},
+
+  {id:8,difficulty:"medium",points:15,answer:1,
+   zh:{question:"真空中電場的能量密度，當電場強度增為兩倍時，能量密度變為原本的幾倍？",options:["變為原本的兩倍","變為原本的四倍","變為原本的八倍","維持原本不變"],explanation:"u=½ε₀E²正比於E²，電場加倍能量密度變四倍。"},
+   en:{question:"For the energy density of an electric field in vacuum, if the field strength doubles, the energy density becomes how many times the original?",options:["Twice the original value","Four times the original value","Eight times the original value","Stays the same as before"],explanation:"u=½ε₀E² scales as E², so doubling E gives four times the density."}},
+
+  {id:9,difficulty:"easy",points:10,answer:0,
+   zh:{question:"電場強度的 SI 單位為下列何者？",options:["伏特每公尺（V/m）","庫侖每公尺（C/m）","安培每公尺（A/m）","焦耳每庫侖（J/C）"],explanation:"E的單位為V/m（等同N/C）；J/C則是電位的單位。"},
+   en:{question:"What is the SI unit of electric field strength?",options:["Volt per metre (V/m)","Coulomb per metre (C/m)","Ampere per metre (A/m)","Joule per coulomb (J/C)"],explanation:"E is in V/m (equivalent to N/C); J/C is the unit of potential."}},
+
+  {id:10,difficulty:"hard",points:25,answer:1,
+   zh:{question:"矩形波導（寬邊 a 大於窄邊 b）的主模（dominant mode）為何？",options:["TM₁₁ 模，截止頻率最低","TE₁₀ 模，截止頻率最低","TE₁₁ 模，截止頻率最低","TM₀₁ 模，截止頻率最低"],explanation:"矩形波導主模為TE₁₀，具有最低的截止頻率。"},
+   en:{question:"What is the dominant mode of a rectangular waveguide (broad side a greater than narrow side b)?",options:["TM₁₁ mode, lowest cutoff frequency","TE₁₀ mode, lowest cutoff frequency","TE₁₁ mode, lowest cutoff frequency","TM₀₁ mode, lowest cutoff frequency"],explanation:"The dominant mode is TE₁₀, which has the lowest cutoff frequency."}},
+
+  {id:11,difficulty:"medium",points:15,answer:3,
+   zh:{question:"一線圈中的感應電動勢大小，主要取決於下列何者？",options:["通過線圈的磁通量大小","線圈所在位置的磁場強度","線圈本身具有的電阻值","磁通量隨時間的變化率"],explanation:"法拉第定律ε=−dΦ/dt，取決於通量變化率而非通量本身。"},
+   en:{question:"The magnitude of the induced emf in a coil mainly depends on which of the following?",options:["The amount of flux through the coil","The field strength at the coil's location","The resistance value of the coil","The time rate of change of the flux"],explanation:"Faraday's law ε=−dΦ/dt depends on the rate of change, not the flux itself."}},
+
+  {id:12,difficulty:"easy",points:10,answer:2,
+   zh:{question:"一長直導線通有電流，其周圍磁場的方向為何？",options:["沿著電流方向與導線平行","指向導線並呈放射狀分布","環繞導線並呈同心圓分布","背離導線並呈放射狀分布"],explanation:"安培定律下直導線磁場為環繞的同心圓，方向用右手定則判定。"},
+   en:{question:"A long straight wire carries a current. What is the direction of the magnetic field around it?",options:["Along the current, parallel to wire","Pointing toward the wire, radially","Encircling the wire in concentric circles","Pointing away from wire, radially"],explanation:"By Ampère's law the field forms concentric circles around the wire (right-hand rule)."}},
+
+  {id:13,difficulty:"trap",points:19,answer:0,
+   zh:{question:"一充電後與電源斷開的平行板電容器，插入介電質後，下列何者正確？",options:["電壓降低，儲存能量也減少","電壓升高，儲存能量也增加","電壓不變，儲存能量會增加","電荷增加，導致電壓升高"],explanation:"孤立電容器電荷固定，介電質使C增大、V=Q/C下降、U=Q²/2C減少。"},
+   en:{question:"A charged parallel-plate capacitor is disconnected from the source, then a dielectric is inserted. Which is correct?",options:["Voltage drops, stored energy decreases","Voltage rises, stored energy increases","Voltage same, stored energy increases","Charge rises, causing voltage to rise"],explanation:"Isolated charge is fixed; the dielectric raises C, so V=Q/C drops and U=Q²/2C falls."}},
+
+  {id:14,difficulty:"medium",points:15,answer:1,
+   zh:{question:"兩條平行的長直導線通有同方向的電流，彼此間的作用力為何？",options:["互相排斥，與電流乘積成反比","互相吸引，與電流乘積成正比","互相排斥，與兩線距離成正比","沒有作用力，磁場互相抵消掉"],explanation:"同向電流相吸，單位長度受力 F/L=μ₀I₁I₂/(2πd)。"},
+   en:{question:"Two parallel straight wires carry currents in the same direction. What is the force between them?",options:["Repulsive, inverse to current product","Attractive, proportional to current product","Repulsive, proportional to separation","No force, the fields cancel each other"],explanation:"Like-direction currents attract; force per length F/L=μ₀I₁I₂/(2πd)."}},
+
+  {id:15,difficulty:"hard",points:25,answer:2,
+   zh:{question:"自由空間中振幅為 E₀ 的平面電磁波，其時間平均坡印廷向量大小為何？",options:["等於 E₀² 除以 μ₀c","等於 E₀² 除以 2μ₀","等於 E₀² 除以 2μ₀c","等於 2E₀² 除以 μ₀c"],explanation:"⟨S⟩=E₀²/(2μ₀c)=½ε₀cE₀²，為時間平均能流密度。"},
+   en:{question:"For a plane EM wave of amplitude E₀ in free space, what is the magnitude of its time-averaged Poynting vector?",options:["Equal to E₀² divided by μ₀c","Equal to E₀² divided by 2μ₀","Equal to E₀² divided by 2μ₀c","Equal to 2E₀² divided by μ₀c"],explanation:"⟨S⟩=E₀²/(2μ₀c)=½ε₀cE₀², the time-averaged energy flux."}},
+
+  {id:16,difficulty:"easy",points:10,answer:3,
+   zh:{question:"依照歐姆定律，導體兩端電壓、流過電流與電阻的關係為何？",options:["電壓等於電流除以電阻值","電流等於電壓乘以電阻值","電阻等於電壓乘以電流值","電壓等於電流乘以電阻值"],explanation:"歐姆定律 V=IR，電壓等於電流乘以電阻。"},
+   en:{question:"By Ohm's law, what is the relation among voltage, current and resistance for a conductor?",options:["Voltage equals current over resistance","Current equals voltage times resistance","Resistance equals voltage times current","Voltage equals current times resistance"],explanation:"Ohm's law states V=IR: voltage equals current times resistance."}},
+
+  {id:17,difficulty:"medium",points:15,answer:0,
+   zh:{question:"電場與電位之間的關係，下列敘述何者正確？",options:["電場等於電位的負梯度","電場等於電位的正梯度","電位等於電場的散度值","電位等於電場的旋度值"],explanation:"E=−∇V，電場為電位的負梯度。"},
+   en:{question:"Which statement correctly describes the relation between electric field and potential?",options:["Field equals the negative gradient of V","Field equals the positive gradient of V","Potential equals the divergence of E","Potential equals the curl of the field E"],explanation:"E=−∇V: the field is the negative gradient of the potential."}},
+
+  {id:18,difficulty:"hard",points:25,answer:1,
+   zh:{question:"一點電荷 q 距離接地的無限大導體平面為 d，利用鏡像法，其鏡像電荷為何？",options:["在距離 d 處放置電荷 +q","在距離 d 處放置電荷 −q","在距離 2d 處放置電荷 −q","在距離 d/2 處放置電荷 +q"],explanation:"鏡像電荷為−q，位於平面另一側對稱距離d處。"},
+   en:{question:"A point charge q is a distance d from a grounded infinite conducting plane. By the method of images, what is the image charge?",options:["A charge +q placed at distance d","A charge −q placed at distance d","A charge −q placed at distance 2d","A charge +q placed at distance d/2"],explanation:"The image is −q, located symmetrically at distance d on the other side of the plane."}},
+
+  {id:19,difficulty:"easy",points:10,answer:2,
+   zh:{question:"距離點電荷 q 為 r 處的電位（取無限遠為零），與距離 r 的關係為何？",options:["與距離 r 的平方成反比","與距離 r 的平方成正比","與距離 r 的一次方成反比","與距離 r 的一次方成正比"],explanation:"V=kq/r，與r成反比；注意電場才與r²成反比。"},
+   en:{question:"The potential at distance r from a point charge q (zero at infinity) relates to r how?",options:["Inversely proportional to r squared","Directly proportional to r squared","Inversely proportional to the distance r","Directly proportional to the distance r"],explanation:"V=kq/r is inverse to r; note that the field, not potential, goes as 1/r²."}},
+
+  {id:20,difficulty:"medium",points:15,answer:3,
+   zh:{question:"依照楞次定律，感應電流的方向具有何種特性？",options:["總是與原磁場同方向以增強磁通","與磁通量的變化率完全無關係","固定總是沿著順時針方向流動","反抗造成它的那個磁通量變化"],explanation:"楞次定律：感應電流方向反抗磁通變化，體現能量守恆。"},
+   en:{question:"According to Lenz's law, what characterizes the direction of an induced current?",options:["Always aligns with field to boost flux","Independent of the rate of flux change","Always flows in the clockwise direction","Opposes the flux change that creates it"],explanation:"Lenz's law: the induced current opposes the change in flux, reflecting energy conservation."}},
+
+  {id:21,difficulty:"trap",points:19,answer:0,
+   zh:{question:"真空中行進的平面電磁波，其電場與磁場的相位關係為何？",options:["相位相同，且兩者互相垂直","相差 90 度，且兩者互相垂直","相位相同，但兩者互相平行","相差 180 度，且兩者互相平行"],explanation:"真空平面波中E與B同相、互相垂直且垂直傳播方向。陷阱：常誤以為相差90°。"},
+   en:{question:"For a plane EM wave travelling in vacuum, what is the phase relation between its E and B fields?",options:["Same phase, perpendicular to each other","90 degrees apart, perpendicular fields","Same phase, parallel to each other","180 degrees apart, parallel to each other"],explanation:"In a vacuum plane wave E and B are in phase and mutually perpendicular. Trap: a 90° lag is a common error."}},
+
+  {id:22,difficulty:"hard",points:25,answer:1,
+   zh:{question:"馬克士威在安培定律中加入位移電流項，主要是為了解決什麼問題？",options:["重新解釋靜電場的高斯定律","使電容器充電時電流連續成立","用來描述磁單極粒子的存在","計算導體內部的歐姆熱損耗"],explanation:"位移電流ε₀∂E/∂t使安培定律在電容器間隙仍成立，符合電荷守恆。"},
+   en:{question:"Maxwell added the displacement-current term to Ampère's law mainly to resolve what problem?",options:["To restate Gauss's law for electrostatics","To keep current continuous while charging","To describe existence of magnetic monopoles","To compute ohmic heat loss in conductors"],explanation:"The displacement current ε₀∂E/∂t keeps Ampère's law valid in a capacitor gap, consistent with charge conservation."}},
+
+  {id:23,difficulty:"medium",points:15,answer:2,
+   zh:{question:"兩個電容 C₁ 與 C₂ 串聯之後，其等效電容為何？",options:["等於 C₁ 直接加上 C₂","等於 C₁ 直接乘以 C₂","等於 C₁C₂ 除以（C₁＋C₂）","等於（C₁＋C₂）除以 C₁C₂"],explanation:"串聯電容 1/C=1/C₁+1/C₂，故 C=C₁C₂/(C₁+C₂)。"},
+   en:{question:"What is the equivalent capacitance of two capacitors C₁ and C₂ connected in series?",options:["Equal to C₁ simply added to C₂","Equal to C₁ simply times C₂","Equal to C₁C₂ over (C₁ plus C₂)","Equal to (C₁ plus C₂) over C₁C₂"],explanation:"For series, 1/C=1/C₁+1/C₂, hence C=C₁C₂/(C₁+C₂)."}},
+
+  {id:24,difficulty:"easy",points:10,answer:3,
+   zh:{question:"磁場的高斯定律（∇·B＝0）所表達的物理意義為何？",options:["磁場在任何地方都恆為零","電場線必定為封閉的曲線","磁場與電場必定互相垂直","不存在孤立的磁單極存在"],explanation:"∇·B=0表示磁力線無起點與終點，不存在磁單極。"},
+   en:{question:"What does Gauss's law for magnetism (∇·B=0) physically mean?",options:["The magnetic field is always zero","Electric field lines must form loops","Magnetic and electric fields are normal","No isolated magnetic monopole exists"],explanation:"∇·B=0 means field lines have no start or end—no magnetic monopoles exist."}},
+
+  {id:25,difficulty:"medium",points:15,answer:0,
+   zh:{question:"一電感 L 流過電流 I 時，其所儲存的磁場能量為何？",options:["二分之一乘以 L 乘以 I 平方","等於 L 直接乘以 I 的平方","二分之一乘以 L 再乘以 I","二分之一乘以 I 乘以 L 平方"],explanation:"電感儲能 U=½LI²。"},
+   en:{question:"What magnetic energy is stored in an inductor L carrying current I?",options:["One half times L times I squared","Equal to L directly times I squared","One half times L times the current I","One half times I times L squared value"],explanation:"Inductor stored energy is U=½LI²."}},
+
+  {id:26,difficulty:"hard",points:25,answer:1,
+   zh:{question:"自由空間（真空）的本質阻抗（intrinsic impedance）約為多少？",options:["大約等於 50 歐姆左右","大約等於 377 歐姆左右","大約等於 188 歐姆左右","大約等於 754 歐姆左右"],explanation:"η₀=√(μ₀/ε₀)≈377Ω≈120π歐姆。"},
+   en:{question:"What is the approximate intrinsic impedance of free space (vacuum)?",options:["Approximately about 50 ohms","Approximately about 377 ohms","Approximately about 188 ohms","Approximately about 754 ohms"],explanation:"η₀=√(μ₀/ε₀)≈377Ω≈120π ohms."}},
+
+  {id:27,difficulty:"easy",points:10,answer:2,
+   zh:{question:"兩個同號的電荷彼此之間的靜電作用力為何？",options:["互相吸引並彼此靠近","彼此之間沒有作用力","互相排斥並彼此遠離","方向會隨時間隨機變化"],explanation:"同號電荷相斥，異號電荷相吸。"},
+   en:{question:"What is the electrostatic force between two charges of the same sign?",options:["Attract and move toward each other","No force acts between the two","Repel and move away from each other","The direction changes randomly in time"],explanation:"Like charges repel; opposite charges attract."}},
+
+  {id:28,difficulty:"trap",points:19,answer:3,
+   zh:{question:"處於靜電平衡狀態的實心導體，下列敘述何者正確？",options:["電荷均勻分布於整個導體體積","導體內部電場方向指向表面","導體表面等位但內部電位不同","淨電荷分布於表面，內部 E＝0"],explanation:"靜電平衡時導體為等位體，淨電荷在表面，內部電場為零。"},
+   en:{question:"For a solid conductor in electrostatic equilibrium, which statement is correct?",options:["Charge spreads through the whole volume","Internal field points toward the surface","Surface equipotential, interior differs","Net charge on surface, interior E=0"],explanation:"In equilibrium the conductor is an equipotential, net charge sits on the surface, and the inside field is zero."}},
+
+  {id:29,difficulty:"medium",points:15,answer:0,
+   zh:{question:"一長度為 L 的導體棒以速度 v 垂直切割磁場 B，其感應電動勢大小為何？",options:["等於 B 乘以 L 再乘以 v","等於 B 乘以 L 再除以 v","等於 B 除以 L 與 v 乘積","等於 L 乘以 v 再除以 B"],explanation:"動生電動勢 ε=BLv。"},
+   en:{question:"A rod of length L moves at speed v cutting perpendicularly across field B. What is the magnitude of the induced emf?",options:["Equal to B times L times the speed v","Equal to B times L divided by speed v","Equal to B over the product of L and v","Equal to L times v divided by field B"],explanation:"Motional emf is ε=BLv."}},
+
+  {id:30,difficulty:"hard",points:25,answer:1,
+   zh:{question:"依照拉莫公式（Larmor formula），加速中的點電荷其輻射功率與何者成正比？",options:["與加速度的一次方成正比","與加速度的二次方成正比","與速度的二次方成正比","與速度的四次方成正比"],explanation:"拉莫公式 P=μ₀q²a²/(6πc)，輻射功率正比於加速度平方。"},
+   en:{question:"According to the Larmor formula, the radiated power of an accelerating point charge is proportional to what?",options:["The first power of the acceleration","The second power of the acceleration","The second power of the velocity","The fourth power of the velocity"],explanation:"Larmor's formula P=μ₀q²a²/(6πc): radiated power scales with acceleration squared."}},
+
+  {id:31,difficulty:"medium",points:15,answer:2,
+   zh:{question:"在平行板電容器中填入相對介電常數為 κ 的介電質後，電容會如何變化？",options:["減為原本的 1/κ 倍大小","維持原本的數值不改變","增為原本的 κ 倍數大小","增為原本的 κ 平方倍大小"],explanation:"C=κC₀，介電質使電容增為原本的κ倍。"},
+   en:{question:"After inserting a dielectric of relative permittivity κ into a parallel-plate capacitor, how does the capacitance change?",options:["Decreases to 1/κ of the original","Stays at the original value unchanged","Increases to κ times the original","Increases to κ squared the original"],explanation:"C=κC₀: the dielectric raises the capacitance by a factor κ."}},
+
+  {id:32,difficulty:"easy",points:10,answer:3,
+   zh:{question:"電流的定義為下列何者？",options:["單位體積內所含有的電荷量","單位長度上所跨的電位差值","電荷量與電場強度的乘積值","單位時間內通過截面的電荷量"],explanation:"I=dQ/dt，即單位時間內流過截面的電荷量。"},
+   en:{question:"How is electric current defined?",options:["The charge contained per unit volume","The potential difference per unit length","The product of charge and field strength","The charge passing a section per time"],explanation:"I=dQ/dt: the charge flowing through a cross-section per unit time."}},
+
+  {id:33,difficulty:"hard",points:25,answer:0,
+   zh:{question:"在無電荷的空間區域中，電位 V 滿足拉普拉斯方程，下列何者為其重要結果？",options:["電位的極值只能出現在邊界上","電位在區域內必有局部極大值","電位在整個區域內恆等於零","電位隨距離的平方而衰減下降"],explanation:"∇²V=0為調和函數，其極值出現在邊界（最大值原理），亦為恩肖定理基礎。"},
+   en:{question:"In a charge-free region the potential V satisfies Laplace's equation. Which is an important consequence?",options:["Extrema of V occur only on the boundary","V must have a local maximum inside region","V is identically zero throughout the region","V falls off as the square of the distance"],explanation:"∇²V=0 makes V harmonic; its extrema lie on the boundary (maximum principle), the basis of Earnshaw's theorem."}},
+
+  {id:34,difficulty:"medium",points:15,answer:1,
+   zh:{question:"理想的長螺線管，其內部的磁場具有何種特性？",options:["由中心向外側逐漸地減弱","均勻分布，大小為 μ₀nI","與離中心軸的距離成正比","集中分布在螺線管的兩端"],explanation:"理想螺線管內部磁場均勻 B=μ₀nI，外部磁場近似為零。"},
+   en:{question:"What characterizes the magnetic field inside an ideal long solenoid?",options:["Weakens gradually from centre outward","Uniform, with magnitude equal to μ₀nI","Proportional to distance from central axis","Concentrated at the two ends of solenoid"],explanation:"Inside an ideal solenoid the field is uniform, B=μ₀nI, and nearly zero outside."}},
+
+  {id:35,difficulty:"easy",points:10,answer:2,
+   zh:{question:"多個點電荷在空間中某一點所產生的總電場，應如何計算？",options:["取各電場大小的算術平均值","取各電場大小相乘的乘積值","各點電荷電場的向量總和值","只取其中最大的那個電場值"],explanation:"電場遵守疊加原理，總電場為各電場的向量和。"},
+   en:{question:"How is the total electric field at a point due to several point charges calculated?",options:["The arithmetic mean of field magnitudes","The product of the field magnitudes","The vector sum of each charge's field","Only the largest single field value taken"],explanation:"Fields obey superposition: the total is the vector sum of individual fields."}},
+
+  {id:36,difficulty:"trap",points:19,answer:3,
+   zh:{question:"一條通有穩定電流且整體電中性的長直導線，對附近一個靜止點電荷的作用為何？",options:["施加一個吸引性的靜電力","施加一個排斥性的靜電力","施加正比於電流大小的磁力","不施淨力，導線中性電荷靜止"],explanation:"導線淨電荷為零無靜電力，靜止電荷又不受磁力，故無淨力。陷阱：有電流不代表有淨電荷。"},
+   en:{question:"A long straight wire carries a steady current and is overall electrically neutral. What is its effect on a nearby stationary point charge?",options:["It exerts an attractive electrostatic force","It exerts a repulsive electrostatic force","It exerts a magnetic force scaling current","No net force: wire neutral, charge at rest"],explanation:"Zero net charge means no electric force, and a charge at rest feels no magnetic force, so there is no net force. Trap: current does not imply net charge."}},
+
+  {id:37,difficulty:"medium",points:15,answer:1,
+   zh:{question:"在磁性介質中，磁感應強度 B、磁場強度 H 與磁化強度 M 三者的關係為何？",options:["B 等於 μ₀ 直接乘以 H 值","B 等於 μ₀ 乘以（H 加 M）","B 等於 μ₀ 乘以（H 減 M）","B 等於 H 再加上 μ₀ 乘 M"],explanation:"在SI制中 B=μ₀(H+M)。"},
+   en:{question:"In a magnetic medium, what is the relation among B, the field strength H and the magnetization M?",options:["B equals μ₀ directly times H value","B equals μ₀ times (H plus M value)","B equals μ₀ times (H minus M value)","B equals H plus μ₀ times M value"],explanation:"In SI units, B=μ₀(H+M)."}},
+
+  {id:38,difficulty:"hard",points:25,answer:0,
+   zh:{question:"關於單一中空的金屬波導，下列敘述何者正確？",options:["無法傳播 TEM 模，僅 TE/TM 模","只能傳播 TEM 模，無法傳 TE 模","任何頻率電磁波皆可無衰減傳播","傳播模式與導波截面形狀完全無關"],explanation:"中空單導體需兩導體才有TEM，故只支援TE/TM模且具截止頻率。"},
+   en:{question:"Which statement is correct about a single hollow metal waveguide?",options:["No TEM mode; only TE or TM modes exist","Only TEM mode; TE modes cannot propagate","Waves of any frequency pass without loss","Modes are unrelated to the cross-section"],explanation:"A TEM mode needs two conductors, so a hollow single conductor supports only TE/TM modes with a cutoff frequency."}},
+
+  {id:39,difficulty:"medium",points:15,answer:2,
+   zh:{question:"電磁波在相對介電常數為 εr 的非磁性介質中傳播，其傳播速度為何？",options:["等於真空中的光速 c 值","等於 c 乘以根號 εr 的值","等於 c 除以根號 εr 的值","等於 c 直接除以 εr 的值"],explanation:"v=c/√(εr)（μr≈1），故波在介質中的速度變慢。"},
+   en:{question:"An EM wave travels in a non-magnetic medium of relative permittivity εr. What is its propagation speed?",options:["Equal to the vacuum speed of light c","Equal to c times the square root of εr","Equal to c divided by square root of εr","Equal to c directly divided by εr value"],explanation:"v=c/√(εr) (with μr≈1), so the wave is slower in the medium."}},
+
+  {id:40,difficulty:"medium",points:15,answer:3,
+   zh:{question:"電阻 R 流過電流 I 時，其所消耗的電功率為何？",options:["等於電流 I 直接乘以電阻 R","等於 I 除以電阻 R 的平方值","等於電流 I 乘以電阻 R 平方","等於電流 I 的平方再乘以 R"],explanation:"焦耳熱功率 P=I²R=VI。"},
+   en:{question:"What electrical power is dissipated by a resistor R carrying current I?",options:["Equal to current I directly times R","Equal to I divided by R squared value","Equal to current I times R squared","Equal to current I squared times R"],explanation:"Joule heating power is P=I²R=VI."}}
+];
+
+const UI = {
+  zh:{title:"電磁學互動測驗",lang:"EN",prev:"上一題",submit:"提交測驗",progress:(c,t)=>`第 ${c} / ${t} 題`,
+    resultTitle:"測驗結果",total:"總分",correctN:"正確題數",wrongN:"錯誤題數",byDiff:"各難度正確率",
+    easy:"簡單",medium:"中等",hard:"困難",trap:"陷阱",
+    percentile:p=>`你的成績超越了約 ${p}% 的測試者`,
+    review:"錯題回顧",yourAns:"你的選擇",correctAns:"正確答案",allCorrect:"太厲害了！全部答對，沒有錯題。",
+    retry:"重新測驗",copy:"複製結果",copied:"已複製！",
+    grades:{expert:"🏆 頂尖專家",adv:"⭐ 進階掌握",inter:"📘 中等水準",basic:"📗 基礎尚可",need:"📕 需要加強"}},
+  en:{title:"Electromagnetics Quiz",lang:"中文",prev:"Previous",submit:"Submit Quiz",progress:(c,t)=>`Question ${c} / ${t}`,
+    resultTitle:"Quiz Results",total:"Total Score",correctN:"Correct",wrongN:"Incorrect",byDiff:"Accuracy by Difficulty",
+    easy:"Easy",medium:"Medium",hard:"Hard",trap:"Trap",
+    percentile:p=>`You scored higher than about ${p}% of test takers`,
+    review:"Review of Wrong Answers",yourAns:"Your choice",correctAns:"Correct answer",allCorrect:"Excellent! All correct, no mistakes.",
+    retry:"Retake Quiz",copy:"Copy Result",copied:"Copied!",
+    grades:{expert:"🏆 Top Expert",adv:"⭐ Advanced",inter:"📘 Intermediate",basic:"📗 Basic",need:"📕 Needs Improvement"}}
+};
+
+const LETTERS = ["A","B","C","D"];
+const TOTAL_POINTS = 670;
+let lang = "zh";
+let current = 0;
+let answers = new Array(questions.length).fill(null);
+let submitted = false;
+
+// theme init
+(function(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+  document.getElementById("themeBtn").textContent = prefersDark ? "☀️" : "🌙";
+})();
+
+document.getElementById("themeBtn").addEventListener("click", ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  document.getElementById("themeBtn").textContent = next === "dark" ? "☀️" : "🌙";
+});
+
+document.getElementById("langBtn").addEventListener("click", ()=>{
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-Hant" : "en");
+  if (submitted) renderResult(); else renderQuestion();
+  applyStaticText();
+});
+
+function applyStaticText(){
+  const t = UI[lang];
+  document.getElementById("appTitle").textContent = t.title;
+  document.getElementById("langBtn").textContent = t.lang;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+  document.title = t.title;
+}
+
+function renderQuestion(){
+  const t = UI[lang];
+  const q = questions[current];
+  const data = q[lang];
+  document.getElementById("progressText").textContent = t.progress(current+1, questions.length);
+  const card = document.getElementById("qcard");
+  card.classList.remove("qcard"); void card.offsetWidth; card.classList.add("qcard");
+  let html = `<div class="question">${data.question}</div><div class="options">`;
+  data.options.forEach((opt,i)=>{
+    const sel = answers[current] === i ? " selected" : "";
+    html += `<div class="option${sel}" data-i="${i}"><span class="letter">${LETTERS[i]}</span><span>${opt}</span></div>`;
+  });
+  html += `</div>`;
+  card.innerHTML = html;
+  card.querySelectorAll(".option").forEach(el=>{
+    el.addEventListener("click", ()=>selectOption(parseInt(el.dataset.i)));
+  });
+
+  document.getElementById("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
+  const submitBtn = document.getElementById("submitBtn");
+  if (current === questions.length-1 && answers[current] !== null){
+    submitBtn.classList.remove("hidden");
+  } else {
+    submitBtn.classList.add("hidden");
+  }
+  const pct = ((current) / questions.length) * 100;
+  document.getElementById("bar").style.width = pct + "%";
+}
+
+function selectOption(i){
+  if (answers[current] === i && current === questions.length-1){
+    // allow re-selecting last; keep submit visible
+  }
+  answers[current] = i;
+  // show selection visually
+  const card = document.getElementById("qcard");
+  card.querySelectorAll(".option").forEach(el=>{
+    el.classList.toggle("selected", parseInt(el.dataset.i) === i);
+  });
+
+  if (current === questions.length-1){
+    // last question: show submit button, no auto-advance
+    document.getElementById("submitBtn").classList.remove("hidden");
+    document.getElementById("bar").style.width = "100%";
+    return;
+  }
+  // auto-advance after ~0.4s
+  setTimeout(()=>{
+    if (current < questions.length-1){
+      current++;
+      renderQuestion();
+    }
+  }, 400);
+}
+
+document.getElementById("prevBtn").addEventListener("click", ()=>{
+  if (current > 0){ current--; renderQuestion(); }
+});
+
+document.getElementById("submitBtn").addEventListener("click", ()=>{
+  submitted = true;
+  document.getElementById("quizView").classList.add("hidden");
+  document.getElementById("resultView").classList.remove("hidden");
+  renderResult();
+});
+
+// normal CDF via erf approximation
+function normalCdf(x, mu, sigma){
+  const z = (x - mu) / (sigma * Math.SQRT2);
+  return 0.5 * (1 + erf(z));
+}
+function erf(x){
+  const t = 1 / (1 + 0.3275911 * Math.abs(x));
+  const y = 1 - (((((1.061405429*t - 1.453152027)*t) + 1.421413741)*t - 0.284496736)*t + 0.254829592)*t*Math.exp(-x*x);
+  return x >= 0 ? y : -y;
+}
+
+function computeResults(){
+  let score = 0, correct = 0;
+  const byDiff = {easy:{c:0,t:0},medium:{c:0,t:0},hard:{c:0,t:0},trap:{c:0,t:0}};
+  questions.forEach((q,idx)=>{
+    byDiff[q.difficulty].t++;
+    if (answers[idx] === q.answer){ score += q.points; correct++; byDiff[q.difficulty].c++; }
+  });
+  return {score, correct, wrong: questions.length - correct, byDiff};
+}
+
+function gradeFor(score){
+  const g = UI[lang].grades;
+  if (score >= 600) return g.expert;
+  if (score >= 500) return g.adv;
+  if (score >= 380) return g.inter;
+  if (score >= 250) return g.basic;
+  return g.need;
+}
+
+function renderResult(){
+  const t = UI[lang];
+  const r = computeResults();
+  const mu = TOTAL_POINTS * 0.45;
+  const sigma = TOTAL_POINTS * 0.15;
+  let percentile = normalCdf(r.score, mu, sigma) * 100;
+  percentile = Math.max(0, Math.min(99.9, percentile));
+  const pctStr = percentile.toFixed(1);
+
+  let html = `<h2>${t.resultTitle}</h2>`;
+  html += `<div class="score-big">${r.score} / ${TOTAL_POINTS}</div>`;
+  html += `<div class="grade">${gradeFor(r.score)}</div>`;
+  html += `<div class="pct">${t.percentile(pctStr)}</div>`;
+
+  html += `<div style="margin-top:20px">`;
+  html += `<div class="stat-row"><span class="label">${t.correctN}</span><span>${r.correct} / ${questions.length}</span></div>`;
+  html += `<div class="stat-row"><span class="label">${t.wrongN}</span><span>${r.wrong} / ${questions.length}</span></div>`;
+  html += `</div>`;
+
+  html += `<div class="section-title">${t.byDiff}</div>`;
+  [["easy",t.easy],["medium",t.medium],["hard",t.hard],["trap",t.trap]].forEach(([k,label])=>{
+    html += `<div class="stat-row"><span class="label">${label}</span><span>${r.byDiff[k].c} / ${r.byDiff[k].t}</span></div>`;
+  });
+
+  // review wrong
+  html += `<div class="section-title">${t.review}</div>`;
+  const wrongs = questions.filter((q,idx)=>answers[idx] !== q.answer);
+  if (wrongs.length === 0){
+    html += `<div class="pct">${t.allCorrect}</div>`;
+  } else {
+    questions.forEach((q,idx)=>{
+      if (answers[idx] === q.answer) return;
+      const d = q[lang];
+      const userIdx = answers[idx];
+      const userTxt = userIdx === null ? "—" : `${LETTERS[userIdx]}. ${d.options[userIdx]}`;
+      const corrTxt = `${LETTERS[q.answer]}. ${d.options[q.answer]}`;
+      html += `<div class="review-item">
+        <div class="review-q">${d.question}</div>
+        <div class="review-line mark-wrong">✗ ${t.yourAns}: ${userTxt}</div>
+        <div class="review-line mark-correct">✓ ${t.correctAns}: ${corrTxt}</div>
+        <div class="review-exp">${d.explanation}</div>
+      </div>`;
+    });
+  }
+
+  html += `<div class="result-actions">
+    <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+    <button class="btn" id="copyBtn">${t.copy}</button>
+  </div>`;
+
+  const rv = document.getElementById("resultView");
+  rv.innerHTML = html;
+
+  document.getElementById("retryBtn").addEventListener("click", ()=>{
+    current = 0; submitted = false; answers = new Array(questions.length).fill(null);
+    document.getElementById("resultView").classList.add("hidden");
+    document.getElementById("quizView").classList.remove("hidden");
+    document.getElementById("submitBtn").classList.add("hidden");
+    renderQuestion();
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", ()=>{
+    const lines = [
+      t.title,
+      `${t.total}: ${r.score} / ${TOTAL_POINTS}`,
+      gradeFor(r.score),
+      `${t.correctN}: ${r.correct} / ${questions.length}`,
+      `${t.easy}: ${r.byDiff.easy.c}/${r.byDiff.easy.t}  ${t.medium}: ${r.byDiff.medium.c}/${r.byDiff.medium.t}  ${t.hard}: ${r.byDiff.hard.c}/${r.byDiff.hard.t}  ${t.trap}: ${r.byDiff.trap.c}/${r.byDiff.trap.t}`,
+      t.percentile(pctStr)
+    ].join("\n");
+    const btn = document.getElementById("copyBtn");
+    navigator.clipboard.writeText(lines).then(()=>{
+      btn.textContent = t.copied;
+      setTimeout(()=>{ btn.textContent = t.copy; }, 1500);
+    }).catch(()=>{
+      const ta = document.createElement("textarea");
+      ta.value = lines; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand("copy"); btn.textContent = t.copied; setTimeout(()=>{ btn.textContent=t.copy; },1500);}catch(e){}
+      document.body.removeChild(ta);
+    });
+  });
+}
+
+// init
+applyStaticText();
+renderQuestion();
+</script>
+</body>
+</html>

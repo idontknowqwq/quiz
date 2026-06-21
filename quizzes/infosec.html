@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>資訊安全測驗 | Information Security Quiz</title>
+<style>
+:root{--bg:#FFFFFF;--text-primary:#1A1A1A;--text-secondary:#6B7280;--border:#E5E7EB;--accent:#2563EB;--accent-hover:#1D4ED8;--option-bg:#FFFFFF;--option-hover:#F3F4F6;--selected-bg:#EFF6FF;--selected-border:#2563EB;--correct-color:#16A34A;--wrong-color:#DC2626;--correct-bg:#F0FDF4;--wrong-bg:#FEF2F2;--progress-bg:#E5E7EB;--card-bg:#F9FAFB;--header-bg:#FFFFFF;--header-border:#E5E7EB;}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#111111;--text-primary:#E5E7EB;--text-secondary:#9CA3AF;--border:#374151;--accent:#60A5FA;--accent-hover:#93C5FD;--option-bg:#1F2937;--option-hover:#374151;--selected-bg:#1E3A5F;--selected-border:#60A5FA;--correct-color:#4ADE80;--wrong-color:#F87171;--correct-bg:#052E16;--wrong-bg:#450A0A;--progress-bg:#374151;--card-bg:#1F2937;--header-bg:#111111;--header-border:#374151;}}
+[data-theme="dark"]{--bg:#111111;--text-primary:#E5E7EB;--text-secondary:#9CA3AF;--border:#374151;--accent:#60A5FA;--accent-hover:#93C5FD;--option-bg:#1F2937;--option-hover:#374151;--selected-bg:#1E3A5F;--selected-border:#60A5FA;--correct-color:#4ADE80;--wrong-color:#F87171;--correct-bg:#052E16;--wrong-bg:#450A0A;--progress-bg:#374151;--card-bg:#1F2937;--header-bg:#111111;--header-border:#374151;}
+[data-theme="light"]{--bg:#FFFFFF;--text-primary:#1A1A1A;--text-secondary:#6B7280;--border:#E5E7EB;--accent:#2563EB;--accent-hover:#1D4ED8;--option-bg:#FFFFFF;--option-hover:#F3F4F6;--selected-bg:#EFF6FF;--selected-border:#2563EB;--correct-color:#16A34A;--wrong-color:#DC2626;--correct-bg:#F0FDF4;--wrong-bg:#FEF2F2;--progress-bg:#E5E7EB;--card-bg:#F9FAFB;--header-bg:#FFFFFF;--header-border:#E5E7EB;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Microsoft JhengHei','Helvetica Neue',Arial,sans-serif;min-height:100vh;transition:background 0.2s,color 0.2s;}
+.header{position:sticky;top:0;z-index:100;background:var(--header-bg);border-bottom:1px solid var(--header-border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.header-title{font-size:15px;font-weight:700;color:var(--text-primary);white-space:nowrap;}
+.header-middle{font-size:13px;color:var(--text-secondary);}
+.header-controls{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.btn{padding:6px 14px;border:1px solid var(--border);background:var(--option-bg);color:var(--text-primary);border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;transition:background 0.15s;white-space:nowrap;}
+.btn:hover{background:var(--option-hover);}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);}
+.hidden{display:none!important;}
+.container{max-width:700px;margin:0 auto;padding:28px 20px 40px;}
+.question-area{opacity:1;transition:opacity 0.18s;}
+.question-area.fade{opacity:0;}
+.q-meta{font-size:13px;color:var(--text-secondary);margin-bottom:10px;}
+.q-text{font-size:18px;font-weight:600;line-height:1.65;margin-bottom:24px;}
+.options{display:flex;flex-direction:column;gap:10px;margin-bottom:28px;}
+.option{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;background:var(--option-bg);transition:background 0.15s,border-color 0.15s;}
+.option:hover:not(.opt-selected):not(.opt-locked){background:var(--option-hover);}
+.opt-selected{background:var(--selected-bg);border-color:var(--selected-border);}
+.opt-locked{cursor:default;}
+.opt-label{display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--border);color:var(--text-primary);font-weight:700;font-size:12px;flex-shrink:0;margin-top:1px;transition:background 0.15s,color 0.15s;}
+.opt-selected .opt-label{background:var(--accent);color:#fff;}
+.opt-text{font-size:15px;line-height:1.5;}
+.nav-row{display:flex;justify-content:space-between;align-items:center;}
+.progress-section{margin-top:28px;}
+.progress-info{display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:6px;}
+.progress-bar-wrap{height:5px;background:var(--progress-bg);border-radius:3px;overflow:hidden;}
+.progress-bar-fill{height:100%;background:var(--accent);border-radius:3px;transition:width 0.3s;}
+.results-top{text-align:center;padding:28px 0 24px;}
+.results-score{font-size:52px;font-weight:800;color:var(--accent);line-height:1;}
+.results-score-sub{font-size:14px;color:var(--text-secondary);margin-top:4px;}
+.grade-badge{font-size:22px;font-weight:700;margin-top:14px;display:block;}
+.percentile{font-size:14px;color:var(--text-secondary);margin-top:6px;}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;}
+.stat-card{background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;}
+.stat-value{font-size:26px;font-weight:700;}
+.stat-label{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+.diff-table{width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;}
+.diff-table th,.diff-table td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--border);}
+.diff-table th{color:var(--text-secondary);font-weight:600;font-size:13px;}
+.section-title{font-size:16px;font-weight:700;margin-bottom:16px;padding-bottom:8px;border-bottom:2px solid var(--border);}
+.review-item{margin-bottom:18px;padding:16px;border:1px solid var(--border);border-radius:8px;background:var(--option-bg);}
+.review-q{font-size:14px;font-weight:600;line-height:1.55;margin-bottom:10px;}
+.review-opt{padding:7px 12px;border-radius:5px;font-size:13px;margin-bottom:5px;}
+.review-opt.correct{background:var(--correct-bg);color:var(--correct-color);font-weight:600;}
+.review-opt.wrong{background:var(--wrong-bg);color:var(--wrong-color);}
+.review-expl{margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;color:var(--text-secondary);line-height:1.55;}
+.results-actions{display:flex;gap:10px;justify-content:center;margin:24px 0;flex-wrap:wrap;}
+.divider{border:none;border-top:1px solid var(--border);margin:24px 0;}
+@media(max-width:480px){.header{padding:8px 14px;}.header-title{font-size:14px;}.container{padding:20px 14px 32px;}.q-text{font-size:16px;}.opt-text{font-size:14px;}.results-score{font-size:40px;}}
+</style>
+</head>
+<body>
+<header class="header" id="app-header">
+  <div class="header-title" id="header-title">資訊安全測驗</div>
+  <div class="header-middle" id="header-progress"></div>
+  <div class="header-controls">
+    <button class="btn" id="lang-btn" onclick="toggleLang()">English</button>
+    <button class="btn" id="theme-btn" onclick="toggleTheme()">深色</button>
+  </div>
+</header>
+<main id="quiz-screen" class="container">
+  <div id="question-area" class="question-area">
+    <div id="q-meta" class="q-meta"></div>
+    <div id="q-text" class="q-text"></div>
+    <div id="q-options" class="options"></div>
+    <div class="nav-row">
+      <button class="btn" id="prev-btn" onclick="prevQuestion()">上一題</button>
+      <button class="btn btn-primary hidden" id="submit-btn" onclick="submitQuiz()">提交測驗</button>
+    </div>
+  </div>
+  <div class="progress-section">
+    <div class="progress-info"><span id="progress-text"></span><span id="progress-pct"></span></div>
+    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+  </div>
+</main>
+<div id="results-screen" class="container hidden"></div>
+<script>
+const questions=[
+{id:1,difficulty:"easy",points:10,zh:{question:"資訊安全中的「CIA 三要素」指的是下列何者？",options:["機密性、完整性、可用性","機密性、鑑別性、可用性","機密性、完整性、可歸責性","保密性、完整性、可靠性"],explanation:"CIA 代表機密性（Confidentiality）、完整性（Integrity）、可用性（Availability）。"},en:{question:'What does the "CIA Triad" in information security stand for?',options:["Confidentiality, Integrity, and Availability","Confidentiality, Authentication, and Availability","Confidentiality, Integrity, and Accountability","Privacy, Integrity, and Reliability"],explanation:"CIA stands for Confidentiality, Integrity, and Availability — the three core security principles."},answer:0},
+{id:2,difficulty:"medium",points:15,zh:{question:"關於對稱式加密與非對稱式加密的比較，下列敘述何者正確？",options:["對稱式加密使用公私鑰對，因此加解密運算速度較慢","對稱式加密使用同一把金鑰加解密，整體運算速度較快","非對稱式加密使用同一把金鑰，適合加密大量資料傳輸","非對稱式加密不需金鑰交換，因此整體安全性較低"],explanation:"對稱式加密使用單一共享金鑰，效率高；非對稱式加密使用公私鑰對，較耗資源。"},en:{question:"Which statement correctly compares symmetric and asymmetric encryption?",options:["Symmetric encryption uses a public-private key pair and therefore operates more slowly","Symmetric encryption uses the same key for both operations and therefore runs faster","Asymmetric encryption uses the same key and is suitable for encrypting large volumes of data","Asymmetric encryption requires no key exchange and therefore has comparatively lower security"],explanation:"Symmetric encryption uses one shared key and is faster; asymmetric uses a key pair and solves key distribution."},answer:1},
+{id:3,difficulty:"easy",points:10,zh:{question:"防火牆（Firewall）的主要功能是什麼？",options:["掃描並移除系統中存在的各類惡意程式碼","對儲存在磁碟上的靜態資料進行加密保護","依據預設規則過濾進出網路的資料封包","備份重要系統資料以便在災後快速復原"],explanation:"防火牆依照規則集過濾網路流量，控制哪些封包可以進入或離開網路。"},en:{question:"What is the primary function of a firewall?",options:["Scanning and removing all types of malicious code present in the system","Encrypting static data stored on disk to protect it from unauthorized access","Filtering network packets based on predefined rules to control traffic flow","Backing up critical system data to enable rapid recovery after a disaster"],explanation:"A firewall filters network traffic based on a rule set, controlling which packets may enter or leave the network."},answer:2},
+{id:4,difficulty:"hard",points:25,zh:{question:"關於緩衝區溢位（Buffer Overflow）攻擊，下列何者描述最為正確？",options:["攻擊者向目標傳送海量封包，使目標服務耗盡資源無法回應","攻擊者在資料庫查詢中插入惡意指令以竊取未授權的資料","攻擊者利用假冒網站誘騙使用者輸入帳號密碼等敏感資訊","攻擊者向緩衝區寫入超量資料，覆蓋相鄰記憶體進而控制程式流程"],explanation:"緩衝區溢位透過寫入超出緩衝區容量的資料，覆蓋返回位址或關鍵資料，使攻擊者得以執行任意程式碼。"},en:{question:"Which statement best describes a buffer overflow attack?",options:["The attacker floods the target with massive traffic to exhaust its resources and deny service","The attacker injects malicious commands into database queries to retrieve unauthorized data","The attacker uses spoofed websites to trick users into entering account credentials","The attacker writes excess data into a buffer, overwriting adjacent memory to hijack program control flow"],explanation:"Buffer overflow writes beyond a buffer's boundary, overwriting the return address or critical data, enabling arbitrary code execution."},answer:3},
+{id:5,difficulty:"medium",points:15,zh:{question:"關於雜湊函數（Hash Function）的特性，下列敘述何者正確？",options:["雜湊為單向函數，在計算上不可能從摘要值還原出原始輸入資料","雜湊為雙向函數，持有正確金鑰即可從摘要值還原原始輸入資料","雜湊函數的輸出長度會隨著輸入資料的大小成正比增長","雜湊函數主要設計用於加密傳輸資料，而非驗證資料完整性"],explanation:"雜湊函數具單向性，無法從輸出逆向推算輸入；且輸出長度固定，與輸入長度無關。"},en:{question:"Which statement correctly describes the properties of a hash function?",options:["A hash is a one-way function; it is computationally infeasible to recover the original input from the digest","A hash is a two-way function; the original input can be recovered from the digest with the correct key","The output length of a hash function grows proportionally with the size of the input data","Hash functions are primarily designed to encrypt transmitted data rather than to verify data integrity"],explanation:"Hash functions are one-way (irreversible) and produce a fixed-length output regardless of input size."},answer:0},
+{id:6,difficulty:"hard",points:25,zh:{question:"在公開金鑰基礎設施（PKI）中，數位憑證（Digital Certificate）的主要用途為何？",options:["安全儲存使用者的私密金鑰，讓使用者能跨裝置安全地共享使用","將公開金鑰與持有者身分綁定，使其他方得以驗證公鑰的真實性","對網路流量進行端對端加密，防止中間人截取並讀取傳輸內容","提供對稱加密所需的共享金鑰，以用於後續的資料加密傳輸"],explanation:"數位憑證由憑證機構（CA）簽發，將公開金鑰與持有者身分綁定，讓第三方得以驗證其真實性。"},en:{question:"In a Public Key Infrastructure (PKI), what is the primary purpose of a digital certificate?",options:["Securely storing the user's private key so that it can be shared safely across different devices","Binding a public key to the holder's identity so other parties can verify the key's authenticity","Providing end-to-end encryption of network traffic to prevent interception and reading by intermediaries","Supplying the shared key needed for symmetric encryption for subsequent data transmission"],explanation:"A digital certificate, issued by a Certificate Authority (CA), binds a public key to an identity for third-party verification."},answer:1},
+{id:7,difficulty:"easy",points:10,zh:{question:"分散式阻斷服務攻擊（DDoS）的主要目的為何？",options:["竊取目標系統中的機密資料或使用者個人資訊","在目標系統中植入後門以取得長期未授權存取","以大量請求癱瘓目標服務，使合法使用者無法正常存取","解密並截取目標系統所傳輸的加密通訊內容"],explanation:"DDoS 攻擊以大量請求淹沒目標，耗盡其資源，使合法使用者無法獲得服務。"},en:{question:"What is the main objective of a Distributed Denial of Service (DDoS) attack?",options:["Stealing confidential data or users' personal information from the target system","Planting backdoors in the target system to gain persistent unauthorized access","Overwhelming the target service with massive traffic so legitimate users cannot access it","Intercepting and decrypting the encrypted communications transmitted by the target system"],explanation:"A DDoS attack floods a target with traffic to exhaust its resources, denying service to legitimate users."},answer:2},
+{id:8,difficulty:"medium",points:15,zh:{question:"虛擬私人網路（VPN）是如何保護使用者的網路通訊安全的？",options:["即時監測網路流量中的異常行為，自動封鎖惡意連線請求","將使用者流量引導至安全的 Proxy 伺服器以隱藏真實 IP","掃描所有傳入傳出的資料封包，主動過濾其中的惡意內容","建立加密隧道傳輸使用者資料，同時對外隱藏真實 IP 位址"],explanation:"VPN 在用戶端與伺服器間建立加密隧道，使 ISP 或第三方無法窺視內容，並隱藏用戶的真實 IP。"},en:{question:"How does a Virtual Private Network (VPN) protect a user's network communications?",options:["By monitoring traffic in real time for anomalies and automatically blocking malicious requests","By routing user traffic through a secure proxy server to conceal the user's real IP address","By scanning all incoming and outgoing data packets and actively filtering out malicious content","By establishing an encrypted tunnel for data transmission while concealing the user's real IP address"],explanation:"A VPN creates an encrypted tunnel between the user and a server, preventing ISPs or third parties from viewing the traffic."},answer:3},
+{id:9,difficulty:"hard",points:25,zh:{question:"在非對稱式加密中，若 Alice 要傳送一則只有 Bob 能讀取的機密訊息，Alice 應使用哪一把金鑰進行加密？",options:["使用 Bob 的公開金鑰加密，由 Bob 使用自己的私密金鑰解密","使用 Alice 自己的私密金鑰加密，由 Bob 使用 Alice 的公開金鑰解密","使用 Alice 自己的公開金鑰加密，由 Alice 使用自己的私密金鑰解密","先用對稱金鑰加密訊息，再用非對稱方式安全傳遞該對稱金鑰"],explanation:"機密性：發送方以接收方的公開金鑰加密，確保只有持有對應私密金鑰的接收方才能解密。"},en:{question:"In asymmetric encryption, if Alice wants to send a message that only Bob can read, which key should she use to encrypt it?",options:["Encrypt with Bob's public key; Bob decrypts with his own private key","Encrypt with Alice's private key; Bob decrypts with Alice's public key","Encrypt with Alice's own public key; Alice decrypts with her own private key","Encrypt with a symmetric key first, then transmit that key using asymmetric encryption"],explanation:"For confidentiality, the sender encrypts with the recipient's public key, so only the recipient (with the private key) can decrypt."},answer:0},
+{id:10,difficulty:"easy",points:10,zh:{question:"「網路釣魚（Phishing）」攻擊的主要手法是什麼？",options:["利用惡意程式掃描目標網路中所有裝置的開放服務埠","偽裝成合法機構，透過假冒的電子郵件或網站騙取敏感資訊","對目標系統儲存的密碼雜湊值進行暴力破解以取得帳號","在合法軟體中隱藏惡意程式碼，待安裝後感染使用者裝置"],explanation:"網路釣魚利用社交工程，偽裝成可信任機構，引誘受害者交出帳號密碼或個資。"},en:{question:"What is the primary technique used in a phishing attack?",options:["Using malicious programs to scan all open service ports on devices within the target network","Impersonating legitimate organizations via fake emails or websites to steal sensitive information","Brute-forcing stored password hashes of the target system to obtain account credentials","Hiding malicious code inside legitimate software so it infects users after installation"],explanation:"Phishing uses social engineering to impersonate trusted organizations, luring victims into surrendering credentials or personal data."},answer:1},
+{id:11,difficulty:"medium",points:15,zh:{question:"Diffie-Hellman 金鑰交換協定的主要功能是什麼？",options:["讓通訊雙方能在不安全通道上協商出共同的秘密值，無需事先共享金鑰","使傳送方能以接收方的公開金鑰加密訊息，確保僅接收方能解密","對傳輸資料進行數位簽章，驗證訊息的來源身分與資料完整性","透過可信任的第三方憑證機構，驗證通訊雙方的真實身分"],explanation:"Diffie-Hellman 讓雙方在公開通道上安全地協商出一個共享秘密，而無需事先透過安全管道交換金鑰。"},en:{question:"What is the primary function of the Diffie-Hellman key exchange protocol?",options:["Allowing two parties to negotiate a shared secret over an insecure channel without prior key sharing","Enabling the sender to encrypt with the recipient's public key so only the recipient can decrypt","Digitally signing transmitted data to verify the source identity and integrity of the message","Verifying both communicating parties' identities through a trusted third-party certificate authority"],explanation:"Diffie-Hellman allows a shared secret to be negotiated securely over a public channel without prior key exchange."},answer:0},
+{id:12,difficulty:"hard",points:25,zh:{question:"下列哪一種防禦措施最能有效防止 SQL 注入（SQL Injection）攻擊？",options:["在應用程式入口部署入侵偵測系統，以監控並記錄異常的流量行為","對所有使用者輸入的資料以 Base64 格式編碼後再存入資料庫","使用參數化查詢或預備語句，將 SQL 指令邏輯與使用者資料分離","強制限制使用者輸入只能包含英數字元，以排除特殊符號輸入"],explanation:"參數化查詢將 SQL 指令與資料完全分離，使注入的惡意指令只會被當成資料處理，而非指令執行。"},en:{question:"Which defensive measure most effectively prevents SQL injection attacks?",options:["Deploying an intrusion detection system at the application entry to monitor and log anomalous traffic","Encoding all user input in Base64 format before storing it in the database","Using parameterized queries or prepared statements to separate SQL command logic from user data","Restricting user input to alphanumeric characters only to exclude all special character inputs"],explanation:"Parameterized queries completely separate SQL logic from data, so injected commands are always treated as data, never executed."},answer:2},
+{id:13,difficulty:"easy",points:10,zh:{question:"「最小權限原則（Principle of Least Privilege）」是指什麼？",options:["所有使用者預設擁有完整的管理員權限，待有需求時再依情況撤銷","使用者或程式應只擁有完成其職責所需的最低必要存取權限","系統管理員必須定期輪替所有帳號的密碼及對應的存取權限","重要系統操作必須由至少兩名管理員共同授權才能執行"],explanation:"最小權限原則主張將存取權限縮減至任務所需的最低程度，降低帳號遭攻擊或濫用時的潛在損害。"},en:{question:'What does the "Principle of Least Privilege" refer to?',options:["All users are granted full administrator rights by default and have them revoked only when needed","Users or programs should possess only the minimum access permissions required to fulfill their duties","System administrators must periodically rotate all account passwords and corresponding access rights","Critical system operations must be authorized jointly by at least two administrators before execution"],explanation:"Least privilege limits access rights to the minimum needed for the task, reducing potential damage if an account is compromised."},answer:1},
+{id:14,difficulty:"medium",points:15,zh:{question:"在 TLS 握手過程中，伺服器傳送數位憑證給客戶端的主要目的為何？",options:["提供對稱式工作階段金鑰，以便後續能快速加解密所有傳輸資料","要求客戶端出示身分憑證，以驗證其為經過授權的合法使用者","傳送隨機數（Nonce）用於產生工作階段金鑰，防止重放攻擊","讓客戶端驗證伺服器的身分合法性，並取得伺服器的公開金鑰"],explanation:"伺服器憑證讓客戶端驗證伺服器身分（非偽冒），並從中取得公開金鑰，用於後續的金鑰協商。"},en:{question:"During the TLS handshake, what is the main purpose of the server sending its digital certificate to the client?",options:["Providing the symmetric session key so subsequent data transmission can be encrypted quickly","Requesting the client to present its identity credential to verify it is an authorized legitimate user","Sending a nonce for session key generation to prevent replay attacks","Allowing the client to verify the server's identity and obtain the server's public key"],explanation:"The server certificate lets the client authenticate the server's identity and retrieve its public key for key negotiation."},answer:3},
+{id:15,difficulty:"hard",points:25,zh:{question:"在密碼雜湊破解中，「彩虹表（Rainbow Table）」攻擊的主要原理是什麼？",options:["預先計算並儲存大量明文與雜湊值的對應關係，以空間換取破解速度","對目標雜湊值反覆進行數學運算，逐字元還原直到找到原始明文","截取網路中傳輸的雜湊值後，直接用該值進行認證而不需知道明文","利用密碼學演算法漏洞，在不知道輸入的情況下偽造相同的雜湊值"],explanation:"彩虹表預先計算並儲存明文與雜湊值的對應映射，用儲存空間換取破解時間，稱為時間空間折衷攻擊。"},en:{question:"In password hash cracking, what is the main principle behind a rainbow table attack?",options:["Precomputing and storing a large mapping of plaintexts to hashes to trade storage space for cracking speed","Iteratively applying mathematical operations to the target hash to recover characters until the plaintext is found","Intercepting hash values transmitted over the network and using them directly for authentication","Exploiting cryptographic algorithm vulnerabilities to forge identical hash values without knowing the input"],explanation:"Rainbow tables precompute plaintext-to-hash mappings, trading storage space for cracking time — a time-space tradeoff attack."},answer:0},
+{id:16,difficulty:"medium",points:15,zh:{question:"跨站腳本攻擊（Cross-Site Scripting, XSS）的核心原理為何？",options:["攻擊者偽造合法請求，誘使已認證的使用者在不知情下執行非預期操作","攻擊者攔截客戶端與伺服器間的通訊，以讀取或竄改傳輸的資料內容","攻擊者將惡意腳本注入網頁，使其在其他使用者的瀏覽器中執行","攻擊者利用伺服器端邏輯漏洞，繞過身分驗證取得未授權的系統存取"],explanation:"XSS 將惡意腳本注入網頁，受害者瀏覽器載入頁面時腳本在受害者身分下執行，可竊取 Cookie 或冒充操作。"},en:{question:"What is the core principle of a Cross-Site Scripting (XSS) attack?",options:["The attacker forges legitimate requests to trick authenticated users into executing unintended actions unknowingly","The attacker intercepts communication between client and server to read or alter the transmitted data","The attacker injects malicious scripts into a web page so they execute within other users' browsers","The attacker exploits server-side logic flaws to bypass authentication and gain unauthorized access"],explanation:"XSS injects malicious scripts into web pages; when victims load the page, the script executes in their browser context, stealing cookies or impersonating actions."},answer:2},
+{id:17,difficulty:"easy",points:10,zh:{question:"雙因素認證（Two-Factor Authentication, 2FA）主要透過結合哪兩類認證因素來提升安全性？",options:["使用者知道的資訊（如密碼）與使用者的電子郵件地址的組合","使用者知道的資訊（如密碼）與使用者擁有的物品（如手機）的組合","使用者的生物特徵（如指紋）與使用者的電子郵件地址的組合","使用者的帳號名稱與使用者知道的資訊（如密碼）的組合"],explanation:"2FA 結合「知道的」（密碼）與「擁有的」（手機、實體金鑰）或「本身是的」（生物特徵）兩種因素。"},en:{question:"Two-factor authentication (2FA) primarily improves security by combining which two types of authentication factors?",options:["Something the user knows (e.g., a password) combined with the user's email address","Something the user knows (e.g., a password) combined with something the user has (e.g., a phone)","Something the user is (e.g., fingerprint) combined with the user's email address","The user's account name combined with something the user knows (e.g., a password)"],explanation:"2FA combines two of the three factor categories: something you know, something you have, or something you are."},answer:1},
+{id:18,difficulty:"trap",points:19,zh:{question:"關於 HTTPS 的安全性，下列敘述何者正確？",options:["HTTPS 先以非對稱加密建立連線，全程改用非對稱加密傳輸資料","只要網站擁有有效憑證並使用 HTTPS，就能完全防止所有的資安攻擊","HTTPS 加密通訊內容，因此使用 HTTPS 的網站不可能散佈惡意程式","HTTPS 保護資料在傳輸途中的安全，但無法保護儲存在伺服器端的資料"],explanation:"HTTPS 僅保護傳輸中的資料，伺服器端的資料儲存安全（如資料庫加密）是獨立的問題，不在其保護範圍內。"},en:{question:"Which statement about HTTPS security is correct?",options:["HTTPS uses asymmetric encryption to establish the connection, then continues using asymmetric encryption throughout","Any website with a valid certificate using HTTPS is completely protected against all types of cybersecurity attacks","HTTPS encrypts the communication, so websites using HTTPS cannot possibly be used to distribute malware","HTTPS protects data security during transmission, but does not protect data stored on the server side"],explanation:"HTTPS only protects data in transit. Server-side storage security (e.g., database encryption) is a separate concern outside its scope."},answer:3},
+{id:19,difficulty:"medium",points:15,zh:{question:"在資訊安全風險管理中，「風險轉移（Risk Transfer）」的典型作法為何？",options:["投資強化技術防護措施，降低威脅成功利用漏洞的機率與影響","停止提供帶有風險的特定服務或系統功能，以徹底消除該風險","透過購買資安保險或將業務外包，將潛在的損失轉移給第三方","評估風險後判斷其可接受，在不採取任何額外措施下繼續承擔"],explanation:"風險轉移將財務或營運損失的責任移轉給第三方，例如購買資安保險或委外管理關鍵系統。"},en:{question:"In information security risk management, what is a typical example of risk transfer?",options:["Investing in technical security controls to reduce the probability and impact of a threat exploiting a vulnerability","Discontinuing specific services or system features that carry risk in order to completely eliminate that risk","Purchasing cybersecurity insurance or outsourcing operations to shift potential losses to a third party","Assessing the risk as acceptable and continuing to bear it without taking any additional measures"],explanation:"Risk transfer shifts financial or operational liability to a third party, such as buying cybersecurity insurance or outsourcing critical systems."},answer:2},
+{id:20,difficulty:"easy",points:10,zh:{question:"「蠕蟲（Worm）」與「病毒（Virus）」的主要差異為何？",options:["蠕蟲需要使用者手動啟動才能傳播，病毒則可自動感染其他主機","蠕蟲能自我複製並透過網路自動傳播，病毒需附著在宿主程式上","病毒專門針對個人電腦系統，蠕蟲則主要用於攻擊行動裝置","病毒加密使用者檔案索要贖金，蠕蟲則竊取帳號密碼等憑證資料"],explanation:"蠕蟲不需宿主程式，能自我複製並透過網路主動傳播；病毒必須附著在合法程式上，靠宿主執行才能傳播。"},en:{question:"What is the main difference between a worm and a virus?",options:["A worm requires the user to manually activate it to spread; a virus can automatically infect other hosts","A worm can self-replicate and spread automatically across networks; a virus must attach to a host program","A virus targets personal computer systems specifically; worms mainly attack mobile devices","A virus encrypts user files and demands ransom; a worm steals credentials such as account passwords"],explanation:"Worms self-replicate and propagate across networks independently; viruses must attach to a host program and rely on it to spread."},answer:1},
+{id:21,difficulty:"medium",points:15,zh:{question:"入侵偵測系統（IDS）與入侵防禦系統（IPS）最主要的差異為何？",options:["IDS 部署在網路邊界以保護外部流量，IPS 則保護內部主機之間的流量","IDS 以簽章比對方式偵測威脅，IPS 則完全以異常行為分析方式偵測","IDS 只能偵測已知攻擊，IPS 可同時偵測已知攻擊和零日漏洞攻擊","IDS 偵測並記錄攻擊後發出警報，IPS 則能主動即時攔截惡意流量"],explanation:"IDS 是被動系統（偵測並告警）；IPS 是主動系統（內嵌於流量路徑中，可即時封鎖惡意流量）。"},en:{question:"What is the primary difference between an Intrusion Detection System (IDS) and an Intrusion Prevention System (IPS)?",options:["IDS is deployed at the network perimeter to protect external traffic; IPS protects inter-host internal traffic","IDS uses signature matching to detect threats; IPS uses exclusively anomaly behavior analysis","IDS can only detect known attacks; IPS can simultaneously detect known attacks and zero-day exploits","IDS detects, logs, and alerts on attacks; IPS actively intercepts and blocks malicious traffic in real time"],explanation:"IDS is passive (detect and alert only); IPS is active (inline, can block malicious traffic in real time)."},answer:3},
+{id:22,difficulty:"hard",points:25,zh:{question:"「零日漏洞（Zero-Day Vulnerability）」的正確定義為何？",options:["已被公開揭露或遭積極利用，但軟體廠商尚未發布修補程式的安全漏洞","攻擊者在發動攻擊後零天內完成入侵，且未留下任何可追蹤痕跡的漏洞","僅存在於特定作業系統核心層，且無法被任何防毒軟體偵測的底層漏洞","需要對目標發動零次嘗試就能成功入侵的極高危險等級安全漏洞"],explanation:"「零日」意指廠商有「零天」的時間反應；漏洞在修補程式發布之前已被公開揭露或遭到利用。"},en:{question:'What is the correct definition of a "zero-day vulnerability"?',options:["A security flaw publicly disclosed or actively exploited before the vendor has released a patch","A vulnerability where the attacker completes intrusion within zero days without leaving traceable evidence","A kernel-level flaw in specific operating systems that cannot be detected by any antivirus software","An extremely high-risk flaw that allows successful intrusion with zero attempts against the target"],explanation:'"Zero-day" means the vendor has zero days to respond — the flaw is publicly disclosed or actively exploited before a patch exists.'},answer:0},
+{id:23,difficulty:"medium",points:15,zh:{question:"在防禦跨站請求偽造（CSRF）攻擊的措施中，下列何者最為有效？",options:["對所有使用者輸入嚴格進行輸出編碼，以防止惡意腳本被注入執行","啟用 Content Security Policy（CSP）標頭，限制網頁載入外部資源","要求使用者在每次敏感操作前重新輸入帳號密碼以進行身分驗證","在表單或請求中嵌入伺服器產生的隨機 Token，並於後端嚴格驗證"],explanation:"CSRF Token（同步 Token 模式）是防禦 CSRF 的標準方法；Token 由伺服器產生，攻擊者無法從跨域頁面取得。"},en:{question:"Among the following measures to defend against Cross-Site Request Forgery (CSRF), which is most effective?",options:["Strictly encoding all user input to prevent malicious scripts from being injected and executed","Enabling the Content Security Policy (CSP) header to restrict the loading of external resources","Requiring users to re-enter their credentials before each sensitive operation for re-authentication","Embedding a server-generated random token in forms or requests and rigorously verifying it on the backend"],explanation:"The CSRF token (synchronized token pattern) is the standard defense; tokens are server-generated and inaccessible to attackers from cross-origin pages."},answer:3},
+{id:24,difficulty:"medium",points:15,zh:{question:"「資訊隱藏（Steganography）」與「密碼學（Cryptography）」最主要的差異為何？",options:["資訊隱藏只能應用於數位媒體，而密碼學可應用於任何形式的資料","資訊隱藏比密碼學更安全，因為它使用更複雜的數學演算法保護資料","資訊隱藏隱蔽訊息的存在，密碼學隱藏訊息的內容但不掩蓋其存在","資訊隱藏需要收發雙方事先協議金鑰，而密碼學不需要任何金鑰交換"],explanation:"隱寫術（資訊隱藏）透過將訊息藏入載體（如圖片）來掩蓋訊息的存在；密碼學公開訊息的存在，但隱藏其內容。"},en:{question:"What is the primary difference between steganography and cryptography?",options:["Steganography can only be applied to digital media, while cryptography can be applied to data of any form","Steganography is more secure than cryptography because it uses more complex mathematical algorithms","Steganography conceals the existence of a message; cryptography conceals the content but not the existence","Steganography requires both parties to pre-agree on a key, while cryptography requires no key exchange at all"],explanation:"Steganography hides the existence of a message (e.g., inside an image); cryptography makes the ciphertext visible but keeps the content unreadable."},answer:2},
+{id:25,difficulty:"easy",points:10,zh:{question:"下列哪一種密碼最能有效抵抗暴力破解（Brute Force）攻擊？",options:["以生日日期加姓名縮寫組成的密碼，例如 Alice0115","使用鍵盤連續相鄰鍵位組成的密碼，例如 qwertyuiop","常見英文單字後接數字組成的密碼，例如 password123","夠長且隨機混合大小寫字母、數字與特殊符號的密碼"],explanation:"高強度密碼應具備足夠長度、高隨機性以及字元種類多樣性，以最大化密碼熵並提高暴力破解的難度。"},en:{question:"Which of the following passwords best resists a brute force attack?",options:["A password combining a birth date and name initials, such as Alice0115","A password made from keyboard keys in adjacent sequence, such as qwertyuiop","A password combining a common English word with numbers, such as password123","A sufficiently long password randomly mixing uppercase, lowercase, digits, and special characters"],explanation:"Strong passwords require sufficient length, high randomness, and character diversity to maximize entropy and resist brute force."},answer:3},
+{id:26,difficulty:"hard",points:25,zh:{question:"「Rootkit」惡意程式最主要的危害特徵為何？",options:["深度嵌入作業系統層，隱藏自身及其他惡意程序的存在以長期駐留","加密受害者所有的儲存檔案，並向受害者勒索加密貨幣作為贖金","大量自我複製並透過網路傳播，耗盡目標主機的頻寬與系統資源","在使用者毫不知情下記錄鍵盤輸入，以竊取帳號密碼等憑證資料"],explanation:"Rootkit 藉由修改或掛鉤作業系統核心，隱藏自身、惡意程序、網路連線與檔案，使一般偵測工具難以發現。"},en:{question:"What is the primary characteristic of rootkit malware?",options:["It embeds deeply at the OS level, hiding itself and other malicious processes for persistent long-term presence","It encrypts all files stored by the victim and demands cryptocurrency ransom in exchange for decryption","It mass-replicates and spreads across networks, exhausting the target host's bandwidth and resources","It secretly records keyboard input without the user's knowledge to steal credentials such as account passwords"],explanation:"Rootkits modify or hook the OS kernel to conceal themselves, malicious processes, network connections, and files from standard detection tools."},answer:0},
+{id:27,difficulty:"medium",points:15,zh:{question:"WPA2-Personal（WPA2-PSK）與 WPA2-Enterprise 最主要的差異為何？",options:["WPA2-Personal 使用 AES 加密演算法，WPA2-Enterprise 使用較舊的 TKIP 加密","WPA2-Personal 使用所有用戶共享的預先共享金鑰，WPA2-Enterprise 使用個人帳號認證","WPA2-Personal 適合企業大型網路環境，WPA2-Enterprise 適合家庭小型網路使用","WPA2-Personal 提供更強的資料加密強度，WPA2-Enterprise 提供更快的連線速度"],explanation:"WPA2-Personal 讓所有用戶共用同一把 PSK；WPA2-Enterprise 則透過 802.1X/RADIUS 為每位用戶進行個別認證。"},en:{question:"What is the primary difference between WPA2-Personal (WPA2-PSK) and WPA2-Enterprise?",options:["WPA2-Personal uses the AES encryption algorithm; WPA2-Enterprise uses the older TKIP encryption","WPA2-Personal uses a pre-shared key common to all users; WPA2-Enterprise uses per-user individual account authentication","WPA2-Personal suits large enterprise network environments; WPA2-Enterprise suits small home network setups","WPA2-Personal provides stronger data encryption strength; WPA2-Enterprise provides faster connection speed"],explanation:"WPA2-Personal shares one PSK among all users; WPA2-Enterprise authenticates each user individually via 802.1X/RADIUS."},answer:1},
+{id:28,difficulty:"hard",points:25,zh:{question:"進階加密標準（AES）採用的是何種密碼學架構？",options:["Feistel 網路架構，將資料分為兩半並交替進行置換與混合運算","串流加密架構，對每個位元產生對應的金鑰串流並進行 XOR 運算","替代-置換網路（SPN）架構，透過多輪的字節替換與排列混淆處理資料","公開金鑰架構，以數學難題（如大數因數分解）作為安全性基礎"],explanation:"AES 採用 SPN 架構，每回合包含 SubBytes（替代）、ShiftRows（置換）、MixColumns（混淆）與 AddRoundKey（金鑰加入）。"},en:{question:"What cryptographic architecture does the Advanced Encryption Standard (AES) use?",options:["A Feistel network, which splits data in half and alternates between substitution and mixing operations","A stream cipher that generates a key stream per bit and applies XOR operations","A Substitution-Permutation Network (SPN) that processes data through multiple rounds of byte substitution and permutation","A public key architecture based on mathematical hard problems such as large integer factorization"],explanation:"AES uses an SPN architecture; each round includes SubBytes, ShiftRows (permutation), MixColumns (diffusion), and AddRoundKey."},answer:2},
+{id:29,difficulty:"medium",points:15,zh:{question:"在資訊安全事件回應流程中，「圍堵（Containment）」階段的主要目標為何？",options:["深入分析攻擊者使用的手法與工具，產出詳細的威脅情資報告","完整移除系統中殘留的惡意程式以及攻擊者留下的所有後門","將受影響的系統恢復至正常運作狀態，並驗證所有資料的完整性","防止攻擊進一步擴散以限制損害範圍，同時保留數位鑑識證據"],explanation:"圍堵是阻止攻擊蔓延並限制損害的緊急措施；後續的「清除（Eradication）」才是移除惡意程式的步驟。"},en:{question:"In the information security incident response process, what is the primary goal of the containment phase?",options:["Deeply analyzing the attacker's techniques and tools to produce a detailed threat intelligence report","Completely removing all residual malware and every backdoor left by the attacker from the system","Restoring all affected systems to normal operation and verifying the integrity of all data","Preventing further spread of the attack to limit damage scope while preserving digital forensic evidence"],explanation:"Containment is an emergency measure to stop the attack from spreading and limit damage; the Eradication phase follows to remove malware."},answer:3},
+{id:30,difficulty:"easy",points:10,zh:{question:"下列哪一種是「非對稱式加密演算法」？",options:["AES（進階加密標準）是目前廣泛使用的區塊對稱加密演算法","DES（資料加密標準）是早期廣泛使用的對稱式區塊加密演算法","3DES（三重 DES）是以 DES 為基礎強化的對稱式區塊加密演算法","RSA 是基於大整數因數分解難題的非對稱式公開金鑰加密演算法"],explanation:"RSA 使用一對公私金鑰，其安全性建立在大整數因數分解的計算困難性之上，屬於非對稱式加密。"},en:{question:"Which of the following is an asymmetric encryption algorithm?",options:["AES (Advanced Encryption Standard) is a widely used symmetric block cipher algorithm","DES (Data Encryption Standard) is an early widely used symmetric block cipher algorithm","3DES (Triple DES) is a strengthened symmetric block cipher algorithm based on DES","RSA is an asymmetric public-key encryption algorithm based on the large integer factorization problem"],explanation:"RSA uses a public-private key pair; its security relies on the computational difficulty of factoring large integers."},answer:3},
+{id:31,difficulty:"hard",points:25,zh:{question:"在 PKI 信任鏈中，設置「中繼憑證機構（Intermediate CA）」的主要目的為何？",options:["保護根憑證機構（Root CA）的私密金鑰，讓 Root CA 能保持離線以降低暴露風險","提供更快速的憑證簽發流程，縮短直接向 Root CA 申請時的審核等待時間","增加憑證本身的加密金鑰長度，使攻擊者更難破解或偽造數位憑證","讓多家憑證機構共同分擔 Root CA 的信任，達成去中心化的憑證管理"],explanation:"Intermediate CA 讓 Root CA 保持離線，即使 Intermediate CA 遭入侵，Root CA 的私密金鑰仍安全，信任鏈得以重建。"},en:{question:"In a PKI certificate chain, what is the primary purpose of an Intermediate Certificate Authority (Intermediate CA)?",options:["Protecting the Root CA's private key by keeping the Root CA offline to reduce its exposure risk","Providing a faster certificate issuance process by reducing review wait times for direct Root CA applications","Increasing the encryption key length of certificates to make them harder for attackers to crack or forge","Allowing multiple CAs to share the Root CA's trust to achieve decentralized certificate management"],explanation:"The Intermediate CA keeps the Root CA offline; even if the Intermediate CA is compromised, the Root CA's private key stays safe and the chain can be rebuilt."},answer:0},
+{id:32,difficulty:"easy",points:10,zh:{question:"在資訊安全管理中，「資料分類（Data Classification）」的主要目的為何？",options:["將所有資料集中儲存於單一加密資料庫中，以簡化資料管理的流程","根據資料的敏感程度分配適當的保護等級，以平衡安全需求與管理成本","確保所有資料均以最高安全等級加密儲存與傳輸，無論敏感程度如何","自動識別並依隱私法規要求，刪除所有過期的個人識別資料"],explanation:"資料分類讓組織依敏感程度給予適合的保護，避免對低敏感資料過度投入資源，或對高敏感資料保護不足。"},en:{question:"In information security management, what is the primary purpose of data classification?",options:["Centralizing all data in a single encrypted database in order to simplify the data management process","Assigning appropriate protection levels based on data sensitivity to balance security requirements with management costs","Ensuring all data is encrypted at the highest security level for storage and transmission regardless of sensitivity","Automatically identifying and deleting all expired personal identifiable data as required by privacy regulations"],explanation:"Data classification assigns protection proportional to sensitivity, preventing over-investment on low-sensitivity data or under-protection of critical data."},answer:1},
+{id:33,difficulty:"hard",points:25,zh:{question:"旁通道攻擊（Side-Channel Attack）的主要特徵為何？",options:["攻擊者利用目標演算法的數學弱點，在不知道金鑰的情況下直接破解密文","攻擊者暴力嘗試所有可能的金鑰組合，直到找到能正確解密目標密文的金鑰","攻擊者分析系統運行時洩露的物理資訊（如功耗時序、電磁輻射）以推導秘密資料","攻擊者冒充合法使用者，以社交工程手法誘騙管理員授予未授權的存取權限"],explanation:"旁通道攻擊不針對演算法本身，而是分析實作時洩露的物理特性（功耗、時序、電磁輻射、聲音等）以推導金鑰。"},en:{question:"What is the primary characteristic of a side-channel attack?",options:["The attacker exploits mathematical weaknesses in the target algorithm to directly break the ciphertext without the key","The attacker brute-forces all possible key combinations until the correct key to decrypt the target ciphertext is found","The attacker analyzes physical information leaked during system operation (e.g., power timing, EM radiation) to infer secret data","The attacker impersonates a legitimate user and uses social engineering to trick an administrator into granting unauthorized access"],explanation:"Side-channel attacks target the physical implementation rather than the algorithm itself, using power consumption, timing, EM emissions, or sound to infer keys."},answer:2},
+{id:34,difficulty:"trap",points:19,zh:{question:"關於 MD5 雜湊演算法，下列敘述何者正確？",options:["MD5 是一種加密演算法，持有正確的解密金鑰即可還原出原始輸入資料","MD5 目前仍廣泛用於密碼儲存，因其碰撞機率已被證實極低且安全","MD5 存在已知的碰撞漏洞，不再適合用於密碼儲存或數位簽章用途","MD5 是非對稱式演算法，因此可同時用於訊息加密和摘要計算用途"],explanation:"MD5 是單向雜湊函數（非加密），且已知存在碰撞漏洞（不同輸入產生相同摘要），不應用於安全用途。"},en:{question:"Which statement about the MD5 hash algorithm is correct?",options:["MD5 is an encryption algorithm; the original input data can be recovered with the correct decryption key","MD5 is still widely used for password storage today, as its collision probability has been proven to be extremely low","MD5 has known collision vulnerabilities and is no longer suitable for password storage or digital signature purposes","MD5 is an asymmetric algorithm and can therefore be used for both message encryption and digest calculation"],explanation:"MD5 is a one-way hash function (not encryption) and has known collision vulnerabilities, making it unsuitable for security-sensitive use."},answer:2},
+{id:35,difficulty:"medium",points:15,zh:{question:"角色型存取控制（RBAC）與自主存取控制（DAC）最主要的差異為何？",options:["RBAC 由系統自動依使用者行為動態調整權限，DAC 由管理員靜態手動設定","RBAC 以資料的敏感等級決定存取權限，DAC 則以使用者的職位高低決定","RBAC 適合小型組織管理，DAC 適合需嚴格管控的大型企業環境使用","RBAC 根據使用者所屬角色來授予權限，DAC 由資源擁有者自行決定授權對象"],explanation:"RBAC 以角色為中心集中管理權限，管理員只需設定角色；DAC 讓資源擁有者自行決定誰可以存取其資源。"},en:{question:"What is the primary difference between Role-Based Access Control (RBAC) and Discretionary Access Control (DAC)?",options:["RBAC dynamically adjusts permissions based on user behavior automatically; DAC is statically set manually by administrators","RBAC determines access based on data sensitivity level; DAC determines access based on the user's job title or rank","RBAC suits small organization management; DAC suits large enterprise environments requiring strict access control","RBAC grants permissions based on the user's assigned role; DAC lets resource owners decide who to authorize"],explanation:"RBAC centralizes permission management through roles; DAC gives resource owners discretion to determine who can access their resources."},answer:3},
+{id:36,difficulty:"trap",points:19,zh:{question:"關於「Base64 編碼」，下列敘述何者正確？",options:["Base64 是編碼方式，不提供任何安全保護，任何人皆可輕易解碼還原","Base64 是一種加密方式，使用固定的共享金鑰加密，安全性低但效率高","Base64 會對資料壓縮並加密，主要用於安全傳輸敏感資訊的場景","Base64 編碼後的資料長度比原始資料短，因此廣泛用於節省傳輸頻寬"],explanation:"Base64 僅為資料表示格式的轉換，無安全性保護；且編碼後的資料長度約增加 33%，不會壓縮。"},en:{question:"Which statement about Base64 encoding is correct?",options:["Base64 is an encoding scheme that provides no security protection; anyone can easily decode and recover the original data","Base64 is an encryption scheme using a fixed shared key for encryption; it has low security but high efficiency","Base64 compresses and encrypts data, making it primarily used for secure transmission of sensitive information","Base64-encoded data is shorter than the original data, making it widely used for bandwidth-efficient transmission"],explanation:"Base64 merely converts data to a textual representation with no security; encoded data is ~33% larger, not smaller."},answer:0},
+{id:37,difficulty:"trap",points:19,zh:{question:"關於網路架構中的「非軍事區（DMZ, Demilitarized Zone）」，下列敘述何者正確？",options:["DMZ 是完全與外部隔離的內部網路區域，不允許任何外部流量進入","DMZ 是介於外部網際網路與內部網路之間的緩衝區，用於部署對外服務","DMZ 只能透過防火牆來實作，無法使用路由器或其他網路設備建置","DMZ 區的伺服器無需額外強化，因為前端防火牆已提供完整的安全防護"],explanation:"DMZ 是放置對外服務（如 Web、Mail 伺服器）的緩衝網路區域；即便位於 DMZ，各伺服器仍需自身的安全強化。"},en:{question:'Which statement about the "Demilitarized Zone (DMZ)" in network architecture is correct?',options:["A DMZ is an internal network zone completely isolated from the outside, allowing no external traffic to enter","A DMZ is a buffer zone between the external internet and the internal network, used to host public-facing services","A DMZ can only be implemented using a firewall and cannot be built using routers or other network devices","Servers in a DMZ require no additional hardening because the front-end firewall already provides complete security"],explanation:"A DMZ hosts public-facing services (web, mail servers) as a buffer zone; servers within the DMZ still require their own security hardening."},answer:1},
+{id:38,difficulty:"medium",points:15,zh:{question:"數位簽章（Digital Signature）的「驗證」過程為何？",options:["接收方使用傳送方的私密金鑰解密簽章，再與計算的訊息雜湊值比對","接收方使用接收方自己的公開金鑰解密簽章，再與計算的訊息雜湊值比對","接收方使用傳送方的公開金鑰解密簽章，再與計算的訊息雜湊值比對","接收方使用可信憑證機構的私密金鑰解密簽章，再與訊息原文比對"],explanation:"傳送方以自己的私密金鑰簽章，接收方以傳送方的公開金鑰驗證，確保訊息完整性與來源不可否認性。"},en:{question:"What is the verification process of a digital signature?",options:["The receiver decrypts the signature using the sender's private key and compares it with the computed message hash","The receiver decrypts the signature using the receiver's own public key and compares it with the computed message hash","The receiver decrypts the signature using the sender's public key and compares it with the computed message hash","The receiver decrypts the signature using the trusted CA's private key and compares it with the original message"],explanation:"The sender signs with their private key; the receiver verifies with the sender's public key, confirming integrity and non-repudiation."},answer:2},
+{id:39,difficulty:"trap",points:19,zh:{question:"關於 VPN 的安全性，下列哪個說法是常見的錯誤觀念？",options:["使用 VPN 後即可完全匿名上網，網站和線上服務完全無法識別使用者身分","VPN 能加密使用者與 VPN 伺服器間的流量，使 ISP 無法輕易監控內容","VPN 可隱藏使用者的真實 IP，但 VPN 供應商本身仍可能記錄使用者活動","VPN 無法保護端點裝置本身的安全，惡意程式仍可感染使用 VPN 的用戶"],explanation:"VPN 並非匿名工具；網站仍可透過 Cookie、瀏覽器指紋與帳號登入識別用戶，VPN 服務商本身亦可記錄使用者活動。"},en:{question:"Regarding VPN security, which of the following is a common misconception?",options:["Using a VPN makes browsing completely anonymous, so websites and online services cannot identify the user at all","A VPN encrypts traffic between the user and the VPN server, preventing ISPs from easily monitoring the content","A VPN hides the user's real IP address, but the VPN provider itself may still log the user's activity","A VPN cannot protect the security of the endpoint device; malware can still infect users who use a VPN"],explanation:"VPNs are not anonymity tools; websites can still identify users via cookies, browser fingerprinting, and account logins."},answer:0},
+{id:40,difficulty:"medium",points:15,zh:{question:"關於密碼金鑰長度與加密安全性，下列何者是常見的錯誤觀念？",options:["相同演算法之下，金鑰長度越長通常意味著越高的安全強度","金鑰長度是決定加密強度的唯一因素，只要金鑰夠長任何演算法都安全","即使金鑰很長，若使用已知有漏洞的演算法仍無法保證通訊安全","不同演算法的金鑰長度之間無法直接比較其對應的安全強度"],explanation:"金鑰長度只是安全性的要素之一；演算法設計、已知漏洞與實作品質同等重要。"},en:{question:"Regarding encryption key length and security, which of the following is a common misconception?",options:["For the same algorithm, a longer key generally implies higher security strength","Key length is the sole factor determining encryption strength; any algorithm is secure if the key is long enough","Even with a long key, using an algorithm with known vulnerabilities cannot guarantee communication security","Key lengths across different algorithms cannot be directly compared for their corresponding security strength"],explanation:"Key length is only one factor in security; algorithm design, known vulnerabilities, and implementation quality are equally important."},answer:1}
+];
+
+let lang='zh',themeMode='auto',shuffled=[],current=0,answers=[],selecting=false,submitReady=false;
+
+function shuffle(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function erf(x){const s=x>=0?1:-1;x=Math.abs(x);const t=1/(1+0.3275911*x);const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-x*x);return s*y;}
+function normalCDF(score,mean,sd){return 0.5*(1+erf((score-mean)/(sd*Math.SQRT2)));}
+const LABELS=['A','B','C','D'];
+
+const UI={
+  zh:{title:'資訊安全測驗',prevBtn:'上一題',submitBtn:'提交測驗',langBtn:'English',themeLight:'淺色',themeDark:'深色',
+    qOf:(c,t)=>`第 ${c} / ${t} 題`,progress:(c,t)=>`已完成 ${c} / ${t}`,progressPct:p=>`${p}%`,
+    diffLabel:{easy:'簡單',medium:'中等',hard:'困難',trap:'陷阱'},totalScore:'總分',correct:'答對題數',wrong:'答錯題數',
+    diffCols:['難度','題數','答對','正確率'],percentile:p=>`你的成績超越了約 ${p}% 的測試者`,
+    grades:[[600,670,'🏆 頂尖專家（Top Expert）'],[500,599,'⭐ 進階掌握（Advanced）'],[380,499,'📘 中等水準（Intermediate）'],[250,379,'📗 基礎尚可（Basic）'],[0,249,'📕 需要加強（Needs Improvement）']],
+    reviewTitle:'錯題回顧',yourAnswer:'你的答案',correctAnswer:'正確答案',explanation:'解析',
+    restart:'重新測驗',copyResult:'複製結果',copied:'已複製！',unanswered:'（未作答）',
+    copyText:(s,c,t)=>`【資訊安全測驗成績】\n總分：${s} / 670\n答對：${c} / 40\n答錯：${t-c} / 40`},
+  en:{title:'Information Security Quiz',prevBtn:'Previous',submitBtn:'Submit Quiz',langBtn:'中文',themeLight:'Light',themeDark:'Dark',
+    qOf:(c,t)=>`Question ${c} / ${t}`,progress:(c,t)=>`Answered ${c} / ${t}`,progressPct:p=>`${p}%`,
+    diffLabel:{easy:'Easy',medium:'Medium',hard:'Hard',trap:'Trap'},totalScore:'Total Score',correct:'Correct',wrong:'Incorrect',
+    diffCols:['Difficulty','Questions','Correct','Accuracy'],percentile:p=>`Your score surpasses approximately ${p}% of test takers`,
+    grades:[[600,670,'🏆 Top Expert'],[500,599,'⭐ Advanced'],[380,499,'📘 Intermediate'],[250,379,'📗 Basic'],[0,249,'📕 Needs Improvement']],
+    reviewTitle:'Wrong Answer Review',yourAnswer:'Your Answer',correctAnswer:'Correct Answer',explanation:'Explanation',
+    restart:'Restart Quiz',copyResult:'Copy Results',copied:'Copied!',unanswered:'(Unanswered)',
+    copyText:(s,c,t)=>`[Information Security Quiz Result]\nScore: ${s} / 670\nCorrect: ${c} / 40\nIncorrect: ${t-c} / 40`}
+};
+
+function applyTheme(){
+  const doc=document.documentElement;
+  if(themeMode==='auto'){doc.removeAttribute('data-theme');}else{doc.setAttribute('data-theme',themeMode);}
+  const isDark=themeMode==='dark'||(themeMode==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+  document.getElementById('theme-btn').textContent=isDark?UI[lang].themeLight:UI[lang].themeDark;
+}
+function toggleTheme(){const isDark=themeMode==='dark'||(themeMode==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);themeMode=isDark?'light':'dark';applyTheme();}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+
+function toggleLang(){
+  lang=lang==='zh'?'en':'zh';
+  document.documentElement.lang=lang==='zh'?'zh-TW':'en';
+  const u=UI[lang];
+  document.getElementById('lang-btn').textContent=u.langBtn;
+  document.getElementById('header-title').textContent=u.title;
+  document.getElementById('prev-btn').textContent=u.prevBtn;
+  document.getElementById('submit-btn').textContent=u.submitBtn;
+  applyTheme();
+  const resVisible=!document.getElementById('results-screen').classList.contains('hidden');
+  if(resVisible){renderResults();}else{renderQuestion();}
+}
+
+function init(){
+  shuffled=shuffle(questions);answers=new Array(shuffled.length).fill(-1);
+  current=0;selecting=false;submitReady=false;
+  document.getElementById('quiz-screen').classList.remove('hidden');
+  document.getElementById('results-screen').classList.add('hidden');
+  document.getElementById('header-progress').style.display='';
+  const u=UI[lang];
+  document.getElementById('lang-btn').textContent=u.langBtn;
+  document.getElementById('header-title').textContent=u.title;
+  document.getElementById('prev-btn').textContent=u.prevBtn;
+  document.getElementById('submit-btn').textContent=u.submitBtn;
+  applyTheme();renderQuestion();
+}
+
+function renderQuestion(){
+  const u=UI[lang];const q=shuffled[current];const data=q[lang];const total=shuffled.length;
+  document.getElementById('header-progress').textContent=u.qOf(current+1,total);
+  document.getElementById('q-meta').textContent=u.qOf(current+1,total);
+  document.getElementById('q-text').textContent=data.question;
+  const optContainer=document.getElementById('q-options');optContainer.innerHTML='';
+  const userAns=answers[current];
+  data.options.forEach((opt,i)=>{
+    const div=document.createElement('div');
+    div.className='option'+(userAns===i?' opt-selected':'');
+    if(submitReady&&current===shuffled.length-1)div.classList.add('opt-locked');
+    div.onclick=()=>selectOption(i);
+    const lbl=document.createElement('div');lbl.className='opt-label';lbl.textContent=LABELS[i];
+    const txt=document.createElement('div');txt.className='opt-text';txt.textContent=opt;
+    div.appendChild(lbl);div.appendChild(txt);optContainer.appendChild(div);
+  });
+  const prevBtn=document.getElementById('prev-btn');
+  prevBtn.textContent=u.prevBtn;prevBtn.style.visibility=current===0?'hidden':'visible';
+  const submitBtn=document.getElementById('submit-btn');
+  submitBtn.textContent=u.submitBtn;
+  if(submitReady&&current===shuffled.length-1){submitBtn.classList.remove('hidden');}else{submitBtn.classList.add('hidden');}
+  const answered=answers.filter(a=>a!==-1).length;const pct=Math.round((answered/total)*100);
+  document.getElementById('progress-text').textContent=u.progress(answered,total);
+  document.getElementById('progress-pct').textContent=u.progressPct(pct);
+  document.getElementById('progress-fill').style.width=pct+'%';
+}
+
+function selectOption(idx){
+  if(selecting)return;
+  selecting=true;submitReady=false;
+  answers[current]=idx;
+  const opts=document.querySelectorAll('.option');
+  opts.forEach((d,i)=>{d.classList.toggle('opt-selected',i===idx);d.classList.add('opt-locked');});
+  document.getElementById('submit-btn').classList.add('hidden');
+  const u=UI[lang];const total=shuffled.length;
+  const answered=answers.filter(a=>a!==-1).length;const pct=Math.round((answered/total)*100);
+  document.getElementById('progress-text').textContent=u.progress(answered,total);
+  document.getElementById('progress-pct').textContent=u.progressPct(pct);
+  document.getElementById('progress-fill').style.width=pct+'%';
+  setTimeout(()=>{
+    selecting=false;
+    if(current===shuffled.length-1){submitReady=true;renderQuestion();}
+    else{
+      const area=document.getElementById('question-area');
+      area.classList.add('fade');
+      setTimeout(()=>{current++;renderQuestion();area.classList.remove('fade');},180);
+    }
+  },400);
+}
+
+function prevQuestion(){
+  if(selecting||current===0)return;
+  submitReady=false;
+  const area=document.getElementById('question-area');
+  area.classList.add('fade');
+  setTimeout(()=>{
+    current--;
+    if(current===shuffled.length-1&&answers[current]!==-1)submitReady=true;
+    renderQuestion();area.classList.remove('fade');
+  },180);
+}
+
+function submitQuiz(){
+  document.getElementById('quiz-screen').classList.add('hidden');
+  document.getElementById('header-progress').style.display='none';
+  renderResults();
+  document.getElementById('results-screen').classList.remove('hidden');
+  window.scrollTo(0,0);
+}
+
+function renderResults(){
+  const u=UI[lang];
+  let totalScore=0,correctCount=0;
+  const ds={easy:{q:0,c:0},medium:{q:0,c:0},hard:{q:0,c:0},trap:{q:0,c:0}};
+  shuffled.forEach((q,i)=>{
+    ds[q.difficulty].q++;
+    if(answers[i]===q.answer){totalScore+=q.points;correctCount++;ds[q.difficulty].c++;}
+  });
+  const wrongCount=shuffled.length-correctCount;
+  const percentile=Math.min(99,Math.max(1,Math.round(normalCDF(totalScore,301.5,100.5)*100)));
+  let grade=u.grades[u.grades.length-1][2];
+  for(const[min,max,label]of u.grades){if(totalScore>=min&&totalScore<=max){grade=label;break;}}
+  const diffs=['easy','medium','hard','trap'];
+  const diffRows=diffs.map(d=>{const s=ds[d];const p=s.q>0?Math.round((s.c/s.q)*100):0;
+    return`<tr><td>${u.diffLabel[d]}</td><td>${s.q}</td><td>${s.c}</td><td>${p}%</td></tr>`;}).join('');
+  const wrongItems=shuffled.map((q,i)=>{
+    if(answers[i]===q.answer)return'';
+    const data=q[lang];const ua=answers[i];
+    const correctOpt=`${LABELS[q.answer]}. ${data.options[q.answer]}`;
+    const userOpt=ua===-1?u.unanswered:`${LABELS[ua]}. ${data.options[ua]}`;
+    return`<div class="review-item"><div class="review-q">Q${i+1}. ${data.question}</div>
+      <div class="review-opt wrong">${u.yourAnswer}: ${userOpt}</div>
+      <div class="review-opt correct">${u.correctAnswer}: ${correctOpt}</div>
+      <div class="review-expl"><strong>${u.explanation}：</strong>${data.explanation}</div></div>`;
+  }).join('');
+  document.getElementById('results-screen').innerHTML=`
+    <div class="results-top">
+      <div class="results-score">${totalScore}</div>
+      <div class="results-score-sub">/ 670 ${u.totalScore}</div>
+      <div class="grade-badge">${grade}</div>
+      <div class="percentile">${u.percentile(percentile)}</div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-value" style="color:var(--correct-color)">${correctCount}</div><div class="stat-label">${u.correct}</div></div>
+      <div class="stat-card"><div class="stat-value" style="color:var(--wrong-color)">${wrongCount}</div><div class="stat-label">${u.wrong}</div></div>
+    </div>
+    <table class="diff-table">
+      <thead><tr>${u.diffCols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>
+      <tbody>${diffRows}</tbody>
+    </table>
+    <div class="results-actions">
+      <button class="btn btn-primary" onclick="restart()">${u.restart}</button>
+      <button class="btn" id="copy-btn" onclick="copyResult(${totalScore},${correctCount})">${u.copyResult}</button>
+    </div>
+    ${wrongCount>0?`<hr class="divider"><div class="section-title">${u.reviewTitle} (${wrongCount})</div>${wrongItems}`:''}`;
+}
+
+function copyResult(score,correct){
+  const u=UI[lang];const text=u.copyText(score,correct,shuffled.length);
+  const done=()=>{const b=document.getElementById('copy-btn');if(b){b.textContent=u.copied;setTimeout(()=>{b.textContent=u.copyResult;},2000);}};
+  if(navigator.clipboard){navigator.clipboard.writeText(text).then(done).catch(()=>{fallbackCopy(text);done();});}
+  else{fallbackCopy(text);done();}
+}
+function fallbackCopy(text){const ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);}
+function restart(){init();}
+init();
+</script>
+</body>
+</html>

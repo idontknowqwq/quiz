@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>計算機網路測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --track: #E5E7EB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --track: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.6;
+    transition: background .2s, color .2s;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap; padding: 12px 0 16px; border-bottom: 1px solid var(--border);
+  }
+  h1 { font-size: 1.15rem; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 12px; font-size: .85rem; cursor: pointer;
+    font-family: inherit; transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn-accent { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .progress-info { color: var(--text-secondary); font-size: .9rem; margin: 18px 0 6px; }
+  .stage { flex: 1; display: flex; flex-direction: column; }
+
+  .q-card { opacity: 1; transition: opacity .25s ease; }
+  .q-card.fade { opacity: 0; }
+  .q-text { font-size: 1.1rem; font-weight: 600; margin: 8px 0 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 10px;
+    border: 1px solid var(--border); border-radius: 8px; padding: 13px 14px;
+    cursor: pointer; background: var(--bg); transition: background .15s, border-color .15s;
+    font-size: .98rem; text-align: left; color: var(--text); font-family: inherit; width: 100%;
+  }
+  .option:hover { background: var(--hover); }
+  .option.selected { border-color: var(--accent); background: var(--hover); }
+  .option .key {
+    flex-shrink: 0; width: 24px; height: 24px; border: 1px solid var(--border);
+    border-radius: 5px; display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; font-weight: 600; color: var(--text-secondary);
+  }
+  .option.selected .key { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+
+  .nav-row { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; gap: 10px; }
+
+  .bar-track { height: 6px; background: var(--track); border-radius: 3px; overflow: hidden; margin-top: 20px; }
+  .bar-fill { height: 100%; width: 0; background: var(--accent); transition: width .25s ease; }
+
+  /* Result */
+  .result h2 { font-size: 1.4rem; margin-bottom: 4px; }
+  .score-big { font-size: 2.6rem; font-weight: 700; color: var(--accent); margin: 10px 0; }
+  .grade { font-size: 1.3rem; font-weight: 600; margin: 6px 0 4px; }
+  .pct { color: var(--text-secondary); margin-bottom: 18px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 18px 0; }
+  .stat {
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
+  }
+  .stat .label { font-size: .8rem; color: var(--text-secondary); }
+  .stat .val { font-size: 1.25rem; font-weight: 700; margin-top: 2px; }
+  .section-title { font-size: 1.05rem; font-weight: 700; margin: 24px 0 12px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 13px 14px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .review-line { font-size: .9rem; margin: 3px 0; }
+  .review-line.your { color: var(--wrong); }
+  .review-line.correct { color: var(--correct); }
+  .review-exp { font-size: .85rem; color: var(--text-secondary); margin-top: 6px; }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  .hidden { display: none; }
+  @media (max-width: 480px) {
+    h1 { font-size: 1rem; }
+    .btn { padding: 6px 9px; font-size: .8rem; }
+    .stat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">計算機網路 · 互動測驗</h1>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <!-- Quiz stage -->
+  <div class="stage" id="quizStage">
+    <div class="progress-info" id="progressInfo"></div>
+    <div class="q-card" id="qCard">
+      <div class="q-text" id="qText"></div>
+      <div class="options" id="options"></div>
+    </div>
+    <div class="nav-row">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-accent hidden" id="submitBtn">提交測驗</button>
+    </div>
+    <div class="bar-track"><div class="bar-fill" id="barFill"></div></div>
+  </div>
+
+  <!-- Result stage -->
+  <div class="stage result hidden" id="resultStage"></div>
+</div>
+
+<script>
+const questions = [
+  {id:1,difficulty:"easy",points:10,answer:2,
+   zh:{question:"OSI 參考模型總共分為幾層？",options:["五層","六層","七層","八層"],explanation:"OSI 模型共分為七層。"},
+   en:{question:"How many layers does the OSI reference model have?",options:["Five layers","Six layers","Seven layers","Eight layers"],explanation:"The OSI model has seven layers."}},
+
+  {id:2,difficulty:"medium",points:15,answer:0,
+   zh:{question:"建立 TCP 連線的三向交握，封包的正確順序為何？",options:["SYN → SYN-ACK → ACK","SYN → ACK → SYN-ACK","ACK → SYN → SYN-ACK","SYN-ACK → SYN → ACK"],explanation:"交握順序為 SYN、SYN-ACK、ACK。"},
+   en:{question:"What is the correct packet order of the TCP three-way handshake?",options:["SYN → SYN-ACK → ACK","SYN → ACK → SYN-ACK","ACK → SYN → SYN-ACK","SYN-ACK → SYN → ACK"],explanation:"The order is SYN, SYN-ACK, then ACK."}},
+
+  {id:3,difficulty:"hard",points:25,answer:3,
+   zh:{question:"在序號為 N 位元的「回退 N」(Go-Back-N) 協定中，傳送視窗的最大值為？",options:["1","N","2 的 N 次方","2 的 N 次方減 1"],explanation:"GBN 傳送視窗最大為 2^N − 1。"},
+   en:{question:"In Go-Back-N with N-bit sequence numbers, the maximum sender window size is?",options:["1","N","Two to the power N","Two to the power N minus 1"],explanation:"GBN sender window max is 2^N − 1."}},
+
+  {id:4,difficulty:"medium",points:15,answer:1,
+   zh:{question:"IPv4 子網遮罩為 /26 時，每個子網路可用的主機數為？",options:["30 台主機","62 台主機","64 台主機","126 台主機"],explanation:"主機位元 6 位，2^6−2=62。"},
+   en:{question:"With an IPv4 subnet mask of /26, how many usable hosts per subnet?",options:["30 hosts","62 hosts","64 hosts","126 hosts"],explanation:"6 host bits, 2^6−2 = 62 hosts."}},
+
+  {id:5,difficulty:"easy",points:10,answer:2,
+   zh:{question:"HTTP 服務預設使用的通訊埠號為？",options:["埠號 21","埠號 25","埠號 80","埠號 443"],explanation:"HTTP 預設使用埠號 80。"},
+   en:{question:"Which port does the HTTP service use by default?",options:["Port 21","Port 25","Port 80","Port 443"],explanation:"HTTP uses port 80 by default."}},
+
+  {id:6,difficulty:"medium",points:15,answer:1,
+   zh:{question:"ARP 協定在區域網路中的主要功能為何？",options:["將網域名稱解析為 IP 位址","將 IP 位址解析為 MAC 位址","將 MAC 位址解析為 IP 位址","為主機自動分配動態 IP"],explanation:"ARP 由 IP 位址查出對應 MAC。"},
+   en:{question:"What is the main function of the ARP protocol on a LAN?",options:["Resolve a domain name to an IP address","Resolve an IP address to a MAC address","Resolve a MAC address to an IP address","Automatically assign a dynamic IP"],explanation:"ARP maps an IP address to its MAC."}},
+
+  {id:7,difficulty:"hard",points:25,answer:3,
+   zh:{question:"在無雜訊通道中，頻寬 B Hz、訊號有 M 種狀態，Nyquist 定理的最大資料速率為？",options:["B × log2 M","2B × M","B × M","2B × log2 M"],explanation:"Nyquist：最大速率 = 2B·log₂M。"},
+   en:{question:"In a noiseless channel of bandwidth B Hz with M signal levels, the Nyquist maximum data rate is?",options:["B × log2 M","2B × M","B × M","2B × log2 M"],explanation:"Nyquist: max rate = 2B·log₂M."}},
+
+  {id:8,difficulty:"easy",points:10,answer:0,
+   zh:{question:"下列何者屬於非連線導向 (connectionless) 的傳輸協定？",options:["UDP 協定","TCP 協定","FTP 協定","Telnet 協定"],explanation:"UDP 為非連線導向協定。"},
+   en:{question:"Which of the following is a connectionless transport protocol?",options:["The UDP protocol","The TCP protocol","The FTP protocol","The Telnet protocol"],explanation:"UDP is connectionless."}},
+
+  {id:9,difficulty:"medium",points:15,answer:1,
+   zh:{question:"網路位址轉換 (NAT) 的主要用途為何？",options:["加密封包內容以確保傳輸安全","將私有 IP 位址轉換為公有 IP","依目的地 IP 選擇最佳路由","把網域名稱解析為 IP 位址"],explanation:"NAT 將私有 IP 對應到公有 IP。"},
+   en:{question:"What is the primary purpose of Network Address Translation (NAT)?",options:["Encrypt packet contents for secure transit","Translate private IP addresses to public IPs","Pick the best route by destination IP","Resolve domain names to IP addresses"],explanation:"NAT maps private IPs to public IPs."}},
+
+  {id:10,difficulty:"trap",points:19,answer:2,
+   zh:{question:"關於第二層交換器 (switch) 的敘述，下列何者正確？",options:["交換器可以分隔廣播網域","交換器與集線器行為完全相同","交換器分隔碰撞網域但不分隔廣播網域","交換器運作於網路層 (第三層)"],explanation:"switch 分隔碰撞網域，廣播須靠路由器。"},
+   en:{question:"Which statement about a Layer 2 switch is correct?",options:["A switch separates broadcast domains","A switch behaves exactly like a hub","A switch separates collision domains but not broadcast domains","A switch operates at the network layer (Layer 3)"],explanation:"A switch splits collision domains; routers split broadcast."}},
+
+  {id:11,difficulty:"easy",points:10,answer:0,
+   zh:{question:"IP 協定運作於 OSI 模型的哪一層？",options:["網路層","資料連結層","傳輸層","應用層"],explanation:"IP 屬於網路層 (第三層)。"},
+   en:{question:"At which OSI layer does the IP protocol operate?",options:["Network layer","Data link layer","Transport layer","Application layer"],explanation:"IP operates at the network layer (L3)."}},
+
+  {id:12,difficulty:"medium",points:15,answer:3,
+   zh:{question:"主機透過 DHCP 取得 IP 位址的四個步驟，正確順序為？",options:["Offer → Discover → Request → Ack","Request → Discover → Offer → Ack","Discover → Request → Offer → Ack","Discover → Offer → Request → Ack"],explanation:"DHCP 流程為 DORA：Discover、Offer、Request、Ack。"},
+   en:{question:"What is the correct order of the four DHCP steps a host uses to obtain an IP?",options:["Offer → Discover → Request → Ack","Request → Discover → Offer → Ack","Discover → Request → Offer → Ack","Discover → Offer → Request → Ack"],explanation:"DHCP follows DORA: Discover, Offer, Request, Ack."}},
+
+  {id:13,difficulty:"easy",points:10,answer:0,
+   zh:{question:"乙太網路 MAC 位址的長度為多少位元？",options:["48 位元","32 位元","64 位元","128 位元"],explanation:"MAC 位址長度為 48 位元。"},
+   en:{question:"How many bits long is an Ethernet MAC address?",options:["48 bits","32 bits","64 bits","128 bits"],explanation:"A MAC address is 48 bits long."}},
+
+  {id:14,difficulty:"medium",points:15,answer:1,
+   zh:{question:"下列何者屬於距離向量 (distance-vector) 路由協定？",options:["OSPF 協定","RIP 協定","BGP 協定","IS-IS 協定"],explanation:"RIP 採用距離向量演算法。"},
+   en:{question:"Which of the following is a distance-vector routing protocol?",options:["The OSPF protocol","The RIP protocol","The BGP protocol","The IS-IS protocol"],explanation:"RIP uses the distance-vector algorithm."}},
+
+  {id:15,difficulty:"hard",points:25,answer:2,
+   zh:{question:"TCP 壅塞控制中，發生逾時 (timeout) 時 ssthresh 會被設為？",options:["設為初始的 1 MSS","維持與 cwnd 相同","降為 cwnd 的一半","完全維持不變"],explanation:"逾時後 ssthresh 設為當前 cwnd 的一半。"},
+   en:{question:"In TCP congestion control, after a timeout the value of ssthresh is set to?",options:["The initial value of 1 MSS","Kept equal to current cwnd","Half of the current cwnd","Left completely unchanged"],explanation:"On timeout, ssthresh becomes half of cwnd."}},
+
+  {id:16,difficulty:"medium",points:15,answer:3,
+   zh:{question:"所謂「公認埠號」(well-known ports) 的範圍為？",options:["1024 至 49151","49152 至 65535","1 至 65535","0 至 1023"],explanation:"公認埠號範圍為 0 至 1023。"},
+   en:{question:"What is the range of the so-called well-known ports?",options:["1024 to 49151","49152 to 65535","1 to 65535","0 to 1023"],explanation:"Well-known ports range from 0 to 1023."}},
+
+  {id:17,difficulty:"trap",points:19,answer:1,
+   zh:{question:"點對點連線常用 /30 遮罩，其可用主機位址數為？",options:["1 個","2 個","4 個","0 個"],explanation:"/30 共 4 位址，扣網路與廣播得 2。"},
+   en:{question:"A /30 mask is common for point-to-point links; how many usable host addresses does it provide?",options:["1 address","2 addresses","4 addresses","0 addresses"],explanation:"/30 has 4 addresses; minus network and broadcast leaves 2."}},
+
+  {id:18,difficulty:"medium",points:15,answer:0,
+   zh:{question:"CSMA/CD 載波偵測多重存取技術，最初設計用於下列何種網路？",options:["傳統乙太網路","無線區域網路","符記環 (Token Ring)","衛星通訊網路"],explanation:"CSMA/CD 用於傳統共享式乙太網路。"},
+   en:{question:"CSMA/CD was originally designed for which kind of network?",options:["Classic wired Ethernet","Wireless local networks","Token Ring networks","Satellite communication links"],explanation:"CSMA/CD is for classic shared Ethernet."}},
+
+  {id:19,difficulty:"easy",points:10,answer:2,
+   zh:{question:"DNS 系統的主要功能為何？",options:["為主機分配動態 IP 位址","加密網頁的傳輸內容","將網域名稱解析為 IP 位址","過濾不安全的網路封包"],explanation:"DNS 將網域名稱轉換為 IP 位址。"},
+   en:{question:"What is the primary function of the DNS system?",options:["Assign dynamic IP addresses to hosts","Encrypt the contents of web pages","Resolve domain names to IP addresses","Filter out unsafe network packets"],explanation:"DNS translates domain names into IP addresses."}},
+
+  {id:20,difficulty:"hard",points:25,answer:3,
+   zh:{question:"一條頻寬 10 Mbps、來回時間 (RTT) 40 ms 的鏈路，其頻寬延遲乘積約為？",options:["約 400 bit","約 4 Kbit","約 40 Kbit","約 400 Kbit"],explanation:"10 Mbps × 40 ms = 400 Kbit。"},
+   en:{question:"For a link of 10 Mbps bandwidth and 40 ms RTT, the bandwidth-delay product is about?",options:["About 400 bit","About 4 Kbit","About 40 Kbit","About 400 Kbit"],explanation:"10 Mbps × 40 ms = 400 Kbit."}},
+
+  {id:21,difficulty:"medium",points:15,answer:1,
+   zh:{question:"用戶端要將電子郵件送出至郵件伺服器，通常使用哪個協定？",options:["POP3 協定","SMTP 協定","IMAP 協定","SNMP 協定"],explanation:"寄送郵件使用 SMTP 協定。"},
+   en:{question:"Which protocol does a client typically use to send email to a mail server?",options:["The POP3 protocol","The SMTP protocol","The IMAP protocol","The SNMP protocol"],explanation:"Sending email uses the SMTP protocol."}},
+
+  {id:22,difficulty:"trap",points:19,answer:0,
+   zh:{question:"關於 HTTP 協定本身的特性，下列敘述何者正確？",options:["HTTP 本身無狀態，靠 cookie 維持狀態","HTTP 本身有狀態，會記住每位用戶","HTTP 必須加密才能正常運作","HTTP 只能運作在 UDP 之上"],explanation:"HTTP 無狀態，需 cookie/session 維持狀態。"},
+   en:{question:"Which statement about the HTTP protocol itself is correct?",options:["HTTP is stateless and relies on cookies for state","HTTP is stateful and remembers every user","HTTP must be encrypted to function at all","HTTP can only run on top of UDP"],explanation:"HTTP is stateless; cookies/sessions keep state."}},
+
+  {id:23,difficulty:"easy",points:10,answer:3,
+   zh:{question:"ping 指令主要是利用下列哪個協定來測試連通性？",options:["TCP 協定","UDP 協定","ARP 協定","ICMP 協定"],explanation:"ping 使用 ICMP 的回應請求/回覆。"},
+   en:{question:"Which protocol does the ping command mainly use to test connectivity?",options:["The TCP protocol","The UDP protocol","The ARP protocol","The ICMP protocol"],explanation:"ping uses ICMP echo request/reply."}},
+
+  {id:24,difficulty:"medium",points:15,answer:2,
+   zh:{question:"一個 /24 的 IPv4 網段最多可分配多少台可用主機？",options:["128 台","256 台","254 台","255 台"],explanation:"/24 共 256 位址，扣 2 得 254。"},
+   en:{question:"How many usable hosts can a /24 IPv4 segment allocate at most?",options:["128 hosts","256 hosts","254 hosts","255 hosts"],explanation:"/24 has 256 addresses; minus 2 leaves 254."}},
+
+  {id:25,difficulty:"hard",points:25,answer:0,
+   zh:{question:"序號空間為 2 的 N 次方的選擇性重傳 (Selective Repeat) 協定，其單一視窗最大值為？",options:["2 的 (N−1) 次方","2 的 N 次方","2 的 N 次方減 1","等於 N"],explanation:"SR 視窗最大為序號空間的一半。"},
+   en:{question:"For Selective Repeat with a sequence space of 2^N, the maximum size of a single window is?",options:["Two to the power (N−1)","Two to the power N","Two to the power N minus 1","Equal to N"],explanation:"SR window max is half the sequence space."}},
+
+  {id:26,difficulty:"trap",points:19,answer:1,
+   zh:{question:"下列關於 UDP 的敘述，何者正確？",options:["UDP 透過重傳機制確保資料送達","UDP 不保證送達、順序與不重複","UDP 一定比 TCP 更為安全","UDP 完全沒有錯誤偵測能力"],explanation:"UDP 盡力傳送，不保證可靠，有選用 checksum。"},
+   en:{question:"Which statement about UDP is correct?",options:["UDP ensures delivery through retransmission","UDP does not guarantee delivery, order or no-duplication","UDP is always more secure than TCP","UDP has no error detection capability at all"],explanation:"UDP is best-effort; it offers an optional checksum."}},
+
+  {id:27,difficulty:"easy",points:10,answer:2,
+   zh:{question:"下列哪一種網路設備運作在 OSI 的資料連結層 (第二層)？",options:["集線器 (Hub)","路由器 (Router)","交換器 (Switch)","閘道器 (Gateway)"],explanation:"交換器運作於第二層。"},
+   en:{question:"Which network device operates at the OSI data link layer (Layer 2)?",options:["A hub","A router","A switch","A gateway"],explanation:"A switch operates at Layer 2."}},
+
+  {id:28,difficulty:"medium",points:15,answer:3,
+   zh:{question:"HTTPS 透過下列哪個協定在傳輸層之上提供加密？",options:["SSH 協定","IPSec 協定","SSL2 協定","TLS 協定"],explanation:"HTTPS 使用 TLS 進行加密。"},
+   en:{question:"Which protocol does HTTPS use to provide encryption above the transport layer?",options:["The SSH protocol","The IPSec protocol","The SSL2 protocol","The TLS protocol"],explanation:"HTTPS uses TLS for encryption."}},
+
+  {id:29,difficulty:"hard",points:25,answer:0,
+   zh:{question:"網際網路中，自治系統 (AS) 之間的繞送主要由哪個協定負責？",options:["BGP 協定","OSPF 協定","RIP 協定","EIGRP 協定"],explanation:"BGP 為跨 AS 的路徑向量繞送協定。"},
+   en:{question:"On the Internet, routing between autonomous systems (AS) is mainly handled by which protocol?",options:["The BGP protocol","The OSPF protocol","The RIP protocol","The EIGRP protocol"],explanation:"BGP is the inter-AS path-vector routing protocol."}},
+
+  {id:30,difficulty:"medium",points:15,answer:1,
+   zh:{question:"IP 封包的 TTL 欄位，每經過一台路由器會如何變化？",options:["數值增加 1","數值減少 1","歸零並重設","維持不變"],explanation:"每經一個路由器 TTL 減 1。"},
+   en:{question:"How does the TTL field of an IP packet change at each router it passes?",options:["Increased by 1","Decreased by 1","Reset to zero","Stays unchanged"],explanation:"TTL is decremented by 1 at each router."}},
+
+  {id:31,difficulty:"hard",points:25,answer:2,
+   zh:{question:"使用生成多項式進行錯誤偵測的技術為下列何者？",options:["檢查碼和 (Checksum)","同位位元 (Parity)","循環冗餘檢查 (CRC)","漢明碼 (Hamming)"],explanation:"CRC 以生成多項式進行除法偵錯。"},
+   en:{question:"Which error-detection technique uses a generator polynomial?",options:["Checksum sum","Parity bit","Cyclic redundancy check (CRC)","Hamming code"],explanation:"CRC divides data by a generator polynomial."}},
+
+  {id:32,difficulty:"trap",points:19,answer:3,
+   zh:{question:"關於「頻寬」(bandwidth) 與「延遲」(latency)，下列敘述何者正確？",options:["頻寬越大，延遲必定越低","兩者的意義完全相同","延遲只由頻寬大小決定","兩者為不同指標，高頻寬不代表低延遲"],explanation:"頻寬與延遲是不同概念，不可混為一談。"},
+   en:{question:"Which statement about bandwidth and latency is correct?",options:["Higher bandwidth always means lower latency","The two terms mean exactly the same thing","Latency is determined only by bandwidth","They are different metrics; high bandwidth is not low latency"],explanation:"Bandwidth and latency are distinct concepts."}},
+
+  {id:33,difficulty:"medium",points:15,answer:1,
+   zh:{question:"下列哪個協定用於可靠地在主機之間傳輸檔案？",options:["SMTP 協定","FTP 協定","SNMP 協定","ICMP 協定"],explanation:"FTP 為檔案傳輸協定。"},
+   en:{question:"Which protocol is used to reliably transfer files between hosts?",options:["The SMTP protocol","The FTP protocol","The SNMP protocol","The ICMP protocol"],explanation:"FTP is the file transfer protocol."}},
+
+  {id:34,difficulty:"medium",points:15,answer:0,
+   zh:{question:"TCP 透過下列哪種機制進行流量控制 (flow control)？",options:["滑動視窗 (sliding window)","三向交握 (handshake)","時間戳記 (timestamp)","檢查碼 (checksum)"],explanation:"TCP 以滑動視窗進行流量控制。"},
+   en:{question:"Which mechanism does TCP use for flow control?",options:["Sliding window","Three-way handshake","Timestamp option","Checksum field"],explanation:"TCP uses a sliding window for flow control."}},
+
+  {id:35,difficulty:"hard",points:25,answer:2,
+   zh:{question:"在有雜訊通道中，香農 (Shannon) 定理的通道容量公式為？",options:["C = 2B·log2 M","C = B·SNR","C = B·log2 (1 + SNR)","C = B / (1 + SNR)"],explanation:"香農容量 C = B·log₂(1+SNR)。"},
+   en:{question:"In a noisy channel, what is the Shannon channel capacity formula?",options:["C = 2B·log2 M","C = B·SNR","C = B·log2 (1 + SNR)","C = B / (1 + SNR)"],explanation:"Shannon capacity C = B·log₂(1+SNR)."}},
+
+  {id:36,difficulty:"hard",points:25,answer:3,
+   zh:{question:"下列哪個 IP 位址屬於私有 (private) 位址範圍？",options:["8.8.8.8","172.15.0.1","192.169.1.1","10.0.0.5"],explanation:"10.0.0.0/8 屬私有位址範圍。"},
+   en:{question:"Which of the following IP addresses falls within a private address range?",options:["8.8.8.8","172.15.0.1","192.169.1.1","10.0.0.5"],explanation:"10.0.0.0/8 is a private address range."}},
+
+  {id:37,difficulty:"easy",points:10,answer:0,
+   zh:{question:"IPv4 位址的長度為多少位元？",options:["32 位元","48 位元","64 位元","128 位元"],explanation:"IPv4 位址長度為 32 位元。"},
+   en:{question:"How many bits long is an IPv4 address?",options:["32 bits","48 bits","64 bits","128 bits"],explanation:"An IPv4 address is 32 bits long."}},
+
+  {id:38,difficulty:"medium",points:15,answer:1,
+   zh:{question:"一台集線器 (hub) 連接的所有埠口，會形成幾個碰撞網域？",options:["每個埠各一個","全部共用一個","依埠口數而定","完全沒有碰撞網域"],explanation:"hub 所有埠共用同一碰撞網域。"},
+   en:{question:"How many collision domains do all ports of a single hub form?",options:["One per each port","One shared by all","Depends on port count","No collision domain at all"],explanation:"All hub ports share one collision domain."}},
+
+  {id:39,difficulty:"easy",points:10,answer:2,
+   zh:{question:"下列哪個協定屬於 OSI 的應用層 (application layer)？",options:["IP 協定","TCP 協定","HTTP 協定","Ethernet 協定"],explanation:"HTTP 為應用層協定。"},
+   en:{question:"Which of the following protocols belongs to the OSI application layer?",options:["The IP protocol","The TCP protocol","The HTTP protocol","The Ethernet protocol"],explanation:"HTTP is an application-layer protocol."}},
+
+  {id:40,difficulty:"hard",points:25,answer:3,
+   zh:{question:"相較於 IPv4，IPv6 標頭的設計主要做了下列何種改變？",options:["增加更多選用欄位以利擴充","加入標頭檢查碼以提升可靠度","將位址縮短為 64 位元","簡化標頭並移除標頭檢查碼"],explanation:"IPv6 標頭簡化並移除 header checksum。"},
+   en:{question:"Compared with IPv4, what major change did the IPv6 header design make?",options:["Added more optional fields for extension","Added a header checksum for reliability","Shortened addresses to 64 bits","Simplified the header and removed the checksum"],explanation:"IPv6 simplified the header and removed the checksum."}}
+];
+
+const i18n = {
+  zh: { title:"計算機網路 · 互動測驗", lang:"English", prev:"上一題", submit:"提交測驗",
+    progress:(c,t)=>`第 ${c} / ${t} 題`,
+    rTitle:"測驗結果", score:"總分", correctN:"正確題數", wrongN:"錯誤題數",
+    byDiff:"各難度正確率", easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱",
+    pct:p=>`你的成績超越了約 ${p}% 的測試者`, grade:"等級評定",
+    review:"錯題回顧", yourAns:"你的選擇", correctAns:"正確答案", noWrong:"太厲害了，全部答對！",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！",
+    summary:(s,c)=>`我在「計算機網路」測驗中獲得 ${s} / 670 分，答對 ${c} / 40 題。` },
+  en: { title:"Computer Networks · Interactive Quiz", lang:"中文", prev:"Previous", submit:"Submit Quiz",
+    progress:(c,t)=>`Question ${c} / ${t}`,
+    rTitle:"Quiz Result", score:"Total Score", correctN:"Correct", wrongN:"Incorrect",
+    byDiff:"Accuracy by Difficulty", easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap",
+    pct:p=>`You scored higher than about ${p}% of test takers`, grade:"Grade",
+    review:"Review of Incorrect Questions", yourAns:"Your answer", correctAns:"Correct answer",
+    noWrong:"Outstanding — everything correct!",
+    retry:"Retake Quiz", copy:"Copy Result", copied:"Copied!",
+    summary:(s,c)=>`I scored ${s} / 670 on the Computer Networks quiz, answering ${c} / 40 correctly.` }
+};
+
+const grades = [
+  {min:600,zh:"🏆 頂尖專家",en:"🏆 Top Expert"},
+  {min:500,zh:"⭐ 進階掌握",en:"⭐ Advanced"},
+  {min:380,zh:"📘 中等水準",en:"📘 Intermediate"},
+  {min:250,zh:"📗 基礎尚可",en:"📗 Basic"},
+  {min:0,  zh:"📕 需要加強",en:"📕 Needs Improvement"}
+];
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const KEYS = ["A","B","C","D"];
+
+// ---- Theme ----
+function initTheme(){
+  const saved = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  setTheme(saved);
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
+}
+document.getElementById("themeBtn").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+};
+document.getElementById("langBtn").onclick = () => {
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  applyStaticText();
+  if (document.getElementById("resultStage").classList.contains("hidden")) renderQuestion();
+  else renderResult();
+};
+
+function applyStaticText(){
+  const t = i18n[lang];
+  document.getElementById("title").textContent = t.title;
+  document.getElementById("langBtn").textContent = t.lang;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+}
+
+// ---- Quiz ----
+function renderQuestion(){
+  const t = i18n[lang];
+  const q = questions[current];
+  const data = q[lang];
+  document.getElementById("progressInfo").textContent = t.progress(current+1, questions.length);
+  document.getElementById("qText").textContent = data.question;
+  const optBox = document.getElementById("options");
+  optBox.innerHTML = "";
+  data.options.forEach((opt, idx) => {
+    const b = document.createElement("button");
+    b.className = "option" + (answers[current] === idx ? " selected" : "");
+    b.innerHTML = `<span class="key">${KEYS[idx]}</span><span>${opt}</span>`;
+    b.onclick = () => choose(idx);
+    optBox.appendChild(b);
+  });
+  document.getElementById("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
+  const submit = document.getElementById("submitBtn");
+  const isLast = current === questions.length - 1;
+  submit.classList.toggle("hidden", !(isLast && answers[current] !== null));
+  const pct = ((current+ (answers[current]!==null?1:0)) / questions.length) * 100;
+  document.getElementById("barFill").style.width = pct + "%";
+}
+
+function choose(idx){
+  answers[current] = idx;
+  // show selected state
+  const opts = document.querySelectorAll("#options .option");
+  opts.forEach((o,i)=>o.classList.toggle("selected", i===idx));
+  const isLast = current === questions.length - 1;
+  if (isLast){
+    document.getElementById("submitBtn").classList.remove("hidden");
+    document.getElementById("barFill").style.width = "100%";
+    return;
+  }
+  // auto-advance after ~0.4s with fade
+  const card = document.getElementById("qCard");
+  setTimeout(()=>{
+    card.classList.add("fade");
+    setTimeout(()=>{
+      current++;
+      renderQuestion();
+      card.classList.remove("fade");
+    }, 250);
+  }, 400);
+}
+
+document.getElementById("prevBtn").onclick = () => {
+  if (current === 0) return;
+  const card = document.getElementById("qCard");
+  card.classList.add("fade");
+  setTimeout(()=>{ current--; renderQuestion(); card.classList.remove("fade"); }, 250);
+};
+
+document.getElementById("submitBtn").onclick = renderResult;
+
+// ---- Normal CDF for percentile ----
+function normalCdf(x, mean, sd){
+  const z = (x - mean) / (sd * Math.SQRT2);
+  return 0.5 * (1 + erf(z));
+}
+function erf(x){
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function renderResult(){
+  const t = i18n[lang];
+  document.getElementById("quizStage").classList.add("hidden");
+  const stage = document.getElementById("resultStage");
+  stage.classList.remove("hidden");
+
+  let score=0, correct=0;
+  const diff = {easy:[0,0],medium:[0,0],hard:[0,0],trap:[0,0]};
+  const wrong = [];
+  questions.forEach((q,i)=>{
+    diff[q.difficulty][1]++;
+    if (answers[i] === q.answer){ score += q.points; correct++; diff[q.difficulty][0]++; }
+    else wrong.push({q, your:answers[i]});
+  });
+  const wrongCount = questions.length - correct;
+  const pctRank = Math.max(1, Math.min(99, Math.round(normalCdf(score, 301.5, 100.5)*100)));
+  const grade = grades.find(g => score >= g.min);
+
+  const diffRow = (k) => `<div class="stat"><div class="label">${t[k]}</div><div class="val">${diff[k][0]} / ${diff[k][1]}</div></div>`;
+
+  let reviewHtml = "";
+  if (wrong.length === 0){
+    reviewHtml = `<p class="pct">${t.noWrong}</p>`;
+  } else {
+    wrong.forEach(({q,your})=>{
+      const d = q[lang];
+      const yourTxt = your===null ? "—" : `${KEYS[your]}. ${d.options[your]}`;
+      reviewHtml += `<div class="review-item">
+        <div class="review-q">${d.question}</div>
+        <div class="review-line your">${t.yourAns}：${yourTxt}</div>
+        <div class="review-line correct">${t.correctAns}：${KEYS[q.answer]}. ${d.options[q.answer]}</div>
+        <div class="review-exp">${d.explanation}</div>
+      </div>`;
+    });
+  }
+
+  stage.innerHTML = `
+    <h2>${t.rTitle}</h2>
+    <div class="score-big">${score} / 670</div>
+    <div class="grade">${grade[lang]}</div>
+    <div class="pct">${t.pct(pctRank)}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="label">${t.correctN}</div><div class="val">${correct} / 40</div></div>
+      <div class="stat"><div class="label">${t.wrongN}</div><div class="val">${wrongCount} / 40</div></div>
+    </div>
+    <div class="section-title">${t.byDiff}</div>
+    <div class="stat-grid">
+      ${diffRow("easy")}${diffRow("medium")}${diffRow("hard")}${diffRow("trap")}
+    </div>
+    <div class="section-title">${t.review}</div>
+    ${reviewHtml}
+    <div class="result-actions">
+      <button class="btn btn-accent" id="retryBtn">${t.retry}</button>
+      <button class="btn" id="copyBtn">${t.copy}</button>
+    </div>
+  `;
+
+  document.getElementById("retryBtn").onclick = () => {
+    answers.fill(null); current = 0;
+    stage.classList.add("hidden");
+    document.getElementById("quizStage").classList.remove("hidden");
+    renderQuestion();
+    window.scrollTo(0,0);
+  };
+  document.getElementById("copyBtn").onclick = () => {
+    const text = t.summary(score, correct) + " " + t.pct(pctRank);
+    navigator.clipboard.writeText(text).then(()=>{
+      const b = document.getElementById("copyBtn");
+      const old = b.textContent; b.textContent = t.copied;
+      setTimeout(()=>b.textContent = old, 1500);
+    });
+  };
+  window.scrollTo(0,0);
+}
+
+// ---- init ----
+initTheme();
+applyStaticText();
+renderQuestion();
+</script>
+</body>
+</html>

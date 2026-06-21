@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>控制系統 互動測驗</title>
+<style>
+:root {
+  --bg: #FFFFFF;
+  --bg2: #F9FAFB;
+  --text: #1A1A1A;
+  --text2: #6B7280;
+  --border: #E5E7EB;
+  --accent: #2563EB;
+  --accent-bg: #EFF6FF;
+  --correct: #16A34A;
+  --correct-bg: #F0FDF4;
+  --wrong: #DC2626;
+  --wrong-bg: #FEF2F2;
+  --hover: #F3F4F6;
+  --progress-bg: #E5E7EB;
+  --btn-bg: #F3F4F6;
+  --btn-text: #1A1A1A;
+}
+[data-theme="dark"] {
+  --bg: #111111;
+  --bg2: #1C1C1C;
+  --text: #E5E7EB;
+  --text2: #9CA3AF;
+  --border: #374151;
+  --accent: #60A5FA;
+  --accent-bg: #1E3A5F;
+  --correct: #4ADE80;
+  --correct-bg: #052E16;
+  --wrong: #F87171;
+  --wrong-bg: #450A0A;
+  --hover: #27272A;
+  --progress-bg: #374151;
+  --btn-bg: #27272A;
+  --btn-text: #E5E7EB;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Noto Sans TC', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.2s, color 0.2s;
+}
+#app { max-width: 760px; margin: 0 auto; padding: 0 16px 48px; }
+
+/* Header */
+.header {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0;
+  margin-bottom: 24px;
+}
+.header-inner {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+}
+.header-title { font-size: 15px; font-weight: 700; color: var(--text); flex: 1; min-width: 120px; }
+.header-controls { display: flex; align-items: center; gap: 6px; }
+.header-progress { font-size: 13px; color: var(--text2); white-space: nowrap; }
+.btn-sm {
+  background: var(--btn-bg); color: var(--btn-text);
+  border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.btn-sm:hover { background: var(--hover); }
+
+/* Progress bar */
+.progress-bar-wrap { height: 4px; background: var(--progress-bg); border-radius: 2px; margin-bottom: 28px; }
+.progress-bar-fill { height: 4px; background: var(--accent); border-radius: 2px; transition: width 0.3s; }
+
+/* Question card */
+.question-card { opacity: 1; transition: opacity 0.25s; }
+.question-card.fade { opacity: 0; }
+.q-meta { font-size: 12px; color: var(--text2); margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+.q-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 4px;
+  font-size: 11px; font-weight: 600; border: 1px solid var(--border);
+  color: var(--text2); background: var(--bg2);
+}
+.q-text { font-size: 17px; font-weight: 600; line-height: 1.6; margin-bottom: 20px; color: var(--text); }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.option {
+  display: flex; align-items: flex-start; gap: 12px;
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 13px 16px; cursor: pointer; background: var(--bg);
+  transition: background 0.15s, border-color 0.15s;
+}
+.option:hover { background: var(--hover); }
+.option.selected { border-color: var(--accent); background: var(--accent-bg); }
+.option-label {
+  flex-shrink: 0; width: 26px; height: 26px;
+  border-radius: 50%; border: 1.5px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--text2);
+  background: var(--bg2);
+}
+.option.selected .option-label { border-color: var(--accent); color: var(--accent); background: var(--accent-bg); }
+.option-text { font-size: 15px; line-height: 1.5; color: var(--text); padding-top: 1px; }
+
+/* Nav buttons */
+.nav-row { display: flex; gap: 10px; margin-top: 24px; justify-content: space-between; align-items: center; }
+.btn-nav {
+  padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--btn-bg); color: var(--btn-text);
+}
+.btn-nav:hover { background: var(--hover); }
+.btn-nav:disabled { opacity: 0.35; cursor: default; }
+.btn-submit {
+  padding: 12px 28px; background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.btn-submit:hover { opacity: 0.88; }
+
+/* Results */
+#results { display: none; }
+.result-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+.result-score { font-size: 48px; font-weight: 900; color: var(--accent); margin: 16px 0 4px; }
+.result-score-sub { font-size: 15px; color: var(--text2); margin-bottom: 20px; }
+.result-grade { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.result-percentile { font-size: 14px; color: var(--text2); margin-bottom: 24px; }
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 16px; text-align: center;
+}
+.stat-card .label { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.stat-card .value { font-size: 22px; font-weight: 800; color: var(--text); }
+.diff-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px; }
+.diff-table th { text-align: left; padding: 8px 10px; background: var(--bg2); border-bottom: 1px solid var(--border); color: var(--text2); font-weight: 600; }
+.diff-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text); }
+.section-title { font-size: 17px; font-weight: 700; margin: 28px 0 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+
+/* Review */
+.review-item { border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 14px; background: var(--bg2); }
+.review-q { font-size: 14px; font-weight: 600; margin-bottom: 10px; line-height: 1.5; }
+.review-opt { font-size: 13px; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; display: flex; align-items: flex-start; gap: 8px; }
+.review-opt.user-wrong { background: var(--wrong-bg); color: var(--wrong); border: 1px solid var(--wrong); }
+.review-opt.correct-ans { background: var(--correct-bg); color: var(--correct); border: 1px solid var(--correct); }
+.review-explanation { font-size: 12px; color: var(--text2); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); line-height: 1.5; }
+.result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+.btn-action {
+  padding: 11px 22px; border-radius: 8px; font-size: 14px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border); background: var(--btn-bg); color: var(--btn-text);
+}
+.btn-action:hover { background: var(--hover); }
+.btn-action.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-action.primary:hover { opacity: 0.88; }
+
+@media (max-width: 520px) {
+  .q-text { font-size: 15px; }
+  .option-text { font-size: 14px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .result-score { font-size: 38px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="header">
+    <div class="header-inner">
+      <div class="header-title" id="headerTitle">控制系統 互動測驗</div>
+      <div class="header-controls">
+        <span class="header-progress" id="headerProgress">第 1 / 40 題</span>
+        <button class="btn-sm" id="btnLang" onclick="toggleLang()">English</button>
+        <button class="btn-sm" id="btnTheme" onclick="toggleTheme()">🌙 深色</button>
+      </div>
+    </div>
+    <div class="progress-bar-wrap" style="margin-top:10px;margin-bottom:0">
+      <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+    </div>
+  </div>
+
+  <div id="quiz">
+    <div class="question-card" id="questionCard">
+      <div class="q-meta">
+        <span id="qNum" class="q-badge">Q1</span>
+        <span id="qPts" class="q-badge"></span>
+      </div>
+      <div class="q-text" id="qText"></div>
+      <div class="options" id="optionsContainer"></div>
+      <div class="nav-row">
+        <button class="btn-nav" id="btnPrev" onclick="goTo(currentQ-1)" disabled>← <span class="nav-label">上一題</span></button>
+        <button class="btn-submit" id="btnSubmit" style="display:none" onclick="submitQuiz()"><span id="submitLabel">提交測驗</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="result-title" id="resultTitle">測驗結果</div>
+    <div class="result-score" id="resultScore"></div>
+    <div class="result-score-sub" id="resultScoreSub"></div>
+    <div class="result-grade" id="resultGrade"></div>
+    <div class="result-percentile" id="resultPercentile"></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="label" id="lblCorrect">答對題數</div><div class="value" id="valCorrect"></div></div>
+      <div class="stat-card"><div class="label" id="lblWrong">答錯題數</div><div class="value" id="valWrong"></div></div>
+    </div>
+    <div class="section-title" id="sectionDiff">各難度成績</div>
+    <table class="diff-table">
+      <thead><tr>
+        <th id="thDiff">難度</th>
+        <th id="thCorrect">答對</th>
+        <th id="thScore">得分</th>
+        <th id="thRate">正確率</th>
+      </tr></thead>
+      <tbody id="diffTableBody"></tbody>
+    </table>
+    <div class="section-title" id="sectionReview">錯題回顧</div>
+    <div id="reviewContainer"></div>
+    <div class="result-actions">
+      <button class="btn-action primary" onclick="restartQuiz()" id="btnRestart">🔄 重新測驗</button>
+      <button class="btn-action" onclick="copyResult()" id="btnCopy">📋 複製結果</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// 題目資料 (40題，難度混排，答案A/B/C/D各10題)
+// ─────────────────────────────────────────
+const questions = [
+  // Q1 - Easy - Answer: A (0)
+  {
+    id: 1, difficulty: "easy", points: 10,
+    zh: {
+      question: "線性非時變（LTI）系統的轉移函數 G(s) 定義為何？",
+      options: [
+        "在零初始條件下，輸出拉普拉斯轉換與輸入拉普拉斯轉換之比",
+        "在任意初始條件下，系統輸出與輸入的時域比值函數",
+        "系統脈衝響應 h(t) 在時域中對所有時間的積分值",
+        "系統輸出對外部擾動訊號之穩態比值，不考慮初始條件"
+      ],
+      explanation: "轉移函數定義在零初始條件下，G(s)=Y(s)/U(s)"
+    },
+    en: {
+      question: "How is the transfer function G(s) of a linear time-invariant (LTI) system defined?",
+      options: [
+        "The ratio of the output Laplace transform to the input Laplace transform under zero initial conditions",
+        "The ratio of system output to input in the time domain under arbitrary initial conditions",
+        "The integral of the impulse response h(t) over all time in the time domain",
+        "The steady-state ratio of the system output to external disturbances, ignoring initial conditions"
+      ],
+      explanation: "Transfer function is defined under zero initial conditions: G(s)=Y(s)/U(s)"
+    },
+    answer: 0
+  },
+  // Q2 - Medium - Answer: B (1)
+  {
+    id: 2, difficulty: "medium", points: 15,
+    zh: {
+      question: "標準二階系統 G(s) = ωn²/(s²+2ζωns+ωn²)，當阻尼比 ζ=0.5 時，單位步階響應的超越量（%OS）最接近？",
+      options: [
+        "約 5%，阻尼比足夠大使超越量極小",
+        "約 16%，由公式 e^(−πζ/√(1−ζ²))×100% 計算得出",
+        "約 30%，阻尼不足導致較大振盪超越",
+        "約 45%，系統接近臨界阻尼邊界所致"
+      ],
+      explanation: "%OS=e^(−πζ/√(1−ζ²))×100%，ζ=0.5 時約 16.3% | %OS≈16.3% when ζ=0.5"
+    },
+    en: {
+      question: "For a standard second-order system G(s) = ωn²/(s²+2ζωns+ωn²) with damping ratio ζ=0.5, the percent overshoot (%OS) of the unit step response is approximately:",
+      options: [
+        "About 5%, the damping ratio is large enough to minimize overshoot significantly",
+        "About 16%, calculated from the formula e^(−πζ/√(1−ζ²))×100%",
+        "About 30%, insufficient damping leads to a considerably large overshoot",
+        "About 45%, the system is near the critical damping boundary condition"
+      ],
+      explanation: "%OS=e^(−πζ/√(1−ζ²))×100%; when ζ=0.5, %OS≈16.3%"
+    },
+    answer: 1
+  },
+  // Q3 - Hard - Answer: C (2)
+  {
+    id: 3, difficulty: "hard", points: 25,
+    zh: {
+      question: "特徵方程式 s⁴+2s³+3s²+4s+5=0，根據勞斯-赫維茲（Routh-Hurwitz）穩定判據，位於右半 s 平面（RHP）的根共有幾個？",
+      options: [
+        "0 個，勞斯陣列第一行無符號變化，系統穩定",
+        "1 個，勞斯陣列第一行出現一次符號變化",
+        "2 個，勞斯陣列第一行出現兩次符號變化",
+        "4 個，所有根均位於右半平面，系統完全不穩定"
+      ],
+      explanation: "勞斯陣列第一行：1,2,1,−6,5，符號變化兩次，故有 2 個 RHP 根 | Routh first column: 1,2,1,−6,5; two sign changes → 2 RHP roots"
+    },
+    en: {
+      question: "For the characteristic equation s⁴+2s³+3s²+4s+5=0, how many roots lie in the right half s-plane (RHP) according to the Routh-Hurwitz stability criterion?",
+      options: [
+        "0 roots; no sign changes in the Routh array first column, system is stable",
+        "1 root; there is exactly one sign change in the Routh array first column",
+        "2 roots; there are exactly two sign changes in the Routh array first column",
+        "4 roots; all roots lie in the right half plane and the system is fully unstable"
+      ],
+      explanation: "Routh first column: 1, 2, 1, −6, 5; two sign changes → 2 RHP roots"
+    },
+    answer: 2
+  },
+  // Q4 - Trap - Answer: D (3)
+  {
+    id: 4, difficulty: "trap", points: 19,
+    zh: {
+      question: "在負回饋控制系統中，若持續增大比例增益 K，以下哪個描述最為正確？",
+      options: [
+        "響應速度不斷加快，且系統穩定性完全不受增益大小影響",
+        "穩態誤差持續線性遞減，當 K 趨向無限大時誤差趨近於零",
+        "超越量雖然持續增加，但只要 K 有限則系統始終維持穩定",
+        "當增益超過某臨界值後，閉迴路極點進入右半平面而不穩定"
+      ],
+      explanation: "增益過大使閉迴路極點移至右半平面，導致不穩定；穩定裕度有限 | Excess gain moves closed-loop poles into RHP causing instability"
+    },
+    en: {
+      question: "In a negative feedback control system, if the proportional gain K is continuously increased, which statement is most accurate?",
+      options: [
+        "Response speed keeps increasing and system stability is completely unaffected by gain magnitude",
+        "Steady-state error decreases linearly; as K approaches infinity the error approaches zero",
+        "Overshoot keeps increasing but as long as K is finite the system always remains stable",
+        "Once gain exceeds a critical value, closed-loop poles enter the right half plane causing instability"
+      ],
+      explanation: "Excessive gain shifts closed-loop poles into the RHP, causing instability; stability margins are limited"
+    },
+    answer: 3
+  },
+  // Q5 - Medium - Answer: A (0)
+  {
+    id: 5, difficulty: "medium", points: 15,
+    zh: {
+      question: "線性非時變系統 BIBO（有界輸入有界輸出）穩定的充要條件是？",
+      options: [
+        "所有閉迴路特徵值（極點）均嚴格位於 s 平面的左半平面",
+        "所有開迴路極點均嚴格位於 s 平面的左半平面不含虛軸",
+        "開迴路轉移函數的增益裕度（GM）嚴格大於 0 dB",
+        "奈奎斯特（Nyquist）圖不包圍且不通過 (−1, j0) 點"
+      ],
+      explanation: "BIBO 穩定充要條件：所有閉迴路極點在左半平面（LHP）| All closed-loop poles must lie in the LHP"
+    },
+    en: {
+      question: "What is the necessary and sufficient condition for BIBO (bounded-input bounded-output) stability of a linear time-invariant system?",
+      options: [
+        "All closed-loop eigenvalues (poles) lie strictly in the left half of the s-plane",
+        "All open-loop poles lie strictly in the left half of the s-plane excluding the imaginary axis",
+        "The gain margin (GM) of the open-loop transfer function is strictly greater than 0 dB",
+        "The Nyquist plot neither encircles nor passes through the point (−1, j0)"
+      ],
+      explanation: "BIBO stability requires all closed-loop poles to lie strictly in the left half plane (LHP)"
+    },
+    answer: 0
+  },
+  // Q6 - Easy - Answer: B (1)
+  {
+    id: 6, difficulty: "easy", points: 10,
+    zh: {
+      question: "一階系統 G(s)=1/(τs+1) 在單位步階輸入下，當時間 t=2τ 時，輸出值約為最終穩態值的多少百分比？",
+      options: [
+        "約 63.2%，此為一個時間常數 τ 時的輸出比例",
+        "約 86.5%，由 1−e⁻²≈0.865 計算得出",
+        "約 95.0%，此為三個時間常數 3τ 時的輸出比例",
+        "約 99.3%，此為五個時間常數 5τ 時的輸出比例"
+      ],
+      explanation: "一階系統步階響應 y(t)=1−e^(−t/τ)，t=2τ 時 y=1−e⁻²≈86.5% | y(t)=1−e^(−t/τ); at t=2τ, y≈86.5%"
+    },
+    en: {
+      question: "For a first-order system G(s)=1/(τs+1) under unit step input, the output at time t=2τ is approximately what percentage of the final steady-state value?",
+      options: [
+        "About 63.2%, which is the output fraction at one time constant τ",
+        "About 86.5%, calculated from 1−e⁻²≈0.865",
+        "About 95.0%, which is the output fraction at three time constants 3τ",
+        "About 99.3%, which is the output fraction at five time constants 5τ"
+      ],
+      explanation: "First-order step response y(t)=1−e^(−t/τ); at t=2τ, y=1−e⁻²≈86.5%"
+    },
+    answer: 1
+  },
+  // Q7 - Hard - Answer: C (2)
+  {
+    id: 7, difficulty: "hard", points: 25,
+    zh: {
+      question: "開迴路轉移函數 G(s)H(s)=K/[s(s+2)(s+4)] 的根軌跡，其三條漸近線的角度分別為？",
+      options: [
+        "0°、90°、180°，均勻分布於正實軸方向及虛軸方向",
+        "45°、135°、225°，從漸近線中心以 90° 間隔向外延伸",
+        "60°、180°、300°，依公式 (2k+1)×180°/(n−m) 計算得出",
+        "30°、90°、270°，依系統極點在實軸上的位置偏移決定"
+      ],
+      explanation: "n=3 個極點，m=0 個零點，漸近線角度=(2k+1)×180°/3，k=0,1,2 得 60°,180°,300° | Angles=(2k+1)×180°/3 for k=0,1,2"
+    },
+    en: {
+      question: "For the root locus of G(s)H(s)=K/[s(s+2)(s+4)], what are the angles of the three asymptotes?",
+      options: [
+        "0°, 90°, 180°, uniformly distributed toward the positive real axis and imaginary axis",
+        "45°, 135°, 225°, extending from the asymptote centroid at 90° intervals",
+        "60°, 180°, 300°, computed from the formula (2k+1)×180°/(n−m)",
+        "30°, 90°, 270°, determined by the locations of the system poles on the real axis"
+      ],
+      explanation: "n=3 poles, m=0 zeros; asymptote angles=(2k+1)×180°/3 for k=0,1,2 → 60°,180°,300°"
+    },
+    answer: 2
+  },
+  // Q8 - Medium - Answer: D (3)
+  {
+    id: 8, difficulty: "medium", points: 15,
+    zh: {
+      question: "若系統開迴路頻率響應在增益交越頻率 ωgc 處的相位角為 −150°，則系統的相位裕度（Phase Margin）為？",
+      options: [
+        "相位裕度為 −150°，即為增益交越頻率處的相位角本身",
+        "相位裕度為 −30°，由 −180° 加上交越頻率相位角計算",
+        "相位裕度為 150°，等於相位角的絕對值，不考慮符號",
+        "相位裕度為 30°，由公式 PM=180°+∠G(jωgc) 計算得出"
+      ],
+      explanation: "PM=180°+∠G(jωgc)=180°+(−150°)=30° | PM=180°+phase at gain crossover=30°"
+    },
+    en: {
+      question: "If the phase angle of a system's open-loop frequency response at the gain crossover frequency ωgc is −150°, what is the phase margin (PM)?",
+      options: [
+        "The phase margin is −150°, equal to the phase angle at the gain crossover frequency itself",
+        "The phase margin is −30°, computed by adding −180° to the crossover frequency phase angle",
+        "The phase margin is 150°, equal to the absolute value of the phase angle ignoring sign",
+        "The phase margin is 30°, computed from the formula PM=180°+∠G(jωgc)"
+      ],
+      explanation: "PM=180°+∠G(jωgc)=180°+(−150°)=30°"
+    },
+    answer: 3
+  },
+  // Q9 - Easy - Answer: A (0)
+  {
+    id: 9, difficulty: "easy", points: 10,
+    zh: {
+      question: "轉移函數 G(s)=10(s+2)/[s(s+5)] 在 s=0 處（直流）的增益為何？",
+      options: [
+        "趨向無限大，因分母含有積分項 s，系統為 Type 1 系統",
+        "等於 4，由 G(0)=10×2/5 代入 s=0 直接計算得出",
+        "等於 2，取分子在 s=0 的值除以分母常數項",
+        "等於 10，即開迴路比例增益 K 的數值"
+      ],
+      explanation: "G(s)分母有 s 因子，G(0)→∞，為 Type 1 系統 | Denominator has s factor, G(0)→∞, Type 1 system"
+    },
+    en: {
+      question: "What is the DC (s=0) gain of the transfer function G(s)=10(s+2)/[s(s+5)]?",
+      options: [
+        "Tends to infinity because the denominator contains an integrator s; this is a Type 1 system",
+        "Equals 4, calculated directly by substituting s=0: G(0)=10×2/5",
+        "Equals 2, obtained by dividing the numerator value at s=0 by the constant denominator term",
+        "Equals 10, which is the numerical value of the open-loop proportional gain K"
+      ],
+      explanation: "The denominator has an s factor, so G(0)→∞; this is a Type 1 system"
+    },
+    answer: 0
+  },
+  // Q10 - Trap - Answer: B (1)
+  {
+    id: 10, difficulty: "trap", points: 19,
+    zh: {
+      question: "關於純微分控制器（D 控制器，C(s)=Tds）的特性，以下何者正確？",
+      options: [
+        "D 控制器累積誤差訊號，能有效消除步階輸入的穩態誤差",
+        "D 控制器對常數誤差的穩態無作用，且對高頻雜訊高度敏感",
+        "D 控制器引入相位滯後，降低系統相位裕度使系統更不穩定",
+        "D 控制器提升系統型別，改善系統對斜坡輸入的追蹤能力"
+      ],
+      explanation: "D 控制器只對誤差變化率有作用，不能消除穩態誤差，且放大高頻雜訊 | D-controller only responds to error rate; cannot eliminate steady-state error; amplifies noise"
+    },
+    en: {
+      question: "Regarding the characteristics of a pure derivative controller (D-controller, C(s)=Tds), which statement is correct?",
+      options: [
+        "The D-controller accumulates error signals and effectively eliminates steady-state error for step inputs",
+        "The D-controller has no effect on steady-state constant errors and is highly sensitive to high-frequency noise",
+        "The D-controller introduces phase lag, reducing the phase margin and making the system less stable",
+        "The D-controller increases the system type number, improving tracking of ramp inputs"
+      ],
+      explanation: "D-controller only reacts to rate of change; it cannot eliminate steady-state error and amplifies high-frequency noise"
+    },
+    answer: 1
+  },
+  // Q11 - Medium - Answer: C (2)
+  {
+    id: 11, difficulty: "medium", points: 15,
+    zh: {
+      question: "單位負回饋的 Type 0 系統（開迴路靜態增益為 K），在單位斜坡輸入 r(t)=t 下的穩態誤差為？",
+      options: [
+        "穩態誤差為 0，Type 0 系統可完美追蹤斜坡輸入",
+        "穩態誤差為 1/(1+K)，由位置誤差常數 Kp=K 計算",
+        "穩態誤差為無窮大，速度誤差常數 Kv=0 導致無法追蹤斜坡",
+        "穩態誤差為 1/K，由速度誤差常數 Kv=K 代入計算得出"
+      ],
+      explanation: "Type 0 系統速度誤差常數 Kv=0，斜坡輸入穩態誤差 ess=1/Kv→∞ | Type 0: Kv=0, so ramp steady-state error = ∞"
+    },
+    en: {
+      question: "For a unity negative feedback Type 0 system with open-loop static gain K, what is the steady-state error under unit ramp input r(t)=t?",
+      options: [
+        "Steady-state error is 0; a Type 0 system can perfectly track ramp inputs",
+        "Steady-state error is 1/(1+K), computed from the position error constant Kp=K",
+        "Steady-state error is infinite; the velocity error constant Kv=0 makes ramp tracking impossible",
+        "Steady-state error is 1/K, obtained by substituting the velocity error constant Kv=K"
+      ],
+      explanation: "Type 0 system has Kv=0; ramp steady-state error ess=1/Kv→∞"
+    },
+    answer: 2
+  },
+  // Q12 - Hard - Answer: D (3)
+  {
+    id: 12, difficulty: "hard", points: 25,
+    zh: {
+      question: "若開迴路轉移函數 G(s)H(s) 在右半平面有 P=2 個極點，閉迴路系統穩定需要奈奎斯特圖包圍 (−1,j0) 的方式為？",
+      options: [
+        "不包圍 (−1,j0)，包圍次數 N=0 即可使閉迴路穩定",
+        "順時針包圍 (−1,j0) 兩圈，使 N=+2 抵消開迴路極點",
+        "逆時針包圍 (−1,j0) 一圈，使 N=−1 部分抵消 RHP 極點",
+        "逆時針包圍 (−1,j0) 兩圈（N=−2），由 Z=N+P=0 確保穩定"
+      ],
+      explanation: "N=Z−P，穩定需 Z=0，故 N=−P=−2，即 2 次逆時針包圍 | N=Z−P; stability requires Z=0, so N=−P=−2 (2 CCW encirclements)"
+    },
+    en: {
+      question: "If the open-loop transfer function G(s)H(s) has P=2 poles in the right half plane, how must the Nyquist plot encircle (−1,j0) for the closed-loop system to be stable?",
+      options: [
+        "No encirclement of (−1,j0); encirclement count N=0 is sufficient for closed-loop stability",
+        "Two clockwise encirclements of (−1,j0), making N=+2 to cancel the open-loop RHP poles",
+        "One counterclockwise encirclement of (−1,j0), making N=−1 to partially cancel RHP poles",
+        "Two counterclockwise encirclements of (−1,j0) with N=−2; Z=N+P=0 ensures stability"
+      ],
+      explanation: "N=Z−P; stability needs Z=0, so N=−P=−2 (2 counterclockwise encirclements)"
+    },
+    answer: 3
+  },
+  // Q13 - Easy - Answer: A (0)
+  {
+    id: 13, difficulty: "easy", points: 10,
+    zh: {
+      question: "開迴路轉移函數 G(s)=K(s+1)/[s²(s+5)] 的系統型別（System Type）為？",
+      options: [
+        "第 2 型（Type 2），分母含有 s² 因子，可完美追蹤拋物線輸入",
+        "第 1 型（Type 1），分母含有 s 因子，可完美追蹤斜坡輸入",
+        "第 0 型（Type 0），分母不含 s 因子，只能追蹤步階輸入",
+        "第 3 型（Type 3），計算分子零點數量後得到的型別"
+      ],
+      explanation: "分母含 s² 因子，系統型別等於原點極點數，故為 Type 2 | Denominator has s², so system type=2"
+    },
+    en: {
+      question: "What is the system type of the open-loop transfer function G(s)=K(s+1)/[s²(s+5)]?",
+      options: [
+        "Type 2, since the denominator contains s²; it can perfectly track parabolic inputs",
+        "Type 1, since the denominator contains s; it can perfectly track ramp inputs",
+        "Type 0, since the denominator has no s factor; it can only track step inputs",
+        "Type 3, determined by counting the number of numerator zeros"
+      ],
+      explanation: "The denominator contains s², so the system type equals the number of poles at the origin: Type 2"
+    },
+    answer: 0
+  },
+  // Q14 - Medium - Answer: B (1)
+  {
+    id: 14, difficulty: "medium", points: 15,
+    zh: {
+      question: "單位負回饋系統，前向路徑轉移函數為 G(s)，其閉迴路的特徵方程式（Characteristic Equation）為？",
+      options: [
+        "G(s) = 0，即開迴路轉移函數的零點構成特徵方程式",
+        "1 + G(s) = 0，即開迴路轉移函數加 1 後設為零",
+        "1 − G(s) = 0，負回饋引入負號造成分母項差值為零",
+        "G(s)/[1+G(s)] = 0，即閉迴路轉移函數的分子為零"
+      ],
+      explanation: "單位負回饋特徵方程式：1+G(s)=0，根即閉迴路極點 | Unity feedback characteristic equation: 1+G(s)=0"
+    },
+    en: {
+      question: "For a unity negative feedback system with forward path transfer function G(s), what is the closed-loop characteristic equation?",
+      options: [
+        "G(s) = 0, meaning the zeros of the open-loop transfer function form the characteristic equation",
+        "1 + G(s) = 0, meaning the open-loop transfer function plus one is set equal to zero",
+        "1 − G(s) = 0, since negative feedback introduces a minus sign making the denominator difference zero",
+        "G(s)/[1+G(s)] = 0, meaning the numerator of the closed-loop transfer function is set to zero"
+      ],
+      explanation: "Unity negative feedback characteristic equation: 1+G(s)=0; its roots are the closed-loop poles"
+    },
+    answer: 1
+  },
+  // Q15 - Trap - Answer: C (2)
+  {
+    id: 15, difficulty: "trap", points: 19,
+    zh: {
+      question: "若一系統的開迴路轉移函數在 s 右半平面無任何極點，則加入負回饋後，閉迴路系統的穩定性如何？",
+      options: [
+        "閉迴路一定穩定，因開迴路穩定性必然保證閉迴路穩定性",
+        "閉迴路一定不穩定，因負回饋的引入必然導致新的不穩定",
+        "閉迴路不一定穩定，開迴路穩定不保證閉迴路穩定，需另行分析",
+        "閉迴路穩定性與開迴路極點無關，只由開迴路零點位置決定"
+      ],
+      explanation: "開迴路穩定不保證閉迴路穩定；增益過大仍可能使閉迴路極點移至右半平面 | Stable open-loop does NOT guarantee stable closed-loop"
+    },
+    en: {
+      question: "If a system's open-loop transfer function has no poles in the right half s-plane, what can be said about the stability of the closed-loop system after adding negative feedback?",
+      options: [
+        "The closed-loop is definitely stable, since open-loop stability always guarantees closed-loop stability",
+        "The closed-loop is definitely unstable, since introducing negative feedback always creates new instability",
+        "The closed-loop is not necessarily stable; open-loop stability does not guarantee closed-loop stability",
+        "Closed-loop stability is independent of open-loop poles; it is determined only by the open-loop zeros"
+      ],
+      explanation: "Stable open-loop does NOT guarantee stable closed-loop; excessive gain can still move closed-loop poles into the RHP"
+    },
+    answer: 2
+  },
+  // Q16 - Hard - Answer: D (3)
+  {
+    id: 16, difficulty: "hard", points: 25,
+    zh: {
+      question: "系統 ẋ=Ax+Bu，其中 A=[[0,1],[−2,−3]]，B=[[0],[1]]。以狀態回饋 u=−Kx 將閉迴路極點配置至 s=−2±j2，回饋增益矩陣 K=[k₁,k₂] 中 k₁ 的值為？",
+      options: [
+        "k₁=2，由期望特徵多項式常數項對應方程式計算錯誤所致",
+        "k₁=4，計算期望特徵多項式時未正確扣除原系統矩陣項",
+        "k₁=8，混淆了極點配置中 k₁ 與 k₂ 的對應方程式",
+        "k₁=6，由期望多項式 s²+4s+8 對應常數項 2+k₁=8 計算"
+      ],
+      explanation: "期望多項式 s²+4s+8，閉迴路多項式 s²+(3+k₂)s+(2+k₁)，解得 k₁=6，k₂=1 | Desired poly: s²+4s+8; matching gives k₁=6, k₂=1"
+    },
+    en: {
+      question: "For system ẋ=Ax+Bu with A=[[0,1],[−2,−3]], B=[[0],[1]], using state feedback u=−Kx to place closed-loop poles at s=−2±j2, what is k₁ in K=[k₁,k₂]?",
+      options: [
+        "k₁=2, arising from an error in computing the constant-term equation of the desired characteristic polynomial",
+        "k₁=4, occurring when the original system matrix terms are not correctly subtracted in pole placement",
+        "k₁=8, resulting from swapping the equations corresponding to k₁ and k₂ in pole placement",
+        "k₁=6, derived from matching the constant term 2+k₁=8 of the desired polynomial s²+4s+8"
+      ],
+      explanation: "Desired polynomial s²+4s+8; closed-loop polynomial s²+(3+k₂)s+(2+k₁); solving gives k₁=6, k₂=1"
+    },
+    answer: 3
+  },
+  // Q17 - Medium - Answer: A (0)
+  {
+    id: 17, difficulty: "medium", points: 15,
+    zh: {
+      question: "在波德圖中，二階系統 G(s)=1/(s²+2s+1) 在高頻段（ω>>1 rad/s）的幅度（Magnitude）漸近線斜率為？",
+      options: [
+        "−40 dB/decade，每個極點貢獻 −20 dB/dec，兩個極點共 −40 dB/dec",
+        "−20 dB/decade，僅計算主導極點的一階漸近線斜率",
+        "−60 dB/decade，誤將系統視為三個極點的三階系統",
+        "−80 dB/decade，誤將 dB 斜率與弧度每秒斜率混淆計算"
+      ],
+      explanation: "二階系統高頻漸近線斜率 −40 dB/decade，每個極點 −20 dB/dec | 2nd-order: high-freq asymptote slope is −40 dB/decade"
+    },
+    en: {
+      question: "In a Bode plot, what is the slope of the high-frequency (ω>>1 rad/s) magnitude asymptote for G(s)=1/(s²+2s+1)?",
+      options: [
+        "−40 dB/decade; each pole contributes −20 dB/dec, so two poles give −40 dB/dec total",
+        "−20 dB/decade; only the dominant pole's first-order asymptote slope is counted",
+        "−60 dB/decade; the system is mistakenly treated as a third-order system with three poles",
+        "−80 dB/decade; the dB slope is confused with the radians-per-second slope in calculation"
+      ],
+      explanation: "Second-order system high-frequency asymptote: −40 dB/decade (−20 dB/dec per pole × 2 poles)"
+    },
+    answer: 0
+  },
+  // Q18 - Easy - Answer: B (1)
+  {
+    id: 18, difficulty: "easy", points: 10,
+    zh: {
+      question: "在 PID 控制器中，積分（I）項的主要作用是？",
+      options: [
+        "加快系統響應速度，縮短上升時間，並減少系統頻寬需求",
+        "累積並消除穩態誤差，確保系統對步階輸入能達到零誤差追蹤",
+        "降低系統對高頻雜訊的靈敏度，提升系統抗雜訊能力",
+        "增加系統阻尼比，有效降低暫態響應中的超越量百分比"
+      ],
+      explanation: "積分項累積誤差並持續調整輸出，直到穩態誤差為零 | Integral term accumulates error and adjusts output until steady-state error is zero"
+    },
+    en: {
+      question: "What is the primary function of the integral (I) term in a PID controller?",
+      options: [
+        "Speed up system response, shorten rise time, and reduce the system bandwidth requirement",
+        "Accumulate and eliminate steady-state error, ensuring zero-error tracking for step inputs",
+        "Reduce system sensitivity to high-frequency noise and improve noise rejection capability",
+        "Increase the damping ratio and effectively reduce the percent overshoot in transient response"
+      ],
+      explanation: "The integral term accumulates error and continuously adjusts output until steady-state error reaches zero"
+    },
+    answer: 1
+  },
+  // Q19 - Hard - Answer: C (2)
+  {
+    id: 19, difficulty: "hard", points: 25,
+    zh: {
+      question: "開迴路轉移函數 G(s)=2/[s(s+2)] 的增益交越頻率 ωgc（使|G(jω)|=1 的頻率）最接近哪個值？",
+      options: [
+        "ωgc ≈ 0.5 rad/s，增益在此頻率過早衰減至單位增益線",
+        "ωgc ≈ 0.8 rad/s，近似解因忽略分母相位項所致誤差",
+        "ωgc ≈ 0.91 rad/s，由 ω⁴+4ω²−4=0 精確求解得出",
+        "ωgc ≈ 2.0 rad/s，混淆為系統極點頻率位置所在"
+      ],
+      explanation: "|G(jω)|²=4/[ω²(4+ω²)]=1，解 ω⁴+4ω²−4=0，得 ω≈0.91 rad/s | Solving |G(jω)|=1: ω⁴+4ω²−4=0 → ω≈0.91 rad/s"
+    },
+    en: {
+      question: "For the open-loop transfer function G(s)=2/[s(s+2)], what is the closest value of the gain crossover frequency ωgc where |G(jω)|=1?",
+      options: [
+        "ωgc ≈ 0.5 rad/s; the gain decays prematurely to the unity gain line at this frequency",
+        "ωgc ≈ 0.8 rad/s; an approximation error from neglecting the denominator phase term",
+        "ωgc ≈ 0.91 rad/s; exact solution obtained from solving ω⁴+4ω²−4=0",
+        "ωgc ≈ 2.0 rad/s; confused with the location of the system pole frequency"
+      ],
+      explanation: "|G(jω)|²=4/[ω²(4+ω²)]=1; solving ω⁴+4ω²−4=0 gives ω≈0.91 rad/s"
+    },
+    answer: 2
+  },
+  // Q20 - Medium - Answer: D (3)
+  {
+    id: 20, difficulty: "medium", points: 15,
+    zh: {
+      question: "梅森增益公式（Mason's Gain Formula）T = ΣkPkΔk / Δ 中，圖的行列式 Δ（Graph Determinant）的計算方式為？",
+      options: [
+        "Δ = 所有前向路徑增益之和，不考慮迴路與不接觸路徑",
+        "Δ = 1 + 所有迴路增益之和，採用加法以統計所有迴路貢獻",
+        "Δ = 所有迴路增益之乘積，反映所有閉合迴路的總增益效果",
+        "Δ = 1 − Σ迴路增益 + Σ兩不接觸迴路增益積 − Σ三不接觸迴路增益積 + ⋯"
+      ],
+      explanation: "Δ=1−ΣLk+ΣLiLj(不接觸)−⋯，為訊號流圖的特徵行列式 | Δ=1−ΣLk+Σ(non-touching loop products)−⋯"
+    },
+    en: {
+      question: "In Mason's Gain Formula T = ΣkPkΔk / Δ, how is the graph determinant Δ computed?",
+      options: [
+        "Δ equals the sum of all forward path gains, without considering loops or non-touching paths",
+        "Δ equals 1 plus the sum of all loop gains, using addition to account for all loop contributions",
+        "Δ equals the product of all loop gains, reflecting the total gain effect of all closed loops",
+        "Δ = 1 − Σloop gains + Σproducts of two non-touching loops − Σproducts of three non-touching loops + ⋯"
+      ],
+      explanation: "Δ=1−ΣLk+Σ(non-touching pair products)−…; this is the signal flow graph characteristic determinant"
+    },
+    answer: 3
+  },
+  // Q21 - Easy - Answer: A (0)
+  {
+    id: 21, difficulty: "easy", points: 10,
+    zh: {
+      question: "具有前向路徑增益 G(s) 和回饋路徑增益 H(s) 的負回饋閉迴路系統，其閉迴路轉移函數 T(s) 為？",
+      options: [
+        "T(s) = G(s) / [1 + G(s)H(s)]，標準負回饋閉迴路公式",
+        "T(s) = G(s)H(s) / [1 + G(s)H(s)]，回饋路徑增益包含在分子中",
+        "T(s) = G(s) / [1 − G(s)H(s)]，正回饋系統的對應轉移函數",
+        "T(s) = 1 / [1 + G(s)H(s)]，誤將前向路徑增益忽略不計"
+      ],
+      explanation: "負回饋閉迴路轉移函數：T(s)=G(s)/[1+G(s)H(s)] | Negative feedback closed-loop TF: T(s)=G/(1+GH)"
+    },
+    en: {
+      question: "For a negative feedback closed-loop system with forward path gain G(s) and feedback path gain H(s), the closed-loop transfer function T(s) is:",
+      options: [
+        "T(s) = G(s) / [1 + G(s)H(s)], the standard negative feedback closed-loop formula",
+        "T(s) = G(s)H(s) / [1 + G(s)H(s)], with the feedback path gain included in the numerator",
+        "T(s) = G(s) / [1 − G(s)H(s)], the corresponding transfer function for a positive feedback system",
+        "T(s) = 1 / [1 + G(s)H(s)], incorrectly omitting the forward path gain from the numerator"
+      ],
+      explanation: "Negative feedback closed-loop transfer function: T(s)=G(s)/[1+G(s)H(s)]"
+    },
+    answer: 0
+  },
+  // Q22 - Hard - Answer: B (1)
+  {
+    id: 22, difficulty: "hard", points: 25,
+    zh: {
+      question: "超前補償器（Lead Compensator）C(s)=K(s+z)/(s+p)（其中 p>z>0）的主要設計目標是？",
+      options: [
+        "在低頻段提升系統增益，改善對斜坡輸入的穩態追蹤精度",
+        "在相位交越頻率附近增加正相位超前，提升相位裕度改善暫態",
+        "在特定頻率注入相位滯後，降低系統頻寬以抑制高頻雜訊",
+        "降低高頻段增益，增加增益裕度以增強對增益擾動的魯棒性"
+      ],
+      explanation: "超前補償器產生正相位超前，在增益交越頻率處增大相位裕度，改善暫態響應 | Lead compensator adds phase lead near crossover, increasing phase margin"
+    },
+    en: {
+      question: "What is the primary design objective of a lead compensator C(s)=K(s+z)/(s+p) where p>z>0?",
+      options: [
+        "Boost low-frequency gain to improve steady-state tracking accuracy for ramp inputs",
+        "Add positive phase lead near the phase crossover frequency to increase phase margin and improve transient response",
+        "Inject phase lag at specific frequencies to reduce bandwidth and suppress high-frequency noise",
+        "Reduce high-frequency gain to increase gain margin and enhance robustness against gain perturbations"
+      ],
+      explanation: "Lead compensator generates positive phase lead near the gain crossover frequency, increasing phase margin and improving transient response"
+    },
+    answer: 1
+  },
+  // Q23 - Medium - Answer: C (2)
+  {
+    id: 23, difficulty: "medium", points: 15,
+    zh: {
+      question: "PD 控制器 C(s)=Kp(1+Tds) 對閉迴路系統相位的影響為？",
+      options: [
+        "在所有頻率引入負相位滯後，降低系統的相位裕度",
+        "對系統相位完全沒有影響，僅改變系統增益大小",
+        "在各頻率引入正相位超前（arctan(Tdω)>0），改善相位裕度",
+        "僅在低頻段引入正相位，高頻段引入負相位，方向隨頻率改變"
+      ],
+      explanation: "PD 控制器相位 ∠C(jω)=arctan(Tdω)>0，在所有頻率提供相位超前 | PD controller phase: arctan(Tdω)>0, providing phase lead at all frequencies"
+    },
+    en: {
+      question: "How does the PD controller C(s)=Kp(1+Tds) affect the phase of the closed-loop system?",
+      options: [
+        "Introduces negative phase lag at all frequencies, reducing the system's phase margin",
+        "Has absolutely no effect on system phase; it only changes the magnitude of the system gain",
+        "Introduces positive phase lead (arctan(Tdω)>0) at all frequencies, improving the phase margin",
+        "Introduces positive phase only at low frequencies and negative phase at high frequencies"
+      ],
+      explanation: "PD controller phase: ∠C(jω)=arctan(Tdω)>0; it provides phase lead at all frequencies"
+    },
+    answer: 2
+  },
+  // Q24 - Trap - Answer: D (3)
+  {
+    id: 24, difficulty: "trap", points: 19,
+    zh: {
+      question: "某系統奈奎斯特圖在相位交越頻率（ωpc）處的開迴路幅度 |G(jωpc)|=0.5，則增益裕度（GM）為？",
+      options: [
+        "增益裕度 GM=0.5，直接取相位交越頻率處的幅度值",
+        "增益裕度 GM=−6 dB，幅度小於 1 故增益裕度為負值",
+        "增益裕度 GM=2，但以 dB 表示時應為 −6 dB 而非正值",
+        "增益裕度 GM=2（線性），換算 dB 為 20log₁₀(2)≈6 dB"
+      ],
+      explanation: "GM=1/|G(jωpc)|=1/0.5=2，以 dB 表示：20log₁₀(2)≈6 dB（正值，系統穩定）| GM=1/|G(jωpc)|=2, i.e., 6 dB (positive → stable)"
+    },
+    en: {
+      question: "A system's Nyquist plot has open-loop magnitude |G(jωpc)|=0.5 at the phase crossover frequency ωpc. What is the gain margin (GM)?",
+      options: [
+        "GM=0.5, directly taking the magnitude value at the phase crossover frequency",
+        "GM=−6 dB, since the magnitude is less than 1 the gain margin must be negative",
+        "GM=2 in linear scale, but when expressed in dB it should be −6 dB, not a positive value",
+        "GM=2 (linear scale), which converts to 20log₁₀(2)≈6 dB in decibels"
+      ],
+      explanation: "GM=1/|G(jωpc)|=1/0.5=2; in dB: 20log₁₀(2)≈6 dB (positive → system is stable)"
+    },
+    answer: 3
+  },
+  // Q25 - Medium - Answer: A (0)
+  {
+    id: 25, difficulty: "medium", points: 15,
+    zh: {
+      question: "系統 ẋ=Ax+Bu 完全可控（Completely Controllable）的充要條件是？",
+      options: [
+        "可控性矩陣 𝒞=[B, AB, A²B, …, Aⁿ⁻¹B] 的秩（rank）等於系統維度 n",
+        "系統矩陣 A 的所有特徵值均嚴格位於左半平面（系統本身穩定）",
+        "可觀測性矩陣 𝒪=[C; CA; …; CAⁿ⁻¹]ᵀ 的秩等於系統維度 n",
+        "輸入矩陣 B 為列滿秩矩陣，其秩等於系統狀態維度 n"
+      ],
+      explanation: "卡爾曼可控性條件：rank([B AB ⋯ Aⁿ⁻¹B])=n | Kalman controllability: rank([B AB … Aⁿ⁻¹B])=n"
+    },
+    en: {
+      question: "What is the necessary and sufficient condition for system ẋ=Ax+Bu to be completely controllable?",
+      options: [
+        "The controllability matrix 𝒞=[B, AB, A²B, …, Aⁿ⁻¹B] has rank equal to the system dimension n",
+        "All eigenvalues of the system matrix A lie strictly in the left half plane (system is inherently stable)",
+        "The observability matrix 𝒪=[C; CA; …; CAⁿ⁻¹]ᵀ has rank equal to the system dimension n",
+        "The input matrix B has full row rank, with its rank equal to the state dimension n"
+      ],
+      explanation: "Kalman controllability condition: rank([B AB … Aⁿ⁻¹B])=n"
+    },
+    answer: 0
+  },
+  // Q26 - Easy - Answer: B (1)
+  {
+    id: 26, difficulty: "easy", points: 10,
+    zh: {
+      question: "若系統對單位步階輸入的輸出拉普拉斯轉換為 Y(s)=5/[s(s²+3s+5)]，依據終值定理（Final Value Theorem），穩態輸出 y(∞) 為？",
+      options: [
+        "y(∞) = 0，系統含有純虛根導致輸出振盪不收斂",
+        "y(∞) = 1，由 lim(s→0) sY(s) = 5/5 = 1 計算得出",
+        "y(∞) = 5，直接取 Y(s) 分子的係數值",
+        "y(∞) = 3，取 Y(s) 分母中 s 係數的倒數值"
+      ],
+      explanation: "終值定理：y(∞)=lim(s→0)sY(s)=5/(0+0+5)=1 | FVT: y(∞)=lim(s→0)sY(s)=5/5=1"
+    },
+    en: {
+      question: "If the output Laplace transform under unit step input is Y(s)=5/[s(s²+3s+5)], what is the steady-state output y(∞) by the Final Value Theorem?",
+      options: [
+        "y(∞)=0; the system has purely imaginary roots causing oscillating non-convergent output",
+        "y(∞)=1, computed from lim(s→0) sY(s) = 5/5 = 1",
+        "y(∞)=5, directly taking the coefficient of the numerator of Y(s)",
+        "y(∞)=3, taking the reciprocal of the coefficient of s in the denominator of Y(s)"
+      ],
+      explanation: "Final Value Theorem: y(∞)=lim(s→0)sY(s)=5/(0+0+5)=1"
+    },
+    answer: 1
+  },
+  // Q27 - Hard - Answer: C (2)
+  {
+    id: 27, difficulty: "hard", points: 25,
+    zh: {
+      question: "系統矩陣 A=[[1,0],[0,2]]，輸出矩陣 C=[1,0]，關於此系統可觀測性（Observability）的正確描述為？",
+      options: [
+        "系統完全可觀測，因為 A 矩陣的兩個特徵值 1 和 2 彼此相異",
+        "系統完全可觀測，因為 A 為對角矩陣，各狀態相互獨立可分辨",
+        "系統不完全可觀測，第二個狀態 x₂ 在輸出中完全不可見",
+        "系統完全可觀測，因為 C 矩陣為行向量，維度符合可觀測條件"
+      ],
+      explanation: "可觀測性矩陣=[C;CA]=[[1,0],[1,0]]，rank=1<2，故不完全可觀測，x₂ 無法被觀測 | Obs. matrix rank=1<2; x₂ is unobservable"
+    },
+    en: {
+      question: "For a system with A=[[1,0],[0,2]] and output matrix C=[1,0], which statement about observability is correct?",
+      options: [
+        "The system is fully observable because the two eigenvalues 1 and 2 of matrix A are distinct",
+        "The system is fully observable because A is diagonal, making each state independently distinguishable",
+        "The system is not fully observable; state x₂ is completely invisible in the output",
+        "The system is fully observable because C is a row vector whose dimension satisfies observability conditions"
+      ],
+      explanation: "Observability matrix=[C;CA]=[[1,0],[1,0]]; rank=1<2; x₂ is unobservable"
+    },
+    answer: 2
+  },
+  // Q28 - Medium - Answer: D (3)
+  {
+    id: 28, difficulty: "medium", points: 15,
+    zh: {
+      question: "在奈奎斯特穩定判據 Z=N+P 中，Z、N、P 各代表什麼物理意義？",
+      options: [
+        "Z=閉迴路系統零點數，N=奈奎斯特圖包圍原點次數，P=開迴路系統零點數",
+        "Z=右半平面極點數，N=相位裕度（rad），P=增益裕度（dB）的組合指標",
+        "Z=不穩定閉迴路零點，N=順時針包圍 (−1,j0) 次數，P=不穩定閉迴路極點",
+        "Z=閉迴路 RHP 極點數，N=奈奎斯特圖順時針包圍 (−1,j0) 次數，P=開迴路 RHP 極點數"
+      ],
+      explanation: "奈奎斯特：Z=閉迴路RHP極點，N=順時針包圍次數，P=開迴路RHP極點，Z=N+P | Z=CL-RHP poles, N=CW encirclements, P=OL-RHP poles"
+    },
+    en: {
+      question: "In the Nyquist stability criterion Z=N+P, what are the physical meanings of Z, N, and P?",
+      options: [
+        "Z=number of closed-loop zeros, N=encirclements of the origin by Nyquist plot, P=number of open-loop zeros",
+        "Z=number of RHP poles, N=phase margin (rad), P=a combined index of gain margin (dB)",
+        "Z=unstable closed-loop zeros, N=clockwise encirclements of (−1,j0), P=unstable closed-loop poles",
+        "Z=number of closed-loop RHP poles, N=clockwise encirclements of (−1,j0) by Nyquist plot, P=open-loop RHP poles"
+      ],
+      explanation: "Nyquist: Z=closed-loop RHP poles, N=clockwise encirclements of (−1,j0), P=open-loop RHP poles; Z=N+P"
+    },
+    answer: 3
+  },
+  // Q29 - Easy - Answer: A (0)
+  {
+    id: 29, difficulty: "easy", points: 10,
+    zh: {
+      question: "一階低通系統 G(s)=K/(τs+1) 的截止頻率（−3 dB 頻率）ωc 為？",
+      options: [
+        "ωc = 1/τ，在此頻率系統幅度降至直流值的 1/√2（即 −3 dB）",
+        "ωc = τ，以時間常數本身作為截止角頻率的數值",
+        "ωc = 2π/τ，將時間常數轉換為週期後取倒數得到頻率",
+        "ωc = 1/(2πτ)，混淆角頻率（rad/s）與赫茲（Hz）頻率定義"
+      ],
+      explanation: "|G(jω)|=K/√2 發生在 ω=1/τ，即 −3 dB 截止頻率 | |G(jω)|=K/√2 occurs at ω=1/τ; this is the −3dB cutoff"
+    },
+    en: {
+      question: "What is the cutoff frequency (−3 dB frequency) ωc of a first-order low-pass system G(s)=K/(τs+1)?",
+      options: [
+        "ωc = 1/τ; at this frequency the system magnitude drops to 1/√2 of the DC value (i.e., −3 dB)",
+        "ωc = τ; the time constant itself is used as the numerical value of the cutoff angular frequency",
+        "ωc = 2π/τ; convert the time constant to period and take the reciprocal to get frequency",
+        "ωc = 1/(2πτ); angular frequency (rad/s) is confused with the frequency definition in hertz (Hz)"
+      ],
+      explanation: "|G(jω)|=K/√2 occurs at ω=1/τ; this is the −3 dB cutoff frequency"
+    },
+    answer: 0
+  },
+  // Q30 - Hard - Answer: B (1)
+  {
+    id: 30, difficulty: "hard", points: 25,
+    zh: {
+      question: "設計超前補償器 C(s)=(s+z)/(s+p) 使最大相位超前 φm=45°，已知 sin(φm)=(p−z)/(p+z)，則比值 α=p/z 應為？",
+      options: [
+        "α ≈ 2.41，由 sin(45°)/cos(45°)=tan(45°)=1 後加 1 計算得出",
+        "α ≈ 5.83，由 α=(1+sin45°)/(1−sin45°)=(1+√2/2)/(1−√2/2) 精確求解",
+        "α ≈ 1.00，因為 sin(45°)=cos(45°) 所以比值等於 1",
+        "α ≈ 10.0，直接取補償器零點與極點間距的 10 倍經驗法則"
+      ],
+      explanation: "令 r=p/z，sin45°=(r−1)/(r+1)，解得 r=(1+sin45°)/(1−sin45°)=(1+√2/2)/(1−√2/2)≈5.83 | r=(1+sinφm)/(1−sinφm)≈5.83"
+    },
+    en: {
+      question: "To design a lead compensator C(s)=(s+z)/(s+p) for maximum phase lead φm=45° given sin(φm)=(p−z)/(p+z), what should the ratio α=p/z be?",
+      options: [
+        "α ≈ 2.41, derived by computing sin(45°)/cos(45°)=tan(45°)=1 and then adding 1",
+        "α ≈ 5.83, exact solution from α=(1+sin45°)/(1−sin45°)=(1+√2/2)/(1−√2/2)",
+        "α ≈ 1.00, since sin(45°)=cos(45°) implies the ratio equals 1",
+        "α ≈ 10.0, applying the empirical rule of 10 times the spacing between compensator zero and pole"
+      ],
+      explanation: "Let r=p/z; sin45°=(r−1)/(r+1); solving: r=(1+sin45°)/(1−sin45°)≈5.83"
+    },
+    answer: 1
+  },
+  // Q31 - Medium - Answer: C (2)
+  {
+    id: 31, difficulty: "medium", points: 15,
+    zh: {
+      question: "在 Type 0 系統的前向路徑加入 PI 控制器 C(s)=Kp(1+1/(Tis)) 後，對系統的主要影響為？",
+      options: [
+        "系統型別由 0 提升至 2，可完美追蹤斜坡且系統響應大幅加快",
+        "系統頻寬顯著提升，暫態響應加速但系統型別維持不變仍為 0",
+        "系統型別由 0 提升至 1，消除步階輸入穩態誤差但可能影響穩定性",
+        "系統型別降低，對步階輸入的穩態誤差增大，低頻追蹤能力下降"
+      ],
+      explanation: "PI 含積分項 1/s，使系統型別 +1（0→1），消除步階穩態誤差 | PI controller adds integrator, increasing system type from 0 to 1"
+    },
+    en: {
+      question: "After adding a PI controller C(s)=Kp(1+1/(Tis)) to the forward path of a Type 0 system, what is the primary effect?",
+      options: [
+        "System type increases from 0 to 2, enabling perfect ramp tracking while greatly speeding up response",
+        "Bandwidth significantly increases and transient response speeds up, but system type remains 0",
+        "System type increases from 0 to 1, eliminating steady-state error for step inputs but possibly affecting stability",
+        "System type decreases, steady-state error for step inputs increases, and low-frequency tracking degrades"
+      ],
+      explanation: "PI controller contains integrator 1/s, increasing system type by 1 (0→1) and eliminating step steady-state error"
+    },
+    answer: 2
+  },
+  // Q32 - Trap - Answer: D (3)
+  {
+    id: 32, difficulty: "trap", points: 19,
+    zh: {
+      question: "根軌跡漸近線中心（Centroid，σa）的計算公式為？（n 為極點數，m 為有限零點數）",
+      options: [
+        "σa = (所有開迴路極點之和) / n，即極點位置的算術平均值",
+        "σa = (所有開迴路零點之和) / m，即有限零點位置的算術平均值",
+        "σa = (閉迴路極點之和) / n，由閉迴路根軌跡終點位置計算",
+        "σa = (Σ有限極點 − Σ有限零點) / (n−m)，需同時考慮零極點"
+      ],
+      explanation: "漸近線中心 σa=(Σ極點−Σ零點)/(n−m)，許多學生誤記為只有極點之和除以 n | σa=(Σpoles−Σzeros)/(n−m); common mistake is to ignore the zeros"
+    },
+    en: {
+      question: "What is the formula for the centroid (σa) of root locus asymptotes? (n = number of poles, m = number of finite zeros)",
+      options: [
+        "σa = (sum of all open-loop poles) / n, i.e., the arithmetic mean of the pole locations",
+        "σa = (sum of all open-loop zeros) / m, i.e., the arithmetic mean of the finite zero locations",
+        "σa = (sum of closed-loop poles) / n, computed from the terminal points of the closed-loop root locus",
+        "σa = (Σfinite poles − Σfinite zeros) / (n−m), requiring both poles and zeros to be considered"
+      ],
+      explanation: "Asymptote centroid: σa=(Σpoles−Σzeros)/(n−m); a common mistake is to divide only the sum of poles by n"
+    },
+    answer: 3
+  },
+  // Q33 - Medium - Answer: A (0)
+  {
+    id: 33, difficulty: "medium", points: 15,
+    zh: {
+      question: "根軌跡（K>0）在實數軸上的存在法則：實數軸上的某點屬於根軌跡的條件是？",
+      options: [
+        "該點右方的實數開迴路零點與極點個數總和為奇數",
+        "該點右方的實數開迴路零點與極點個數總和為偶數",
+        "該點恰好位於兩相鄰開迴路極點之間的中點位置",
+        "該點在所有開迴路零點與極點的右方（最右端之外）"
+      ],
+      explanation: "根軌跡實數軸法則：某點右方實數零極點總數為奇數，則該點在根軌跡上 | Real-axis root locus: odd number of real OL poles+zeros to the right"
+    },
+    en: {
+      question: "For a root locus (K>0) on the real axis, a point on the real axis belongs to the root locus if:",
+      options: [
+        "The total number of real open-loop zeros and poles to the right of that point is odd",
+        "The total number of real open-loop zeros and poles to the right of that point is even",
+        "The point is exactly at the midpoint between two adjacent open-loop poles on the real axis",
+        "The point lies to the right of all open-loop zeros and poles (beyond the rightmost one)"
+      ],
+      explanation: "Real-axis root locus rule: a point is on the locus if the total count of real OL poles+zeros to its right is odd"
+    },
+    answer: 0
+  },
+  // Q34 - Easy - Answer: B (1)
+  {
+    id: 34, difficulty: "easy", points: 10,
+    zh: {
+      question: "與開迴路控制相比，負回饋控制系統最主要的優點是？",
+      options: [
+        "能完全消除所有類型的外部擾動，包括隨機雜訊與非線性效應",
+        "對系統參數變動及外部擾動有較強抑制力，提升系統魯棒性",
+        "系統響應速度必然比開迴路控制快，上升時間一定更短",
+        "引入回饋後系統絕對不會出現不穩定的情形，安全性更高"
+      ],
+      explanation: "負回饋最主要優點是魯棒性，但也可能引入不穩定性 | Negative feedback's main advantage is robustness, but may introduce instability"
+    },
+    en: {
+      question: "Compared to open-loop control, what is the primary advantage of a negative feedback control system?",
+      options: [
+        "It can completely eliminate all types of external disturbances including random noise and nonlinear effects",
+        "It has stronger rejection of system parameter variations and external disturbances, improving robustness",
+        "System response is always faster than open-loop control and rise time is always shorter",
+        "After introducing feedback the system will absolutely never become unstable, ensuring higher safety"
+      ],
+      explanation: "Negative feedback's primary advantage is robustness; however, it may also introduce instability"
+    },
+    answer: 1
+  },
+  // Q35 - Hard - Answer: C (2)
+  {
+    id: 35, difficulty: "hard", points: 25,
+    zh: {
+      question: "在描述函數（Describing Function）分析中，非線性系統產生極限環（Limit Cycle）的條件為？",
+      options: [
+        "G(jω)×N(A)=1，即開迴路描述函數頻率響應增益等於 1",
+        "N(A)+G(jω)=0，描述函數值與線性部分頻率響應值之和為零",
+        "G(jω)=−1/N(A)，奈奎斯特圖與 −1/N(A) 負倒數軌跡的交點",
+        "G(jω)×N(A)=j，即乘積為純虛數代表相位差恰好 90°"
+      ],
+      explanation: "極限環條件：1+G(jω)N(A)=0，即 G(jω)=−1/N(A) | Limit cycle: G(jω)=−1/N(A), intersection of Nyquist plot and −1/N(A) locus"
+    },
+    en: {
+      question: "In describing function (DF) analysis, what is the condition for a nonlinear system to produce a limit cycle?",
+      options: [
+        "G(jω)×N(A)=1, meaning the open-loop describing function frequency response gain equals 1",
+        "N(A)+G(jω)=0, meaning the sum of the describing function value and the linear frequency response is zero",
+        "G(jω)=−1/N(A), at the intersection of the Nyquist plot and the negative inverse describing function locus",
+        "G(jω)×N(A)=j, meaning the product is purely imaginary indicating an exact 90° phase difference"
+      ],
+      explanation: "Limit cycle condition: 1+G(jω)N(A)=0, i.e., G(jω)=−1/N(A): intersection of Nyquist plot and −1/N(A) locus"
+    },
+    answer: 2
+  },
+  // Q36 - Medium - Answer: D (3)
+  {
+    id: 36, difficulty: "medium", points: 15,
+    zh: {
+      question: "關於開迴路不穩定系統（開迴路轉移函數在 RHP 有極點）與閉迴路穩定性的關係，最正確的描述為？",
+      options: [
+        "增益裕度與相位裕度永遠為負，因此閉迴路系統一定不穩定",
+        "相位裕度對此類系統失去意義，但增益裕度仍可直接判斷穩定性",
+        "此類系統傳統裕度指標完全失效，只能用模態分析判斷穩定性",
+        "閉迴路系統仍可能穩定，但需採用奈奎斯特準則而非波德穩定判據"
+      ],
+      explanation: "開迴路不穩定系統（含不穩定被控體）仍可閉迴路穩定，但需用奈奎斯特準則分析，波德穩定判據不適用 | Unstable OL plant can have stable CL; use Nyquist, not Bode stability criterion"
+    },
+    en: {
+      question: "Regarding the relationship between open-loop unstable systems (open-loop TF has RHP poles) and closed-loop stability, which statement is most accurate?",
+      options: [
+        "Gain margin and phase margin are always negative, so the closed-loop system is always unstable",
+        "Phase margin loses meaning for such systems, but gain margin can still directly determine stability",
+        "Traditional margin indicators completely fail for such systems; only modal analysis can determine stability",
+        "The closed-loop system can still be stable, but the Nyquist criterion must be used instead of Bode stability"
+      ],
+      explanation: "An open-loop unstable system (with an unstable plant) can still have a stable closed-loop; Nyquist criterion is required, not Bode stability"
+    },
+    answer: 3
+  },
+  // Q37 - Easy - Answer: A (0)
+  {
+    id: 37, difficulty: "easy", points: 10,
+    zh: {
+      question: "兩個子系統轉移函數 G₁(s) 和 G₂(s) 串聯（Cascade/Series）連接後，等效轉移函數為？",
+      options: [
+        "G₁(s)×G₂(s)，串聯系統等效轉移函數為各子系統轉移函數之乘積",
+        "G₁(s)+G₂(s)，串聯系統等效轉移函數為各子系統轉移函數之和",
+        "G₁(s)/G₂(s)，以前級轉移函數除以後級轉移函數得到等效值",
+        "G₁(s)×G₂(s)/[G₁(s)+G₂(s)]，類似電阻並聯的倒數和公式"
+      ],
+      explanation: "串聯系統等效轉移函數 = G₁(s)×G₂(s) | Series/cascade: equivalent TF = G₁(s)×G₂(s)"
+    },
+    en: {
+      question: "When two subsystem transfer functions G₁(s) and G₂(s) are connected in cascade (series), the equivalent transfer function is:",
+      options: [
+        "G₁(s)×G₂(s); the equivalent transfer function of a cascaded system is the product of individual TFs",
+        "G₁(s)+G₂(s); the equivalent transfer function of a cascaded system is the sum of individual TFs",
+        "G₁(s)/G₂(s); the equivalent is obtained by dividing the preceding TF by the succeeding TF",
+        "G₁(s)×G₂(s)/[G₁(s)+G₂(s)]; analogous to the reciprocal-sum formula for parallel resistors"
+      ],
+      explanation: "Cascade (series) equivalent transfer function = G₁(s)×G₂(s)"
+    },
+    answer: 0
+  },
+  // Q38 - Hard - Answer: B (1)
+  {
+    id: 38, difficulty: "hard", points: 25,
+    zh: {
+      question: "靈敏度函數 S(s)=1/[1+L(s)] 與補靈敏度函數 T(s)=L(s)/[1+L(s)] 之間的恆等關係為？",
+      options: [
+        "S(s)×T(s)=1，兩者乘積在所有頻率恆等於 1",
+        "S(s)+T(s)=1，兩者之和在所有頻率恆等於 1",
+        "S(s)−T(s)=1，靈敏度函數與補靈敏度函數之差為 1",
+        "S(s)²+T(s)²=1，兩者平方和在所有頻率恆等於 1"
+      ],
+      explanation: "S+T=[1/(1+L)]+[L/(1+L)]=(1+L)/(1+L)=1，此為互補靈敏度恆等式 | S+T=1/(1+L)+L/(1+L)=(1+L)/(1+L)=1"
+    },
+    en: {
+      question: "What is the fundamental identity relating the sensitivity function S(s)=1/[1+L(s)] and the complementary sensitivity function T(s)=L(s)/[1+L(s)]?",
+      options: [
+        "S(s)×T(s)=1; their product equals 1 at all frequencies",
+        "S(s)+T(s)=1; their sum equals 1 at all frequencies",
+        "S(s)−T(s)=1; the difference between the sensitivity and complementary sensitivity functions is 1",
+        "S(s)²+T(s)²=1; the sum of their squares equals 1 at all frequencies"
+      ],
+      explanation: "S+T=[1/(1+L)]+[L/(1+L)]=(1+L)/(1+L)=1; this is the complementary sensitivity identity"
+    },
+    answer: 1
+  },
+  // Q39 - Medium - Answer: C (2)
+  {
+    id: 39, difficulty: "medium", points: 15,
+    zh: {
+      question: "對於最小相位（Minimum Phase）系統，以下波德穩定判據的敘述何者正確？",
+      options: [
+        "系統在相位交越頻率處增益大於 0 dB，系統一定不穩定",
+        "系統在增益交越頻率處相位角等於 −180°，系統剛好在穩定邊界",
+        "系統在增益交越頻率處相位角小於（更負於）−180°，閉迴路一定不穩定",
+        "波德穩定判據對最小相位系統永遠有效，無需使用奈奎斯特準則"
+      ],
+      explanation: "最小相位系統：在ωgc處相位<−180°代表相位裕度為負，閉迴路不穩定 | For minimum-phase: phase<−180° at ωgc → negative PM → unstable CL"
+    },
+    en: {
+      question: "For a minimum-phase system, which statement about the Bode stability criterion is correct?",
+      options: [
+        "If the system gain is greater than 0 dB at the phase crossover frequency, the system is always unstable",
+        "If the phase angle equals −180° at the gain crossover frequency, the system is exactly at the stability boundary",
+        "If the phase angle is less than (more negative than) −180° at the gain crossover frequency, the closed-loop is unstable",
+        "The Bode stability criterion is always valid for minimum-phase systems; the Nyquist criterion is never needed"
+      ],
+      explanation: "For minimum-phase systems: phase<−180° at ωgc means negative phase margin → closed-loop is unstable"
+    },
+    answer: 2
+  },
+  // Q40 - Medium - Answer: D (3)
+  {
+    id: 40, difficulty: "medium", points: 15,
+    zh: {
+      question: "閉迴路系統對前向路徑增益 K 變化的靈敏度函數 S_T^K，在迴路增益 L=GH>>1（高增益）時近似為？",
+      options: [
+        "S_T^K ≈ L，靈敏度與迴路增益成正比，增益越高越敏感",
+        "S_T^K ≈ 1，無論迴路增益多大，靈敏度恆等於 1 不變",
+        "S_T^K ≈ L/(1+L)，靈敏度趨近於 1 但永遠不會完全等於 1",
+        "S_T^K ≈ 1/(1+L) ≈ 0，負回饋使系統對增益變化幾乎不靈敏"
+      ],
+      explanation: "靈敏度 S=1/(1+L)，高增益時 S≈1/L→0，負回饋降低對參數變化的敏感度 | Sensitivity S=1/(1+L)→0 when L>>1; negative feedback reduces parameter sensitivity"
+    },
+    en: {
+      question: "The sensitivity function S_T^K of the closed-loop system to forward path gain K changes approximates to what when the loop gain L=GH>>1 (high gain)?",
+      options: [
+        "S_T^K ≈ L; sensitivity is proportional to loop gain, meaning higher gain means more sensitivity",
+        "S_T^K ≈ 1; regardless of loop gain magnitude, sensitivity always equals 1 and never changes",
+        "S_T^K ≈ L/(1+L); sensitivity approaches 1 but can never be exactly equal to 1",
+        "S_T^K ≈ 1/(1+L) ≈ 0; negative feedback makes the system nearly insensitive to gain variations"
+      ],
+      explanation: "Sensitivity S=1/(1+L); when L>>1, S≈1/L→0; negative feedback reduces sensitivity to parameter changes"
+    },
+    answer: 3
+  }
+];
+
+// ─────────────────────────────────────────
+// 語言 & 主題狀態
+// ─────────────────────────────────────────
+let lang = 'zh';
+let currentQ = 0;
+let userAnswers = new Array(40).fill(-1);
+let submitted = false;
+let transitioning = false;
+
+// ─────────────────────────────────────────
+// 主題初始化
+// ─────────────────────────────────────────
+(function initTheme() {
+  const stored = localStorage.getItem('cs_quiz_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const theme = stored || (prefersDark ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', theme);
+  updateThemeBtn(theme);
+})();
+
+function updateThemeBtn(theme) {
+  const btn = document.getElementById('btnTheme');
+  if (btn) btn.textContent = theme === 'dark' ? '☀️ 淺色' : '🌙 深色';
+}
+
+function toggleTheme() {
+  const cur = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('cs_quiz_theme', next);
+  updateThemeBtn(next);
+}
+
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  document.getElementById('btnLang').textContent = lang === 'zh' ? 'English' : '中文';
+  document.documentElement.setAttribute('lang', lang === 'zh' ? 'zh-TW' : 'en');
+  if (submitted) {
+    renderResults();
+  } else {
+    renderQuestion(currentQ, false);
+    updateUI();
+  }
+}
+
+// ─────────────────────────────────────────
+// 渲染題目
+// ─────────────────────────────────────────
+function renderQuestion(idx, animate) {
+  const q = questions[idx];
+  const data = q[lang];
+  const card = document.getElementById('questionCard');
+
+  if (animate) {
+    card.classList.add('fade');
+    setTimeout(() => {
+      _setQuestion(q, data, idx);
+      card.classList.remove('fade');
+    }, 220);
+  } else {
+    _setQuestion(q, data, idx);
+  }
+}
+
+function _setQuestion(q, data, idx) {
+  document.getElementById('qNum').textContent = `Q${idx + 1}`;
+  const ptsLabel = { easy: lang==='zh'?'簡單':'Easy', medium: lang==='zh'?'中等':'Med', hard: lang==='zh'?'困難':'Hard', trap: lang==='zh'?'陷阱':'Trap' };
+  document.getElementById('qPts').textContent = `${q.points} ${lang==='zh'?'分':'pts'}`;
+  document.getElementById('qText').textContent = data.question;
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  const labels = ['A', 'B', 'C', 'D'];
+  data.options.forEach((opt, i) => {
+    const div = document.createElement('div');
+    div.className = 'option' + (userAnswers[idx] === i ? ' selected' : '');
+    div.innerHTML = `<div class="option-label">${labels[i]}</div><div class="option-text">${opt}</div>`;
+    div.onclick = () => selectOption(idx, i);
+    container.appendChild(div);
+  });
+}
+
+function updateUI() {
+  const idx = currentQ;
+  document.getElementById('headerProgress').textContent = lang === 'zh'
+    ? `第 ${idx+1} / 40 題` : `Q ${idx+1} / 40`;
+  document.getElementById('headerTitle').textContent = lang === 'zh'
+    ? '控制系統 互動測驗' : 'Control Systems Quiz';
+  document.getElementById('progressFill').style.width = ((idx+1)/40*100) + '%';
+  document.getElementById('btnPrev').disabled = idx === 0;
+  const prevBtn = document.getElementById('btnPrev');
+  prevBtn.innerHTML = lang === 'zh' ? '← 上一題' : '← Prev';
+
+  const submitBtn = document.getElementById('btnSubmit');
+  if (idx === 39) {
+    submitBtn.style.display = 'inline-block';
+    document.getElementById('submitLabel').textContent = lang === 'zh' ? '提交測驗 ✓' : 'Submit Quiz ✓';
+  } else {
+    submitBtn.style.display = 'none';
+  }
+}
+
+function selectOption(qIdx, optIdx) {
+  if (transitioning) return;
+  userAnswers[qIdx] = optIdx;
+
+  // 視覺更新
+  const options = document.querySelectorAll('.option');
+  options.forEach((el, i) => {
+    el.classList.toggle('selected', i === optIdx);
+  });
+
+  // 最後一題不自動跳轉
+  if (qIdx === 39) return;
+
+  // 0.4 秒後自動跳到下一題
+  transitioning = true;
+  setTimeout(() => {
+    transitioning = false;
+    goTo(qIdx + 1);
+  }, 400);
+}
+
+function goTo(idx) {
+  if (idx < 0 || idx >= 40) return;
+  currentQ = idx;
+  renderQuestion(idx, true);
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────
+// 提交測驗
+// ─────────────────────────────────────────
+function submitQuiz() {
+  submitted = true;
+  document.getElementById('quiz').style.display = 'none';
+  document.getElementById('results').style.display = 'block';
+  renderResults();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ─────────────────────────────────────────
+// 計算成績
+// ─────────────────────────────────────────
+function calcResults() {
+  const diffStats = { easy: {correct:0,total:10,pts:0,maxPts:100}, medium: {correct:0,total:15,pts:0,maxPts:225}, hard: {correct:0,total:10,pts:0,maxPts:250}, trap: {correct:0,total:5,pts:0,maxPts:95} };
+  let totalScore = 0, correctCount = 0;
+  const wrongQuestions = [];
+
+  questions.forEach((q, i) => {
+    const isCorrect = userAnswers[i] === q.answer;
+    if (isCorrect) {
+      totalScore += q.points;
+      correctCount++;
+      diffStats[q.difficulty].correct++;
+      diffStats[q.difficulty].pts += q.points;
+    } else {
+      wrongQuestions.push({ q, idx: i, userAns: userAnswers[i] });
+    }
+  });
+
+  // 常態分布 CDF 計算百分位
+  const mean = 670 * 0.45;   // 301.5
+  const std = 670 * 0.15;    // 100.5
+  const z = (totalScore - mean) / std;
+  const percentile = Math.round(normalCDF(z) * 100);
+
+  return { totalScore, correctCount, wrongQuestions, diffStats, percentile };
+}
+
+function normalCDF(z) {
+  // Abramowitz & Stegun 近似
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989422820 * Math.exp(-z * z / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.7814779 + t * (-1.8212560 + t * 1.3302744))));
+  return z > 0 ? 1 - p : p;
+}
+
+// ─────────────────────────────────────────
+// 渲染結果頁
+// ─────────────────────────────────────────
+function renderResults() {
+  const { totalScore, correctCount, wrongQuestions, diffStats, percentile } = calcResults();
+  const isZh = lang === 'zh';
+
+  document.getElementById('resultTitle').textContent = isZh ? '測驗結果' : 'Quiz Results';
+  document.getElementById('resultScore').textContent = `${totalScore} / 670`;
+  document.getElementById('resultScoreSub').textContent = isZh
+    ? `答對 ${correctCount} 題，答錯 ${40-correctCount} 題`
+    : `${correctCount} correct, ${40-correctCount} incorrect`;
+
+  // 等級
+  let grade;
+  if (totalScore >= 600) grade = isZh ? '🏆 頂尖專家' : '🏆 Top Expert';
+  else if (totalScore >= 500) grade = isZh ? '⭐ 進階掌握' : '⭐ Advanced';
+  else if (totalScore >= 380) grade = isZh ? '📘 中等水準' : '📘 Intermediate';
+  else if (totalScore >= 250) grade = isZh ? '📗 基礎尚可' : '📗 Basic';
+  else grade = isZh ? '📕 需要加強' : '📕 Needs Improvement';
+  document.getElementById('resultGrade').textContent = grade;
+  document.getElementById('resultPercentile').textContent = isZh
+    ? `你的成績超越了約 ${percentile}% 的測試者`
+    : `Your score surpasses approximately ${percentile}% of test takers`;
+
+  // 統計卡
+  document.getElementById('lblCorrect').textContent = isZh ? '答對題數' : 'Correct';
+  document.getElementById('valCorrect').textContent = `${correctCount} / 40`;
+  document.getElementById('lblWrong').textContent = isZh ? '答錯題數' : 'Incorrect';
+  document.getElementById('valWrong').textContent = `${40-correctCount} / 40`;
+
+  // 難度表格
+  document.getElementById('sectionDiff').textContent = isZh ? '各難度成績' : 'Performance by Difficulty';
+  document.getElementById('thDiff').textContent = isZh ? '難度' : 'Difficulty';
+  document.getElementById('thCorrect').textContent = isZh ? '答對' : 'Correct';
+  document.getElementById('thScore').textContent = isZh ? '得分' : 'Score';
+  document.getElementById('thRate').textContent = isZh ? '正確率' : 'Accuracy';
+
+  const diffNames = {
+    easy: isZh ? '簡單 Easy' : 'Easy',
+    medium: isZh ? '中等 Med' : 'Medium',
+    hard: isZh ? '困難 Hard' : 'Hard',
+    trap: isZh ? '陷阱 Trap' : 'Trap'
+  };
+  const tbody = document.getElementById('diffTableBody');
+  tbody.innerHTML = '';
+  ['easy','medium','hard','trap'].forEach(d => {
+    const s = diffStats[d];
+    const rate = Math.round(s.correct / s.total * 100);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${diffNames[d]}</td><td>${s.correct} / ${s.total}</td><td>${s.pts} / ${s.maxPts}</td><td>${rate}%</td>`;
+    tbody.appendChild(tr);
+  });
+
+  // 錯題回顧
+  document.getElementById('sectionReview').textContent = isZh ? '錯題回顧' : 'Review Incorrect Answers';
+  const container = document.getElementById('reviewContainer');
+  container.innerHTML = '';
+  if (wrongQuestions.length === 0) {
+    container.innerHTML = `<p style="color:var(--correct);font-weight:700;font-size:16px">${isZh ? '🎉 全部答對！' : '🎉 Perfect score!'}</p>`;
+  } else {
+    const labels = ['A','B','C','D'];
+    wrongQuestions.forEach(({ q, idx, userAns }) => {
+      const data = q[lang];
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      let html = `<div class="review-q">Q${idx+1}. ${data.question}</div>`;
+      if (userAns >= 0) {
+        html += `<div class="review-opt user-wrong">❌ ${isZh?'你的選擇':'Your answer'}: ${labels[userAns]}. ${data.options[userAns]}</div>`;
+      } else {
+        html += `<div class="review-opt user-wrong">— ${isZh?'未作答':'Not answered'}</div>`;
+      }
+      html += `<div class="review-opt correct-ans">✓ ${isZh?'正確答案':'Correct'}: ${labels[q.answer]}. ${data.options[q.answer]}</div>`;
+      html += `<div class="review-explanation">💡 ${data.explanation}</div>`;
+      div.innerHTML = html;
+      container.appendChild(div);
+    });
+  }
+
+  // 按鈕文字
+  document.getElementById('btnRestart').textContent = isZh ? '🔄 重新測驗' : '🔄 Retake Quiz';
+  document.getElementById('btnCopy').textContent = isZh ? '📋 複製結果' : '📋 Copy Result';
+}
+
+function restartQuiz() {
+  userAnswers = new Array(40).fill(-1);
+  currentQ = 0;
+  submitted = false;
+  document.getElementById('results').style.display = 'none';
+  document.getElementById('quiz').style.display = 'block';
+  renderQuestion(0, false);
+  updateUI();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function copyResult() {
+  const { totalScore, correctCount, diffStats, percentile } = calcResults();
+  const isZh = lang === 'zh';
+  let text;
+  if (isZh) {
+    text = `控制系統 互動測驗 結果\n═══════════════════\n總分：${totalScore} / 670\n答對：${correctCount} / 40 題\n百分位：超越約 ${percentile}% 的測試者\n簡單：${diffStats.easy.correct}/10 | 中等：${diffStats.medium.correct}/15 | 困難：${diffStats.hard.correct}/10 | 陷阱：${diffStats.trap.correct}/5`;
+  } else {
+    text = `Control Systems Quiz Result\n═══════════════════\nTotal: ${totalScore} / 670\nCorrect: ${correctCount} / 40\nPercentile: surpasses ~${percentile}% of test takers\nEasy: ${diffStats.easy.correct}/10 | Med: ${diffStats.medium.correct}/15 | Hard: ${diffStats.hard.correct}/10 | Trap: ${diffStats.trap.correct}/5`;
+  }
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('btnCopy');
+    const orig = btn.textContent;
+    btn.textContent = isZh ? '✓ 已複製！' : '✓ Copied!';
+    setTimeout(() => btn.textContent = orig, 2000);
+  }).catch(() => {
+    alert(text);
+  });
+}
+
+// ─────────────────────────────────────────
+// 初始化
+// ─────────────────────────────────────────
+renderQuestion(0, false);
+updateUI();
+</script>
+</body>
+</html>

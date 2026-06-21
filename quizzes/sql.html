@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SQL 互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --track: #E5E7EB;
+  }
+  html[data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --muted: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --track: #374151;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 8px 0 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .title { font-size: 18px; font-weight: 700; margin: 0; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font-size: 14px;
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .progress-text { color: var(--muted); font-size: 14px; margin: 18px 0 6px; }
+  .qtext { font-size: 18px; font-weight: 600; margin: 4px 0 18px; }
+  .options { list-style: none; padding: 0; margin: 0; }
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 15px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    background: var(--bg);
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .opt:hover { background: var(--hover); }
+  .opt.selected { border-color: var(--accent); background: var(--hover); }
+  .opt .label { font-weight: 700; color: var(--accent); min-width: 18px; }
+  .stage { transition: opacity 0.25s; }
+  .stage.fade { opacity: 0; }
+  .nav { display: flex; justify-content: space-between; margin-top: 18px; min-height: 40px; }
+  .barwrap { height: 6px; background: var(--track); border-radius: 3px; margin-top: 24px; overflow: hidden; }
+  .bar { height: 100%; width: 0%; background: var(--accent); transition: width 0.25s; }
+  /* results */
+  .result-card { border: 1px solid var(--border); border-radius: 10px; padding: 18px; margin-bottom: 14px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .grade { font-size: 22px; font-weight: 700; margin: 6px 0; }
+  .stat-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .stat-row:last-child { border-bottom: none; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 13px 15px; margin-bottom: 12px; }
+  .rev-q { font-weight: 600; margin-bottom: 8px; }
+  .rev-line { font-size: 14px; margin: 3px 0; }
+  .rev-wrong { color: var(--wrong); }
+  .rev-correct { color: var(--correct); }
+  .rev-exp { color: var(--muted); font-size: 13px; margin-top: 6px; }
+  .hidden { display: none; }
+  .section-h { font-size: 15px; font-weight: 700; margin: 22px 0 10px; color: var(--muted); }
+  @media (max-width: 480px) {
+    .title { font-size: 16px; }
+    .btn { padding: 6px 9px; font-size: 13px; }
+    .qtext { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="title" id="appTitle">SQL 互動測驗</h1>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </header>
+
+  <!-- QUIZ -->
+  <div id="quiz">
+    <div class="progress-text" id="progressText"></div>
+    <div class="stage" id="stage">
+      <div class="qtext" id="qText"></div>
+      <ul class="options" id="optList"></ul>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+    </div>
+    <div class="barwrap"><div class="bar" id="bar"></div></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="hidden"></div>
+</div>
+
+<script>
+const questions = [
+  {id:1,difficulty:"easy",points:10,answer:0,
+   zh:{question:"SQL 中的 SELECT 關鍵字有什麼作用？",options:["從一個或多個資料表中取出資料","永久刪除資料表中的資料列","變更既有資料表的結構","授予資料庫使用者存取權限"],explanation:"SELECT 用於查詢並取回資料。/ SELECT retrieves data."},
+   en:{question:"What does the SQL keyword SELECT do?",options:["Retrieves data from one or more tables","Permanently deletes rows from a table","Changes the structure of an existing table","Grants access privileges to a database user"],explanation:"SELECT 用於查詢並取回資料。/ SELECT retrieves data."}},
+
+  {id:2,difficulty:"medium",points:15,answer:2,
+   zh:{question:"INNER JOIN 會回傳哪些資料列？",options:["只回傳左表的所有資料列","回傳兩表所有列而不論是否匹配","只回傳兩表鍵值相符的資料列","只回傳右表的所有資料列"],explanation:"INNER JOIN 只保留雙方都匹配的列。/ Only matching rows are kept."},
+   en:{question:"What does an INNER JOIN return?",options:["All rows from the left table only","All rows from both tables regardless of match","Only rows with matching keys in both tables","All rows from the right table only"],explanation:"INNER JOIN 只保留雙方都匹配的列。/ Only matching rows are kept."}},
+
+  {id:3,difficulty:"hard",points:25,answer:1,
+   zh:{question:"哪個視窗函數可產生無間隔且無並列的唯一序號？",options:["在分區排序上使用 RANK()","在分區排序上使用 ROW_NUMBER()","在分區排序上使用 DENSE_RANK()","在分區排序上使用 NTILE(4)"],explanation:"ROW_NUMBER 給每列唯一連號。/ ROW_NUMBER gives unique sequential numbers."},
+   en:{question:"Which window function assigns a unique sequential number with no gaps or ties?",options:["RANK() over the partition ordering","ROW_NUMBER() over the partition ordering","DENSE_RANK() over the partition ordering","NTILE(4) over the partition ordering"],explanation:"ROW_NUMBER 給每列唯一連號。/ ROW_NUMBER gives unique sequential numbers."}},
+
+  {id:4,difficulty:"trap",points:19,answer:3,
+   zh:{question:"下列哪個述詞能正確判斷欄位 x 是否為 NULL？",options:["WHERE x = NULL","WHERE x == NULL","WHERE x <> NULL","WHERE x IS NULL"],explanation:"NULL 須用 IS NULL，不能用等號。/ Use IS NULL, not = NULL."},
+   en:{question:"Which predicate correctly tests whether column x is NULL?",options:["WHERE x = NULL","WHERE x == NULL","WHERE x <> NULL","WHERE x IS NULL"],explanation:"NULL 須用 IS NULL，不能用等號。/ Use IS NULL, not = NULL."}},
+
+  {id:5,difficulty:"easy",points:10,answer:0,
+   zh:{question:"哪個子句可將結果集的資料列排序？",options:["ORDER BY 依一或多個欄位排序","GROUP BY 依一或多個欄位排序","SORT KEY 依一或多個欄位排序","CLUSTER BY 依一或多個欄位排序"],explanation:"ORDER BY 負責排序輸出。/ ORDER BY sorts the output."},
+   en:{question:"Which clause sorts the rows of a result set?",options:["ORDER BY sorts rows by one or more columns","GROUP BY sorts rows by one or more columns","SORT KEY sorts rows by one or more columns","CLUSTER BY sorts rows by one or more columns"],explanation:"ORDER BY 負責排序輸出。/ ORDER BY sorts the output."}},
+
+  {id:6,difficulty:"medium",points:15,answer:2,
+   zh:{question:"針對 SUM() 等聚合結果的篩選條件應放在哪裡？",options:["放在分組前的 WHERE 子句","放在 JOIN 的 ON 子句","放在分組後的 HAVING 子句","放在查詢的 ORDER BY 子句"],explanation:"聚合後的篩選須用 HAVING。/ Filter aggregates with HAVING."},
+   en:{question:"Where must a condition on an aggregate like SUM() be placed?",options:["In the WHERE clause before grouping","In the ON clause of the join","In the HAVING clause after grouping","In the ORDER BY clause of the query"],explanation:"聚合後的篩選須用 HAVING。/ Filter aggregates with HAVING."}},
+
+  {id:7,difficulty:"hard",points:25,answer:1,
+   zh:{question:"對於述詞 WHERE last_name LIKE 'Sm%'，哪種索引最有幫助？",options:["建在 last_name 欄上的雜湊索引","建在 last_name 欄上的 B-tree 索引","建在 last_name 欄上的點陣圖索引","建在 last_name 欄上的全文索引"],explanation:"前綴比對可用 B-tree 索引。/ Prefix LIKE uses a B-tree index."},
+   en:{question:"For the predicate WHERE last_name LIKE 'Sm%', which index helps most?",options:["A hash index on the last_name column","A B-tree index on the last_name column","A bitmap index on the last_name column","A full-text index on the last_name column"],explanation:"前綴比對可用 B-tree 索引。/ Prefix LIKE uses a B-tree index."}},
+
+  {id:8,difficulty:"medium",points:15,answer:3,
+   zh:{question:"在 LEFT JOIN 中，右表未匹配的欄位會呈現什麼？",options:["每個未匹配欄位皆為零值","每個未匹配欄位皆為空字串","重複上一列的對應欄位值","每個未匹配欄位皆為 NULL 值"],explanation:"LEFT JOIN 未匹配端補 NULL。/ Unmatched side is filled with NULL."},
+   en:{question:"In a LEFT JOIN, unmatched right-table columns appear as what?",options:["Zero values for every unmatched column","Empty strings for every unmatched column","The previous row's values are repeated","NULL values for every unmatched column"],explanation:"LEFT JOIN 未匹配端補 NULL。/ Unmatched side is filled with NULL."}},
+
+  {id:9,difficulty:"easy",points:10,answer:0,
+   zh:{question:"哪個聚合函數會回傳資料列的數量？",options:["COUNT() 回傳資料列的數量","TOTAL() 回傳資料列的數量","NUMBER() 回傳資料列的數量","AMOUNT() 回傳資料列的數量"],explanation:"COUNT 用於計算列數。/ COUNT returns the row count."},
+   en:{question:"Which aggregate function returns the number of rows?",options:["COUNT() returns the number of rows","TOTAL() returns the number of rows","NUMBER() returns the number of rows","AMOUNT() returns the number of rows"],explanation:"COUNT 用於計算列數。/ COUNT returns the row count."}},
+
+  {id:10,difficulty:"hard",points:25,answer:2,
+   zh:{question:"查詢任意深度的階層結構，最適合用哪種功能？",options:["在 SELECT 清單中的相關子查詢","固定重複數次的自我連接","遞迴的共用資料表運算式（CTE）","每列呼叫一次的純量自訂函數"],explanation:"任意深度階層用遞迴 CTE。/ Use a recursive CTE for hierarchies."},
+   en:{question:"Which feature is best suited to query a hierarchy of arbitrary depth?",options:["A correlated subquery in the SELECT list","A self join repeated a fixed number of times","A recursive common table expression (CTE)","A scalar user-defined function per row"],explanation:"任意深度階層用遞迴 CTE。/ Use a recursive CTE for hierarchies."}},
+
+  {id:11,difficulty:"medium",points:15,answer:1,
+   zh:{question:"標準 SQL 中，SELECT 內未聚合的欄位還必須出現在哪裡？",options:["同一查詢的 WHERE 子句中","查詢的 GROUP BY 子句中","查詢的 HAVING 子句中","查詢的 ORDER BY 子句中"],explanation:"非聚合欄位須列入 GROUP BY。/ Non-aggregated columns must be in GROUP BY."},
+   en:{question:"In standard SQL, non-aggregated SELECT columns must also appear where?",options:["In the WHERE clause of the same query","In the GROUP BY clause of the query","In the HAVING clause of the query","In the ORDER BY clause of the query"],explanation:"非聚合欄位須列入 GROUP BY。/ Non-aggregated columns must be in GROUP BY."}},
+
+  {id:12,difficulty:"trap",points:19,answer:3,
+   zh:{question:"COUNT(column) 與 COUNT(*) 有何不同？",options:["兩者永遠回傳完全相同的數值","COUNT(column) 只計算重複的資料列","COUNT(*) 會忽略含有 NULL 的資料列","COUNT(column) 會忽略該欄為 NULL 的列"],explanation:"COUNT(欄位)略過該欄 NULL。/ COUNT(col) skips NULLs in that column."},
+   en:{question:"How does COUNT(column) differ from COUNT(*)?",options:["They always return exactly the same value","COUNT(column) counts duplicate rows only","COUNT(*) ignores rows that contain NULL","COUNT(column) ignores rows where it is NULL"],explanation:"COUNT(欄位)略過該欄 NULL。/ COUNT(col) skips NULLs in that column."}},
+
+  {id:13,difficulty:"easy",points:10,answer:0,
+   zh:{question:"哪個敘述句可將新資料列加入資料表？",options:["INSERT 將新資料列加入資料表","APPEND 將新資料列加入資料表","CREATE 將新資料列加入資料表","ATTACH 將新資料列加入資料表"],explanation:"新增資料列用 INSERT。/ Add rows with INSERT."},
+   en:{question:"Which statement adds new rows to a table?",options:["INSERT adds new rows into a table","APPEND adds new rows into a table","CREATE adds new rows into a table","ATTACH adds new rows into a table"],explanation:"新增資料列用 INSERT。/ Add rows with INSERT."}},
+
+  {id:14,difficulty:"medium",points:15,answer:2,
+   zh:{question:"在 SELECT DISTINCT a, b 中，何者會被視為重複列？",options:["只比較欄位 a 的值","只比較欄位 b 的值","比較 a 與 b 的組合","各欄位各自去除重複"],explanation:"DISTINCT 比較整組欄位組合。/ DISTINCT compares the column combination."},
+   en:{question:"In SELECT DISTINCT a, b, what makes a row a duplicate?",options:["Only column a values are compared","Only column b values are compared","The combination of a and b is compared","Each column is de-duplicated on its own"],explanation:"DISTINCT 比較整組欄位組合。/ DISTINCT compares the column combination."}},
+
+  {id:15,difficulty:"hard",points:25,answer:1,
+   zh:{question:"哪種隔離等級可防止髒讀但仍允許幻讀？",options:["READ UNCOMMITTED 允許讀取未提交資料","READ COMMITTED 只讀取已提交的資料列","SERIALIZABLE 完全隔離並行交易","REPEATABLE READ 阻擋所有幻影列插入"],explanation:"READ COMMITTED 防髒讀但容許幻讀。/ READ COMMITTED stops dirty reads, allows phantoms."},
+   en:{question:"Which isolation level prevents dirty reads but still allows phantom reads?",options:["READ UNCOMMITTED allows reading uncommitted data","READ COMMITTED reads only committed data rows","SERIALIZABLE fully isolates concurrent transactions","REPEATABLE READ blocks all phantom row inserts"],explanation:"READ COMMITTED 防髒讀但容許幻讀。/ READ COMMITTED stops dirty reads, allows phantoms."}},
+
+  {id:16,difficulty:"medium",points:15,answer:3,
+   zh:{question:"WHERE id IN (SELECT id FROM t2) 的作用是什麼？",options:["在每一欄位上連接這兩張資料表","回傳 id 不存在於 t2 的資料列","永遠回傳外層資料表的每一列","回傳 id 出現在子查詢中的資料列"],explanation:"IN 子查詢保留有相符值的列。/ IN keeps rows whose value is in the subquery."},
+   en:{question:"What does WHERE id IN (SELECT id FROM t2) do?",options:["Joins the two tables on every column pair","Returns rows whose id is absent from t2","Always returns every row of the outer table","Returns rows whose id appears in the subquery"],explanation:"IN 子查詢保留有相符值的列。/ IN keeps rows whose value is in the subquery."}},
+
+  {id:17,difficulty:"easy",points:10,answer:0,
+   zh:{question:"哪個子句負責篩選查詢回傳的資料列？",options:["WHERE 依指定條件篩選資料列","SELECT 依指定條件篩選資料列","VALUES 依指定條件篩選資料列","BETWEEN 依指定條件篩選資料列"],explanation:"WHERE 依條件篩選列。/ WHERE filters rows by condition."},
+   en:{question:"Which clause filters which rows a query returns?",options:["WHERE filters rows by a given condition","SELECT filters rows by a given condition","VALUES filters rows by a given condition","BETWEEN filters rows by a given condition"],explanation:"WHERE 依條件篩選列。/ WHERE filters rows by condition."}},
+
+  {id:18,difficulty:"medium",points:15,answer:2,
+   zh:{question:"UNION 與 UNION ALL 有何不同？",options:["UNION 保留重複，UNION ALL 去除重複","UNION 排序結果，UNION ALL 反轉結果","UNION 去除重複列，UNION ALL 保留重複","UNION 連接欄位，UNION ALL 連接資料列"],explanation:"UNION 去重，UNION ALL 不去重。/ UNION dedups; UNION ALL keeps all."},
+   en:{question:"How does UNION differ from UNION ALL?",options:["UNION keeps duplicates, UNION ALL removes them","UNION sorts results, UNION ALL reverses them","UNION removes duplicate rows, UNION ALL keeps them","UNION joins columns, UNION ALL joins rows"],explanation:"UNION 去重，UNION ALL 不去重。/ UNION dedups; UNION ALL keeps all."}},
+
+  {id:19,difficulty:"hard",points:25,answer:1,
+   zh:{question:"SUM(x) OVER (ORDER BY d) 對每一列計算的是什麼？",options:["在每列重複出現的單一總計","累計到當前列為止的累積總和","僅針對排序後最後一列的總計","整個分區內 x 的平均值"],explanation:"帶 ORDER BY 的視窗 SUM 為累計值。/ It is a running cumulative total."},
+   en:{question:"What does SUM(x) OVER (ORDER BY d) compute per row?",options:["A single grand total repeated on every row","A running cumulative total up to that row","The total only for the final ordered row","The average of x across the whole partition"],explanation:"帶 ORDER BY 的視窗 SUM 為累計值。/ It is a running cumulative total."}},
+
+  {id:20,difficulty:"trap",points:19,answer:3,
+   zh:{question:"某列 x 為 NULL，經 WHERE x <> 5 測試後會如何？",options:["該列被回傳，因為 NULL 不等於 5","資料庫會拋出比較型別的錯誤","該列被視為 x 等於零來處理","該列被排除，因測試結果為未知"],explanation:"NULL 比較結果為未知，列被排除。/ NULL comparison is UNKNOWN, row excluded."},
+   en:{question:"A row where x is NULL is tested by WHERE x <> 5. What happens?",options:["The row is returned because NULL differs from 5","The database raises a comparison type error","The row is treated as if x equals zero here","The row is excluded because the test is unknown"],explanation:"NULL 比較結果為未知，列被排除。/ NULL comparison is UNKNOWN, row excluded."}},
+
+  {id:21,difficulty:"easy",points:10,answer:0,
+   zh:{question:"PRIMARY KEY 限制對欄位保證了什麼？",options:["欄位值唯一且永不為 NULL","欄位值可重複但不可為 NULL","欄位值依排序的實體順序儲存","欄位值會在靜態時自動加密"],explanation:"主鍵保證唯一且非 NULL。/ A primary key is unique and not NULL."},
+   en:{question:"What does a PRIMARY KEY constraint guarantee for a column?",options:["Values are unique and never NULL in it","Values may repeat but cannot be NULL in it","Values are stored in sorted physical order","Values are automatically encrypted at rest"],explanation:"主鍵保證唯一且非 NULL。/ A primary key is unique and not NULL."}},
+
+  {id:22,difficulty:"medium",points:15,answer:2,
+   zh:{question:"在自我連接（self join）中使用資料表別名有何用處？",options:["將連接轉換成內部連接","自動排序連接後的輸出","區分同一張表的兩種角色","從結果中移除重複的資料列"],explanation:"別名用以區分同表的不同角色。/ Aliases distinguish the table's two roles."},
+   en:{question:"Why are table aliases useful in a self join?",options:["They convert the join into an inner join","They sort the joined output automatically","They distinguish the two roles of one table","They remove duplicate rows from the result"],explanation:"別名用以區分同表的不同角色。/ Aliases distinguish the table's two roles."}},
+
+  {id:23,difficulty:"hard",points:25,answer:1,
+   zh:{question:"將欄位包進函數，如 WHERE YEAR(d)=2020，常會導致什麼？",options:["在多數資料庫上發生語法錯誤","該欄上的索引無法被使用","結果集靜默地遺失所有資料列","自動改寫成範圍掃描以加速"],explanation:"欄位被函數包住通常使索引失效。/ Wrapping a column disables its index."},
+   en:{question:"Wrapping a column in a function, like WHERE YEAR(d)=2020, often causes what?",options:["A syntax error on most SQL databases","The index on that column to be unused","The result set to silently lose all rows","An automatic rewrite into a range scan"],explanation:"欄位被函數包住通常使索引失效。/ Wrapping a column disables its index."}},
+
+  {id:24,difficulty:"medium",points:15,answer:3,
+   zh:{question:"TRUNCATE TABLE 與 DELETE 相比有何作用？",options:["只移除符合篩選條件的資料列","刪除整張資料表的定義本身","執行後會自動回復先前狀態","移除所有列，通常更快且無篩選"],explanation:"TRUNCATE 清空整表，通常較快。/ TRUNCATE removes all rows, usually faster."},
+   en:{question:"What does TRUNCATE TABLE do compared with DELETE?",options:["It removes only the rows matching a filter","It deletes the table definition entirely","It rolls back automatically after running","It removes all rows, usually faster, no filter"],explanation:"TRUNCATE 清空整表，通常較快。/ TRUNCATE removes all rows, usually faster."}},
+
+  {id:25,difficulty:"easy",points:10,answer:0,
+   zh:{question:"哪個敘述句可變更既有資料列中的值？",options:["UPDATE 變更既有資料列中的值","REPLACE 變更既有資料列中的值","MODIFY 變更既有資料列中的值","REVISE 變更既有資料列中的值"],explanation:"修改既有資料用 UPDATE。/ Modify existing data with UPDATE."},
+   en:{question:"Which statement changes values in existing rows?",options:["UPDATE changes values in existing rows","REPLACE changes values in existing rows","MODIFY changes values in existing rows","REVISE changes values in existing rows"],explanation:"修改既有資料用 UPDATE。/ Modify existing data with UPDATE."}},
+
+  {id:26,difficulty:"medium",points:15,answer:2,
+   zh:{question:"FOREIGN KEY（外鍵）限制強制了什麼？",options:["欄位中每個值都必須是唯一的","欄位永遠不能包含 NULL 值","值必須對應到另一表的鍵值","值會在每次插入時自動遞增"],explanation:"外鍵須對應參照表的鍵值。/ A foreign key must match a key elsewhere."},
+   en:{question:"What does a FOREIGN KEY constraint enforce?",options:["Each value in the column must be unique","The column can never contain a NULL value","Values must match a key in another table","Values are auto-incremented on each insert"],explanation:"外鍵須對應參照表的鍵值。/ A foreign key must match a key elsewhere."}},
+
+  {id:27,difficulty:"hard",points:25,answer:1,
+   zh:{question:"相關子查詢（correlated subquery）的特性是什麼？",options:["在外層查詢開始前只執行一次","參照外層查詢並對每列重新執行","完全無法被改寫成連接查詢","必須剛好回傳一欄一列的結果"],explanation:"相關子查詢逐列參照外層並重跑。/ It references the outer query and reruns per row."},
+   en:{question:"What characterizes a correlated subquery?",options:["It runs once before the outer query begins","It references the outer query and reruns per row","It can never be rewritten as a join at all","It must return exactly one column and row"],explanation:"相關子查詢逐列參照外層並重跑。/ It references the outer query and reruns per row."}},
+
+  {id:28,difficulty:"medium",points:15,answer:3,
+   zh:{question:"AVG(x) 等聚合函數如何處理 NULL 值？",options:["先將每個 NULL 轉換成零","中止並對該組回傳 NULL","把 NULL 當作所見最小值計入","忽略 NULL，僅平均其餘的值"],explanation:"聚合函數會略過 NULL。/ Aggregates ignore NULLs."},
+   en:{question:"How do aggregate functions like AVG(x) treat NULL values?",options:["They convert each NULL into a zero first","They abort and return NULL for the group","They count NULLs as the lowest value seen","They ignore NULLs and average the rest"],explanation:"聚合函數會略過 NULL。/ Aggregates ignore NULLs."}},
+
+  {id:29,difficulty:"easy",points:10,answer:0,
+   zh:{question:"哪個關鍵字可從結果中移除重複的資料列？",options:["DISTINCT 從結果中移除重複的資料列","UNIQUE 從結果中移除重複的資料列","SEPARATE 從結果中移除重複的資料列","SINGULAR 從結果中移除重複的資料列"],explanation:"去除重複列用 DISTINCT。/ Remove duplicates with DISTINCT."},
+   en:{question:"Which keyword removes duplicate rows from results?",options:["DISTINCT removes duplicate rows from results","UNIQUE removes duplicate rows from results","SEPARATE removes duplicate rows from results","SINGULAR removes duplicate rows from results"],explanation:"去除重複列用 DISTINCT。/ Remove duplicates with DISTINCT."}},
+
+  {id:30,difficulty:"medium",points:15,answer:2,
+   zh:{question:"哪一組子句可取得每頁 10 列中的第二頁？",options:["WHERE 10 並略過前面的 10 列","TOP 10 START 10 在排序結果上","LIMIT 10 OFFSET 10 在排序結果上","FETCH 10 RESET 10 在排序結果上"],explanation:"分頁用 LIMIT 搭配 OFFSET。/ Paginate with LIMIT and OFFSET."},
+   en:{question:"Which clause pair retrieves the second page of 10 rows?",options:["WHERE 10 AND skip the first 10 rows","TOP 10 START 10 of the ordered result","LIMIT 10 OFFSET 10 of the ordered result","FETCH 10 RESET 10 of the ordered result"],explanation:"分頁用 LIMIT 搭配 OFFSET。/ Paginate with LIMIT and OFFSET."}},
+
+  {id:31,difficulty:"hard",points:25,answer:1,
+   zh:{question:"兩個交易之間的死結（deadlock）是什麼情況？",options:["某交易永久鎖住整張資料表","各自等待對方已持有的鎖","因缺少索引導致查詢執行緩慢","某交易在另一個讀取前先提交"],explanation:"死結為彼此互等對方持有的鎖。/ Each waits on a lock the other holds."},
+   en:{question:"What is a deadlock between two transactions?",options:["One transaction permanently locks the table","Each waits for a lock the other already holds","A query runs slowly due to a missing index","A transaction commits before another can read"],explanation:"死結為彼此互等對方持有的鎖。/ Each waits on a lock the other holds."}},
+
+  {id:32,difficulty:"trap",points:19,answer:3,
+   zh:{question:"一對多連接竟使 SUM(amount) 灌水變大，原因為何？",options:["SUM 函數重複計算了 NULL 的金額","GROUP BY 總是把聚合值加倍","INNER JOIN 暗中加入額外的合成列","每個左列依匹配的右列重複出現"],explanation:"左列依匹配右列被複製致金額重複加總。/ Left rows repeat per matching right row."},
+   en:{question:"A one-to-many join unexpectedly inflates SUM(amount). Why?",options:["The SUM function double counts NULL amounts","GROUP BY always doubles aggregated values","INNER JOIN secretly adds extra synthetic rows","Each left row repeats per matching right row"],explanation:"左列依匹配右列被複製致金額重複加總。/ Left rows repeat per matching right row."}},
+
+  {id:33,difficulty:"easy",points:10,answer:0,
+   zh:{question:"NULL 在 SQL 中代表什麼？",options:["欄位中未知或缺漏的值","儲存在欄位內的數值零","長度為零的空白文字字串","設在欄位上的布林假值旗標"],explanation:"NULL 表示未知或缺漏。/ NULL means unknown or missing."},
+   en:{question:"What does NULL represent in SQL?",options:["An unknown or missing value in a column","A numeric zero stored inside the column","An empty text string of length zero","A boolean false flag set on the column"],explanation:"NULL 表示未知或缺漏。/ NULL means unknown or missing."}},
+
+  {id:34,difficulty:"medium",points:15,answer:2,
+   zh:{question:"標準 SQL 中，x BETWEEN 1 AND 10 包含哪些值？",options:["嚴格大於 1 且小於 10 的值","從 1 起但不含 10 本身的值","從 1 到 10，含頭尾兩端點","大於 1 並到 10 為止的值"],explanation:"BETWEEN 包含上下兩端點。/ BETWEEN is inclusive of both ends."},
+   en:{question:"In standard SQL, the range x BETWEEN 1 AND 10 includes which values?",options:["Values strictly greater than 1 and below 10","Values from 1 up to but excluding 10 itself","Values from 1 to 10, including both endpoints","Values above 1 and up to and including 10"],explanation:"BETWEEN 包含上下兩端點。/ BETWEEN is inclusive of both ends."}},
+
+  {id:35,difficulty:"hard",points:25,answer:1,
+   zh:{question:"下列子句在邏輯上的處理順序為何？",options:["SELECT、再 FROM、再 WHERE、再 GROUP BY","FROM、再 WHERE、再 GROUP BY、再 SELECT","WHERE、再 FROM、再 SELECT、再 GROUP BY","GROUP BY、再 FROM、再 SELECT、再 WHERE"],explanation:"邏輯順序 FROM→WHERE→GROUP BY→SELECT。/ FROM then WHERE then GROUP BY then SELECT."},
+   en:{question:"In which order are these clauses logically processed?",options:["SELECT, then FROM, then WHERE, then GROUP BY","FROM, then WHERE, then GROUP BY, then SELECT","WHERE, then FROM, then SELECT, then GROUP BY","GROUP BY, then FROM, then SELECT, then WHERE"],explanation:"邏輯順序 FROM→WHERE→GROUP BY→SELECT。/ FROM then WHERE then GROUP BY then SELECT."}},
+
+  {id:36,difficulty:"trap",points:19,answer:3,
+   zh:{question:"DELETE FROM orders 在沒有 WHERE 子句時會發生什麼？",options:["拋出錯誤，要求必須加上 WHERE 子句","只刪除資料表的第一筆資料列","什麼都不刪，因為沒有列被匹配到","移除 orders 表中的每一筆資料列"],explanation:"無 WHERE 的 DELETE 會清空整表。/ DELETE without WHERE removes all rows."},
+   en:{question:"What happens when DELETE FROM orders runs with no WHERE clause?",options:["It raises an error demanding a WHERE clause","It deletes only the first row of the table","It deletes nothing because no row is matched","It removes every row from the orders table"],explanation:"無 WHERE 的 DELETE 會清空整表。/ DELETE without WHERE removes all rows."}},
+
+  {id:37,difficulty:"medium",points:15,answer:0,
+   zh:{question:"SELECT dept, COUNT(*) FROM emp GROUP BY dept 回傳什麼？",options:["每個部門一列，附上其資料列數","單一列，內含員工的總人數","每位員工一列，附上重複的計數","僅回傳人數超過一人的那些部門"],explanation:"GROUP BY 每組一列加計數。/ One row per group with its count."},
+   en:{question:"SELECT dept, COUNT(*) FROM emp GROUP BY dept returns what?",options:["One row per department with its row count","A single row holding the total employee count","One row per employee with a repeated count","Only departments having more than one employee"],explanation:"GROUP BY 每組一列加計數。/ One row per group with its count."}},
+
+  {id:38,difficulty:"hard",points:25,answer:2,
+   zh:{question:"為何 NOT IN 搭配子查詢可能出現意外行為？",options:["NOT IN 根本不能與任何子查詢併用","它會先靜默地轉換成內部連接","子查詢中含 NULL 會使它回傳空集合","它忽略 NULL 並匹配所有外層資料列"],explanation:"子查詢含 NULL 時 NOT IN 回傳空集。/ A NULL makes NOT IN return nothing."},
+   en:{question:"Why can NOT IN behave unexpectedly with a subquery?",options:["NOT IN cannot be used with any subquery","It silently converts to an inner join first","A NULL in the subquery makes it return nothing","It ignores NULLs and matches every outer row"],explanation:"子查詢含 NULL 時 NOT IN 回傳空集。/ A NULL makes NOT IN return nothing."}},
+
+  {id:39,difficulty:"medium",points:15,answer:1,
+   zh:{question:"ON DELETE CASCADE 對子資料列會做什麼？",options:["阻止父資料列被刪除","自動刪除對應的子資料列","將子外鍵設為某個預設值","把子資料列複製到稽核表中"],explanation:"CASCADE 連帶刪除對應子列。/ It deletes matching child rows automatically."},
+   en:{question:"What does ON DELETE CASCADE do to child rows?",options:["It blocks the parent row from being deleted","It deletes matching child rows automatically","It sets the child foreign keys to a default","It copies the child rows into an audit table"],explanation:"CASCADE 連帶刪除對應子列。/ It deletes matching child rows automatically."}},
+
+  {id:40,difficulty:"easy",points:10,answer:3,
+   zh:{question:"哪個敘述句可移除整張資料表及其定義？",options:["CLEAR TABLE 移除資料表及其定義","ERASE TABLE 移除資料表及其定義","REMOVE TABLE 移除資料表及其定義","DROP TABLE 移除資料表及其定義"],explanation:"刪除整張表用 DROP TABLE。/ Remove a whole table with DROP TABLE."},
+   en:{question:"Which statement removes an entire table and its definition?",options:["CLEAR TABLE removes the table and definition","ERASE TABLE removes the table and definition","REMOVE TABLE removes the table and definition","DROP TABLE removes the table and definition"],explanation:"刪除整張表用 DROP TABLE。/ Remove a whole table with DROP TABLE."}}
+];
+
+const T = {
+  zh: {
+    title:"SQL 互動測驗", lang:"English", dark:"🌙 深色", light:"☀️ 淺色",
+    progress:(c,t)=>`第 ${c} / ${t} 題`, prev:"上一題", submit:"提交測驗",
+    labels:["A","B","C","D"],
+    rTitle:"測驗結果", total:"總分", correctN:"正確題數", wrongN:"錯誤題數",
+    byDiff:"各難度正確率", easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱",
+    percentile:p=>`你的成績超越了約 ${p}% 的測試者`, gradeH:"等級評定",
+    reviewH:"錯題回顧", yourAns:"你的選擇", correctAns:"正確答案",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！", allCorrect:"太厲害了，全部答對！",
+    grades:[[600,"🏆 頂尖專家"],[500,"⭐ 進階掌握"],[380,"📘 中等水準"],[250,"📗 基礎尚可"],[0,"📕 需要加強"]],
+    summary:(s,c)=>`SQL 互動測驗結果\n總分：${s} / 670\n正確：${c} / 40`
+  },
+  en: {
+    title:"SQL Interactive Quiz", lang:"中文", dark:"🌙 Dark", light:"☀️ Light",
+    progress:(c,t)=>`Question ${c} / ${t}`, prev:"Previous", submit:"Submit Quiz",
+    labels:["A","B","C","D"],
+    rTitle:"Quiz Results", total:"Total Score", correctN:"Correct", wrongN:"Incorrect",
+    byDiff:"Accuracy by Difficulty", easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap",
+    percentile:p=>`You scored higher than about ${p}% of test takers`, gradeH:"Grade",
+    reviewH:"Review of Incorrect Answers", yourAns:"Your answer", correctAns:"Correct answer",
+    retry:"Retake Quiz", copy:"Copy Results", copied:"Copied!", allCorrect:"Perfect — every answer correct!",
+    grades:[[600,"🏆 Top Expert"],[500,"⭐ Advanced"],[380,"📘 Intermediate"],[250,"📗 Basic"],[0,"📕 Needs Improvement"]],
+    summary:(s,c)=>`SQL Interactive Quiz Result\nScore: ${s} / 670\nCorrect: ${c} / 40`
+  }
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+
+const $ = id => document.getElementById(id);
+
+// theme
+(function initTheme(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+  updateThemeBtn();
+})();
+function updateThemeBtn(){
+  const dark = document.documentElement.getAttribute("data-theme")==="dark";
+  $("themeBtn").textContent = dark ? T[lang].light : T[lang].dark;
+}
+$("themeBtn").onclick = () => {
+  const dark = document.documentElement.getAttribute("data-theme")==="dark";
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+  updateThemeBtn();
+};
+
+$("langBtn").onclick = () => {
+  lang = lang==="zh" ? "en" : "zh";
+  document.documentElement.lang = lang==="zh" ? "zh-Hant" : "en";
+  applyStaticText();
+  if($("results").classList.contains("hidden")) renderQuestion(false);
+  else renderResults();
+};
+
+function applyStaticText(){
+  $("appTitle").textContent = T[lang].title;
+  $("langBtn").textContent = T[lang].lang;
+  $("prevBtn").textContent = T[lang].prev;
+  $("submitBtn").textContent = T[lang].submit;
+  updateThemeBtn();
+  document.title = T[lang].title;
+}
+
+function renderQuestion(fade){
+  const q = questions[current];
+  const data = q[lang];
+  const stage = $("stage");
+  const draw = () => {
+    $("progressText").textContent = T[lang].progress(current+1, questions.length);
+    $("qText").textContent = data.question;
+    const list = $("optList");
+    list.innerHTML = "";
+    data.options.forEach((opt,i) => {
+      const li = document.createElement("li");
+      li.className = "opt" + (answers[current]===i ? " selected" : "");
+      li.innerHTML = `<span class="label">${T[lang].labels[i]}</span><span>${opt}</span>`;
+      li.onclick = () => choose(i);
+      list.appendChild(li);
+    });
+    $("prevBtn").style.visibility = current===0 ? "hidden" : "visible";
+    const last = current===questions.length-1;
+    $("submitBtn").classList.toggle("hidden", !(last && answers[current]!==null));
+    $("bar").style.width = ((current+1)/questions.length*100) + "%";
+    stage.classList.remove("fade");
+  };
+  if(fade){ stage.classList.add("fade"); setTimeout(draw, 250); } else { draw(); }
+}
+
+function choose(i){
+  answers[current] = i;
+  // show selected state
+  const opts = document.querySelectorAll(".opt");
+  opts.forEach((o,idx)=>o.classList.toggle("selected", idx===i));
+  const last = current===questions.length-1;
+  if(last){
+    $("submitBtn").classList.remove("hidden");
+  } else {
+    setTimeout(()=>{ current++; renderQuestion(true); }, 400);
+  }
+}
+
+$("prevBtn").onclick = () => { if(current>0){ current--; renderQuestion(true); } };
+$("submitBtn").onclick = () => { showResults(); };
+
+// normal CDF (Abramowitz & Stegun)
+function normalCdf(z){
+  const t = 1/(1+0.2316419*Math.abs(z));
+  const d = 0.3989423*Math.exp(-z*z/2);
+  let p = d*t*(0.3193815+t*(-0.3565638+t*(1.781478+t*(-1.821256+t*1.330274))));
+  return z>0 ? 1-p : p;
+}
+
+let lastResult = null;
+function computeResult(){
+  let score=0, correct=0;
+  const byDiff = {easy:[0,0], medium:[0,0], hard:[0,0], trap:[0,0]};
+  const wrong = [];
+  questions.forEach((q,i)=>{
+    byDiff[q.difficulty][1]++;
+    if(answers[i]===q.answer){ score+=q.points; correct++; byDiff[q.difficulty][0]++; }
+    else wrong.push({q, chosen:answers[i]});
+  });
+  const mean=301.5, sd=100.5;
+  const pct = Math.max(0, Math.min(100, Math.round(normalCdf((score-mean)/sd)*100)));
+  return {score, correct, wrong:questions.length-correct, byDiff, pct, wrongList:wrong};
+}
+
+function gradeFor(score){
+  for(const [min,label] of T[lang].grades){ if(score>=min) return label; }
+  return T[lang].grades[T[lang].grades.length-1][1];
+}
+
+function showResults(){
+  lastResult = computeResult();
+  $("quiz").classList.add("hidden");
+  $("results").classList.remove("hidden");
+  renderResults();
+  window.scrollTo(0,0);
+}
+
+function renderResults(){
+  if(!lastResult) return;
+  const r = lastResult, t = T[lang];
+  const d = r.byDiff;
+  const rows = [
+    [t.total, `${r.score} / 670`],
+    [t.correctN, `${r.correct} / 40`],
+    [t.wrongN, `${r.wrong} / 40`]
+  ];
+  let html = `<div class="result-card">
+    <div class="score-big">${r.score} / 670</div>
+    <div class="grade">${gradeFor(r.score)}</div>
+    <div style="color:var(--muted)">${t.percentile(r.pct)}</div>
+  </div>
+  <div class="result-card">
+    ${rows.map(([k,v])=>`<div class="stat-row"><span>${k}</span><strong>${v}</strong></div>`).join("")}
+  </div>
+  <div class="result-card">
+    <div class="section-h" style="margin-top:0">${t.byDiff}</div>
+    <div class="stat-row"><span>${t.easy}</span><strong>${d.easy[0]} / ${d.easy[1]}</strong></div>
+    <div class="stat-row"><span>${t.medium}</span><strong>${d.medium[0]} / ${d.medium[1]}</strong></div>
+    <div class="stat-row"><span>${t.hard}</span><strong>${d.hard[0]} / ${d.hard[1]}</strong></div>
+    <div class="stat-row"><span>${t.trap}</span><strong>${d.trap[0]} / ${d.trap[1]}</strong></div>
+  </div>`;
+
+  html += `<div class="section-h">${t.reviewH}</div>`;
+  if(r.wrongList.length===0){
+    html += `<div class="result-card">${t.allCorrect}</div>`;
+  } else {
+    r.wrongList.forEach(({q,chosen})=>{
+      const data = q[lang];
+      const yourTxt = chosen===null ? "—" : `${t.labels[chosen]}. ${data.options[chosen]}`;
+      const corTxt = `${t.labels[q.answer]}. ${data.options[q.answer]}`;
+      html += `<div class="review-item">
+        <div class="rev-q">${data.question}</div>
+        <div class="rev-line rev-wrong">${t.yourAns}: ${yourTxt}</div>
+        <div class="rev-line rev-correct">${t.correctAns}: ${corTxt}</div>
+        <div class="rev-exp">${data.explanation}</div>
+      </div>`;
+    });
+  }
+
+  html += `<div class="nav" style="margin-top:20px">
+    <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+    <button class="btn" id="copyBtn">${t.copy}</button>
+  </div>`;
+
+  $("results").innerHTML = html;
+  $("retryBtn").onclick = retry;
+  $("copyBtn").onclick = function(){
+    const text = t.summary(r.score, r.correct) + "\n" + gradeFor(r.score) + "\n" + t.percentile(r.pct);
+    navigator.clipboard.writeText(text).then(()=>{
+      this.textContent = t.copied;
+      setTimeout(()=>{ this.textContent = t.copy; }, 1500);
+    }).catch(()=>{ this.textContent = t.copied; });
+  };
+}
+
+function retry(){
+  current = 0;
+  answers.fill(null);
+  lastResult = null;
+  $("results").classList.add("hidden");
+  $("quiz").classList.remove("hidden");
+  renderQuestion(false);
+  window.scrollTo(0,0);
+}
+
+// init
+applyStaticText();
+renderQuestion(false);
+</script>
+</body>
+</html>

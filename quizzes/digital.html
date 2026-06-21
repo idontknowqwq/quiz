@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>數位邏輯設計 互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-muted: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --surface: #F9FAFB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-muted: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --surface: #1B1B1B;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", Roboto, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font-size: 14px; padding: 7px 12px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); border-radius: 6px;
+    cursor: pointer; transition: background-color 0.15s; font-family: inherit;
+  }
+  .btn:hover { background: var(--surface); }
+  .btn-primary {
+    background: var(--accent); color: var(--accent-text); border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent); opacity: 0.9; }
+  .progress-info { font-size: 14px; color: var(--text-muted); margin: 18px 0 6px; }
+  .qcard { transition: opacity 0.25s; }
+  .qcard.fading { opacity: 0; }
+  .question {
+    font-size: 18px; font-weight: 600; margin: 10px 0 20px; line-height: 1.5;
+  }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    text-align: left; padding: 14px 16px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--text); border-radius: 8px;
+    cursor: pointer; font-size: 15px; transition: background-color 0.15s, border-color 0.15s;
+    font-family: inherit; line-height: 1.5;
+  }
+  .option:hover { background: var(--surface); }
+  .option.selected { border-color: var(--accent); background: var(--surface); color: var(--accent); font-weight: 600; }
+  .option .tag { font-weight: 700; margin-right: 8px; }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 22px; }
+  .progress-bar-track {
+    height: 6px; background: var(--border); border-radius: 3px;
+    margin-top: 26px; overflow: hidden;
+  }
+  .progress-bar-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.25s; }
+  .hidden { display: none !important; }
+
+  /* Results */
+  .result-score { font-size: 40px; font-weight: 800; margin: 8px 0; }
+  .result-sub { color: var(--text-muted); font-size: 15px; }
+  .grade { font-size: 24px; font-weight: 700; margin: 18px 0 6px; }
+  .stat-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0;
+  }
+  .stat-box { border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .stat-box .label { font-size: 13px; color: var(--text-muted); }
+  .stat-box .value { font-size: 22px; font-weight: 700; margin-top: 2px; }
+  .percentile {
+    border: 1px solid var(--accent); border-radius: 8px; padding: 16px;
+    margin: 18px 0; text-align: center; font-size: 17px; font-weight: 600; color: var(--accent);
+  }
+  .review-title { font-size: 17px; font-weight: 700; margin: 26px 0 12px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .review-line { font-size: 14px; margin: 3px 0; }
+  .review-line.wrong { color: var(--wrong); }
+  .review-line.correct { color: var(--correct); }
+  .review-exp { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+  .result-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 24px; }
+  .center { text-align: center; }
+  @media (max-width: 520px) {
+    .title { font-size: 16px; }
+    .question { font-size: 16px; }
+    .stat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">數位邏輯設計 互動測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn" onclick="toggleLang()">English</button>
+      <button class="btn" id="themeBtn" onclick="toggleTheme()">🌙</button>
+    </div>
+  </header>
+
+  <!-- Quiz -->
+  <section id="quizView">
+    <div class="progress-info" id="progressInfo"></div>
+    <div class="qcard" id="qcard">
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn" onclick="goPrev()">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn" onclick="submitQuiz()">提交測驗</button>
+      <span></span>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+  </section>
+
+  <!-- Results -->
+  <section id="resultView" class="hidden">
+    <div class="center">
+      <div class="result-sub" id="rTotalLabel">總分</div>
+      <div class="result-score" id="rScore"></div>
+      <div class="grade" id="rGrade"></div>
+    </div>
+    <div class="percentile" id="rPercentile"></div>
+    <div class="stat-grid">
+      <div class="stat-box"><div class="label" id="rCorrectLabel">正確題數</div><div class="value" id="rCorrect"></div></div>
+      <div class="stat-box"><div class="label" id="rWrongLabel">錯誤題數</div><div class="value" id="rWrong"></div></div>
+      <div class="stat-box"><div class="label" id="rEasyLabel">簡單</div><div class="value" id="rEasy"></div></div>
+      <div class="stat-box"><div class="label" id="rMedLabel">中等</div><div class="value" id="rMed"></div></div>
+      <div class="stat-box"><div class="label" id="rHardLabel">困難</div><div class="value" id="rHard"></div></div>
+      <div class="stat-box"><div class="label" id="rTrapLabel">陷阱</div><div class="value" id="rTrap"></div></div>
+    </div>
+    <div class="review-title" id="rReviewTitle">錯題回顧</div>
+    <div id="reviewBox"></div>
+    <div class="result-actions">
+      <button class="btn btn-primary" id="retryBtn" onclick="restart()">重新測驗</button>
+      <button class="btn" id="copyBtn" onclick="copyResult()">複製結果</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"將二進位數 1101₂ 轉換為十進位，結果為下列何者？", options:["13","11","15","9"], explanation:"1×8+1×4+0+1=13。" },
+    en:{ question:"What is the decimal value of the binary number 1101₂?", options:["13","11","15","9"], explanation:"1×8+1×4+0+1 = 13." } },
+
+  { id:2, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"布林表示式 A + A′B 經化簡後等於下列何者？", options:["A 且 B","A 或 B","僅 A 本身","僅 B 本身"], explanation:"吸收律：A+A′B = A+B。" },
+    en:{ question:"After simplification, the Boolean expression A + A′B equals which of the following?", options:["A AND B","A OR B","A alone","B alone"], explanation:"Absorption: A+A′B = A+B." } },
+
+  { id:3, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"在 5 位元二補數表示法中，−6 的表示為下列何者？", options:["10110","11001","11010","01010"], explanation:"6=00110，取補數加1得11010。" },
+    en:{ question:"In 5-bit two's complement, the representation of −6 is which of the following?", options:["10110","11001","11010","01010"], explanation:"6=00110; invert and add 1 → 11010." } },
+
+  { id:4, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"兩個相同的輸入送入 XOR 閘，其輸出為下列何者？", options:["恆為邏輯 1","與輸入相同","輸入的反相值","恆為邏輯 0"], explanation:"A⊕A = 0。" },
+    en:{ question:"When two identical inputs are fed into an XOR gate, the output is:", options:["Always logic 1","Same as the input","The inverted input","Always logic 0"], explanation:"A⊕A = 0." } },
+
+  { id:5, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"下列哪一種邏輯閘屬於通用閘（universal gate，可單獨實作任意布林函數）？", options:["XOR 邏輯閘","NAND 邏輯閘","XNOR 邏輯閘","AND 邏輯閘"], explanation:"NAND（與 NOR）為通用閘，XOR、AND 皆非。" },
+    en:{ question:"Which of the following gates is a universal gate (can alone implement any Boolean function)?", options:["XOR gate","NAND gate","XNOR gate","AND gate"], explanation:"NAND (and NOR) are universal; XOR and AND are not." } },
+
+  { id:6, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"D 型正反器的特性方程式（次態 Q⁺）為下列何者？", options:["Q⁺ = D","Q⁺ = D′","Q⁺ = D·Q","Q⁺ = D ⊕ Q"], explanation:"D 正反器次態直接等於 D。" },
+    en:{ question:"The characteristic equation (next state Q⁺) of a D flip-flop is:", options:["Q⁺ = D","Q⁺ = D′","Q⁺ = D·Q","Q⁺ = D ⊕ Q"], explanation:"A D flip-flop's next state equals D." } },
+
+  { id:7, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"JK 正反器當 J=1、K=1 時，在時脈觸發後其輸出將會如何變化？", options:["維持原來的狀態不變","被設定為邏輯 1","被清除為邏輯 0","反相為相反的狀態"], explanation:"J=K=1 時輸出翻轉(toggle)。" },
+    en:{ question:"For a JK flip-flop with J=1 and K=1, after the clock edge the output will:", options:["Hold its present state","Be set to logic 1","Be cleared to logic 0","Toggle to the opposite state"], explanation:"J=K=1 causes the output to toggle." } },
+
+  { id:8, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"設計一個模數為 12（mod-12）的計數器，至少需要多少個正反器？", options:["2 個正反器","3 個正反器","4 個正反器","5 個正反器"], explanation:"2⁴=16≥12，需 4 個。" },
+    en:{ question:"A modulo-12 (mod-12) counter requires at least how many flip-flops?", options:["2 flip-flops","3 flip-flops","4 flip-flops","5 flip-flops"], explanation:"2⁴=16 ≥ 12, so 4 are needed." } },
+
+  { id:9, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"十六進位數字 A₁₆ 轉換為 4 位元二進位等於下列何者？", options:["1100","1010","1001","1110"], explanation:"A = 10 = 1010。" },
+    en:{ question:"The hexadecimal digit A₁₆ converts to which 4-bit binary value?", options:["1100","1010","1001","1110"], explanation:"A = 10 = 1010." } },
+
+  { id:10, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"依照笛摩根定理，(A·B)′ 等於下列何者？", options:["A′ + B′","A′ · B′","A + B","A · B′"], explanation:"(A·B)′ = A′ + B′。" },
+    en:{ question:"By De Morgan's theorem, (A·B)′ equals which of the following?", options:["A′ + B′","A′ · B′","A + B","A · B′"], explanation:"(A·B)′ = A′ + B′." } },
+
+  { id:11, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"關於 D 型閂鎖器（latch）與 D 型正反器（flip-flop）的差異，下列敘述何者正確？", options:["兩者皆屬於邊緣觸發的元件","閂鎖器為邊緣觸發、正反器為位準觸發","兩者皆屬於位準觸發的元件","閂鎖器為位準觸發、正反器為邊緣觸發"], explanation:"閂鎖器位準觸發，正反器邊緣觸發。" },
+    en:{ question:"Regarding the difference between a D latch and a D flip-flop, which statement is correct?", options:["Both are edge-triggered devices","The latch is edge-triggered, the flip-flop is level-sensitive","Both are level-sensitive devices","The latch is level-sensitive, the flip-flop is edge-triggered"], explanation:"Latches are level-sensitive; flip-flops are edge-triggered." } },
+
+  { id:12, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"一個 16-to-1 多工器（multiplexer）需要多少條選擇線（select lines）？", options:["2 條選擇線","3 條選擇線","4 條選擇線","8 條選擇線"], explanation:"log₂16 = 4 條選擇線。" },
+    en:{ question:"How many select lines does a 16-to-1 multiplexer require?", options:["2 select lines","3 select lines","4 select lines","8 select lines"], explanation:"log₂16 = 4 select lines." } },
+
+  { id:13, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"格雷碼（Gray code）最主要的特性為下列何者？", options:["相鄰兩數之間僅有一個位元改變","每個數值都包含偶數個邏輯 1","可直接用於二進位算術加法運算","相鄰兩數之間恰有兩個位元改變"], explanation:"格雷碼相鄰碼僅差一個位元。" },
+    en:{ question:"What is the primary characteristic of the Gray code?", options:["Only one bit changes between adjacent values","Each value contains an even number of 1s","It supports direct binary arithmetic addition","Exactly two bits change between adjacent values"], explanation:"Adjacent Gray codes differ by exactly one bit." } },
+
+  { id:14, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"一個 3-to-8 解碼器（decoder）共有多少條輸出線？", options:["6 條輸出線","8 條輸出線","3 條輸出線","16 條輸出線"], explanation:"3 條輸入產生 2³=8 條輸出。" },
+    en:{ question:"A 3-to-8 decoder has how many output lines?", options:["6 output lines","8 output lines","3 output lines","16 output lines"], explanation:"3 inputs produce 2³ = 8 outputs." } },
+
+  { id:15, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"全加器（full adder）的進位輸出 Cout 可以下列哪一個布林式表示？（A、B 為輸入，Cin 為進位輸入）", options:["A·B·Cin + (A ⊕ B)","(A ⊕ B) + A·B·Cin","A ⊕ B ⊕ (A·B·Cin)","A·B + Cin·(A ⊕ B)"], explanation:"Cout = AB + Cin(A⊕B)。" },
+    en:{ question:"The carry-out Cout of a full adder is given by which Boolean equation? (A, B are inputs, Cin is carry-in)", options:["A·B·Cin + (A ⊕ B)","(A ⊕ B) + A·B·Cin","A ⊕ B ⊕ (A·B·Cin)","A·B + Cin·(A ⊕ B)"], explanation:"Cout = AB + Cin(A⊕B)." } },
+
+  { id:16, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"某同步電路中，正反器傳播延遲 8 ns、組合邏輯延遲 5 ns、建立時間 2 ns，其最高時脈頻率約為多少？", options:["約 40 MHz","約 50 MHz","約 66.7 MHz","約 100 MHz"], explanation:"T=8+5+2=15 ns，f≈66.7 MHz。" },
+    en:{ question:"In a synchronous circuit, the flip-flop propagation delay is 8 ns, combinational delay 5 ns, and setup time 2 ns. The maximum clock frequency is about:", options:["About 40 MHz","About 50 MHz","About 66.7 MHz","About 100 MHz"], explanation:"T=8+5+2=15 ns, f≈66.7 MHz." } },
+
+  { id:17, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"優先權編碼器（priority encoder）的主要功能為下列何者？", options:["將一組二進位碼轉換為一條作用中輸出線","當多條輸入同時作用時輸出最高優先者的碼","將輸入訊號延遲固定的時脈週期數","把並列資料逐位元轉換成串列資料輸出"], explanation:"多輸入同時作用時輸出最高優先順序的編碼。" },
+    en:{ question:"The primary function of a priority encoder is:", options:["To convert a binary code into one active output line","To output the code of the highest-priority active input","To delay the input signal by a fixed number of clock cycles","To convert parallel data bit by bit into serial output"], explanation:"It outputs the code of the highest-priority active input." } },
+
+  { id:18, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"一個 2 輸入 NAND 閘，其輸出為 0 的條件為下列何者？", options:["兩個輸入皆為邏輯 1","兩個輸入皆為邏輯 0","任意一個輸入為 1","兩個輸入彼此不相等"], explanation:"NAND 僅在輸入全為 1 時輸出 0。" },
+    en:{ question:"For a 2-input NAND gate, the output is 0 under which condition?", options:["Both inputs are at logic 1","Both inputs are at logic 0","Any single input is at 1","The two inputs are unequal"], explanation:"NAND outputs 0 only when all inputs are 1." } },
+
+  { id:19, difficulty:"trap", points:19, answer:2,
+    zh:{ question:"在布林代數中，運算式 1 + 1 的結果為下列何者？（注意：此為布林邏輯運算，並非二進位加法）", options:["結果等於 10","結果等於 2","結果等於 1","結果等於 0"], explanation:"布林 OR：1+1=1，並非二進位加法。" },
+    en:{ question:"In Boolean algebra, the expression 1 + 1 evaluates to which value? (Note: this is Boolean logic, not binary addition)", options:["It equals 10","It equals 2","It equals 1","It equals 0"], explanation:"Boolean OR: 1+1=1, not binary addition." } },
+
+  { id:20, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"若要將串列輸入的資料一次以並列方式取出，應使用下列哪一種移位暫存器？", options:["並入並出（PIPO）暫存器","串入串出（SISO）暫存器","並入串出（PISO）暫存器","串入並出（SIPO）暫存器"], explanation:"SIPO：串列輸入、並列輸出。" },
+    en:{ question:"To take serial-input data out in parallel form all at once, which shift register should be used?", options:["Parallel-in parallel-out (PIPO) register","Serial-in serial-out (SISO) register","Parallel-in serial-out (PISO) register","Serial-in parallel-out (SIPO) register"], explanation:"SIPO takes serial input and gives parallel output." } },
+
+  { id:21, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"關於 Mealy 與 Moore 有限狀態機，下列敘述何者正確？", options:["Mealy 機的輸出同時取決於現態與輸入","Moore 機的輸出同時取決於現態與輸入","Mealy 機的輸出僅取決於目前狀態","兩者的輸出皆僅取決於輸入訊號"], explanation:"Mealy 輸出依現態與輸入；Moore 僅依現態。" },
+    en:{ question:"Regarding Mealy and Moore finite state machines, which statement is correct?", options:["A Mealy machine's output depends on both state and input","A Moore machine's output depends on both state and input","A Mealy machine's output depends only on current state","Both machines' outputs depend only on the input signal"], explanation:"Mealy output depends on state and input; Moore only on state." } },
+
+  { id:22, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"一個布林函數若以「最小項之和」（sum of minterms）表示，則每個最小項對應真值表中哪一種情形？", options:["函數輸出為 0 的每一個列","函數輸出為 1 的每一個列","輸入變數全為 0 的那一列","輸入變數全為 1 的那一列"], explanation:"最小項對應輸出為 1 的列。" },
+    en:{ question:"When a Boolean function is expressed as a sum of minterms, each minterm corresponds to which case in the truth table?", options:["Each row where the function output is 0","Each row where the function output is 1","The row where all input variables are 0","The row where all input variables are 1"], explanation:"A minterm corresponds to a row where output is 1." } },
+
+  { id:23, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"要表示十進位數值 255，至少需要多少個二進位位元？", options:["5 個位元","6 個位元","7 個位元","8 個位元"], explanation:"255=11111111，需 8 個位元。" },
+    en:{ question:"How many binary bits are needed at minimum to represent the decimal value 255?", options:["5 bits","6 bits","7 bits","8 bits"], explanation:"255 = 11111111, requiring 8 bits." } },
+
+  { id:24, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"三態緩衝器（tri-state buffer）相較於一般緩衝器，多了下列哪一種輸出狀態？", options:["一個額外的邏輯低態輸出","一個額外的邏輯高態輸出","一個額外的高阻抗態輸出","一個經過反相的邏輯輸出"], explanation:"三態多了高阻抗（Hi-Z）狀態。" },
+    en:{ question:"Compared to an ordinary buffer, a tri-state buffer adds which additional output state?", options:["An extra logic-low output level","An extra logic-high output level","An extra high-impedance output","An extra inverted logic output"], explanation:"Tri-state adds a high-impedance (Hi-Z) state." } },
+
+  { id:25, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"在二補數加法中，溢位（overflow）發生的判斷條件為下列何者？", options:["最高位元向外產生進位輸出時","兩個同符號數相加卻得到相反符號的結果","兩個相異符號的數相加時必定會發生","運算結果的最低位元為邏輯 1 時"], explanation:"同號相加得到異號結果即溢位。" },
+    en:{ question:"In two's complement addition, overflow is detected under which condition?", options:["When the most significant bit produces a carry-out","When two same-sign numbers add to an opposite-sign result","Whenever two opposite-sign numbers are added together","When the least significant bit of the result is logic 1"], explanation:"Same-sign operands giving opposite-sign result = overflow." } },
+
+  { id:26, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"關於加法運算中「進位輸出」與「溢位」的關係，下列敘述何者正確？", options:["進位輸出不必然代表二補數運算發生溢位","只要產生進位輸出就一定代表發生溢位","溢位與進位在所有情況下都完全等價","二補數的加法運算永遠不會發生溢位"], explanation:"進位 ≠ 溢位，兩者判斷方式不同。" },
+    en:{ question:"Regarding the relationship between carry-out and overflow in addition, which statement is correct?", options:["A carry-out does not necessarily mean two's complement overflow","Whenever a carry-out is produced, overflow must occur","Overflow and carry are completely equivalent in all cases","Two's complement addition can never produce overflow"], explanation:"Carry ≠ overflow; they are judged differently." } },
+
+  { id:27, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"同步計數器相較於漣波（非同步）計數器，最主要的優點為下列何者？", options:["所使用的正反器數量明顯較少","電路接線的結構相對較為簡單","所有正反器同時觸發、延遲不累積","完全不需要時脈訊號即可運作"], explanation:"同步計數器各級延遲不會累加。" },
+    en:{ question:"Compared to a ripple (asynchronous) counter, the main advantage of a synchronous counter is:", options:["It uses significantly fewer flip-flops","Its wiring structure is relatively simpler","All flip-flops trigger together; delays don't add up","It can operate without any clock signal at all"], explanation:"In synchronous counters, delays do not accumulate." } },
+
+  { id:28, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"反相器（NOT 閘）的功能為下列何者？", options:["當兩個輸入相同時輸出邏輯 1","將兩個輸入進行邏輯相加運算","將兩個輸入進行邏輯相乘運算","將單一輸入反相後輸出結果"], explanation:"NOT 閘將輸入反相。" },
+    en:{ question:"The function of an inverter (NOT gate) is:", options:["To output logic 1 when two inputs are equal","To logically add two inputs together","To logically multiply two inputs together","To output the inverse of a single input"], explanation:"A NOT gate inverts its single input." } },
+
+  { id:29, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"T 型正反器的特性方程式（次態 Q⁺）為下列何者？", options:["Q⁺ = T ⊕ Q","Q⁺ = T · Q","Q⁺ = T + Q","Q⁺ = T′ · Q"], explanation:"T 正反器：Q⁺ = T ⊕ Q。" },
+    en:{ question:"The characteristic equation (next state Q⁺) of a T flip-flop is:", options:["Q⁺ = T ⊕ Q","Q⁺ = T · Q","Q⁺ = T + Q","Q⁺ = T′ · Q"], explanation:"For a T flip-flop, Q⁺ = T ⊕ Q." } },
+
+  { id:30, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"8421 BCD 碼使用 4 個位元表示一個十進位數字，下列哪一組位元組合是「無效」的 BCD 碼？", options:["1001","1010","0111","0011"], explanation:"BCD 僅 0000–1001 有效，1010 無效。" },
+    en:{ question:"8421 BCD uses 4 bits per decimal digit. Which of the following bit combinations is an INVALID BCD code?", options:["1001","1010","0111","0011"], explanation:"Valid BCD is 0000–1001; 1010 is invalid." } },
+
+  { id:31, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"八進位（octal）數字系統中，每一個位數可使用的數字範圍為下列何者？", options:["0 到 9","0 到 F","0 到 7","0 到 1"], explanation:"八進位每位數字為 0–7。" },
+    en:{ question:"In the octal number system, the range of digits available for each position is:", options:["0 to 9","0 to F","0 to 7","0 to 1"], explanation:"Each octal digit ranges from 0 to 7." } },
+
+  { id:32, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"解多工器（demultiplexer）的功能與下列哪一種元件最為相似？", options:["與優先權編碼器的功能相同","與全加器的進位產生電路相同","與多工器的功能完全相同","與帶有致能輸入的解碼器相似"], explanation:"Demux 類似帶致能輸入的解碼器。" },
+    en:{ question:"The function of a demultiplexer is most similar to which of the following devices?", options:["Identical to a priority encoder's function","Identical to a full adder's carry circuit","Exactly identical to a multiplexer's function","Similar to a decoder with an enable input"], explanation:"A demux resembles a decoder with an enable input." } },
+
+  { id:33, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"在組合邏輯電路中，單一輸入變化「不應」改變輸出，卻因路徑延遲不同而出現短暫錯誤脈衝，此現象稱為下列何者？", options:["亞穩態（metastability）現象","靜態冒險（static hazard）現象","建立時間違規（setup violation）","扇出負載過載（fan-out overload）"], explanation:"路徑延遲造成的短暫錯誤脈衝即靜態冒險。" },
+    en:{ question:"In a combinational circuit, a single input change that should NOT alter the output produces a brief erroneous pulse due to differing path delays. This is called:", options:["A metastability phenomenon","A static hazard phenomenon","A setup-time violation","A fan-out load overload"], explanation:"A momentary glitch from path-delay differences is a static hazard." } },
+
+  { id:34, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"一個兩層的「NAND–NAND」邏輯結構，在功能上等效於下列哪一種兩層結構？", options:["AND–OR 結構（積之和 SOP）","OR–AND 結構（和之積 POS）","OR–OR 兩層的結構形式","AND–AND 兩層的結構形式"], explanation:"NAND-NAND 等效於 AND-OR（SOP）。" },
+    en:{ question:"A two-level NAND–NAND logic structure is functionally equivalent to which two-level structure?", options:["AND–OR structure (sum of products, SOP)","OR–AND structure (product of sums, POS)","An OR–OR two-level structure form","An AND–AND two-level structure form"], explanation:"NAND-NAND is equivalent to AND-OR (SOP)." } },
+
+  { id:35, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"一個具有 10 條位址線與 8 條資料線的 ROM，其總儲存容量為多少？", options:["256 位元組（0.25 KB）","512 位元組（0.5 KB）","1024 位元組（1 KB）","2048 位元組（2 KB）"], explanation:"2¹⁰ × 8 位元 = 1024 位元組。" },
+    en:{ question:"A ROM with 10 address lines and 8 data lines has a total storage capacity of:", options:["256 bytes (0.25 KB)","512 bytes (0.5 KB)","1024 bytes (1 KB)","2048 bytes (2 KB)"], explanation:"2¹⁰ × 8 bits = 1024 bytes." } },
+
+  { id:36, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"一個 2 輸入 OR 閘，其輸出為 0 的條件為下列何者？", options:["任意一個輸入為邏輯 1 時","兩個輸入皆為邏輯 1 時","兩個輸入彼此不相等時","兩個輸入皆為邏輯 0 時"], explanation:"OR 僅在輸入全為 0 時輸出 0。" },
+    en:{ question:"For a 2-input OR gate, the output is 0 under which condition?", options:["When any single input is logic 1","When both inputs are at logic 1","When the two inputs are unequal","When both inputs are at logic 0"], explanation:"OR outputs 0 only when all inputs are 0." } },
+
+  { id:37, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"對於 n 個輸入變數，可定義的相異布林函數總數為下列何者？", options:["2^(2ⁿ) 個函數","2ⁿ 個布林函數","n² 個布林函數","2 × n 個函數"], explanation:"真值表 2ⁿ 列，函數數為 2^(2ⁿ)。" },
+    en:{ question:"For n input variables, the total number of distinct Boolean functions that can be defined is:", options:["2^(2ⁿ) functions","2ⁿ Boolean functions","n² Boolean functions","2 × n functions"], explanation:"With 2ⁿ truth-table rows, there are 2^(2ⁿ) functions." } },
+
+  { id:38, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"數位大小比較器（magnitude comparator）的主要輸出通常包含下列哪三種結果？", options:["進位、借位、溢位三種","大於、等於、小於三種","和、差、積三種運算結果","設定、清除、保持三種"], explanation:"比較器輸出 A>B、A=B、A<B。" },
+    en:{ question:"The main outputs of a digital magnitude comparator typically include which three results?", options:["Carry, borrow, and overflow","Greater-than, equal-to, less-than","Sum, difference, and product","Set, clear, and hold states"], explanation:"A comparator outputs A>B, A=B, A<B." } },
+
+  { id:39, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"一個單獨的正反器（flip-flop）一次可以儲存多少位元的資料？", options:["4 位元的資料","2 位元的資料","1 位元的資料","8 位元的資料"], explanation:"一個正反器儲存 1 位元。" },
+    en:{ question:"A single flip-flop can store how many bits of data at a time?", options:["4 bits of data","2 bits of data","1 bit of data","8 bits of data"], explanation:"One flip-flop stores 1 bit." } },
+
+  { id:40, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"在卡諾圖（Karnaugh map）化簡中，將相鄰的 1 圈成越大的群組，所得到的乘積項會有何特性？", options:["包含的變數（文字）數量越多","對應的最小項數量會變得越少","電路必定需要使用更多邏輯閘","包含的變數（文字）數量越少"], explanation:"群組越大，乘積項的文字數越少。" },
+    en:{ question:"In Karnaugh map simplification, circling adjacent 1s into a larger group yields a product term that has:", options:["A greater number of variables (literals)","A smaller number of corresponding minterms","A circuit that must use more logic gates","A smaller number of variables (literals)"], explanation:"Larger groups yield product terms with fewer literals." } },
+];
+
+const ui = {
+  zh: { title:"數位邏輯設計 互動測驗", lang:"English", prev:"上一題", submit:"提交測驗",
+    progress:(c,t)=>`第 ${c} / ${t} 題`, totalLabel:"總分", correctLabel:"正確題數", wrongLabel:"錯誤題數",
+    easy:"簡單", med:"中等", hard:"困難", trap:"陷阱", reviewTitle:"錯題回顧",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！",
+    yourAns:"你的選擇", correctAns:"正確答案", allCorrect:"太厲害了！全部答對，沒有錯題。",
+    percentile:(p)=>`你的成績超越了約 ${p}% 的測試者`,
+    grades:{ top:"🏆 頂尖專家（Top Expert）", adv:"⭐ 進階掌握（Advanced）", inter:"📘 中等水準（Intermediate）", basic:"📗 基礎尚可（Basic）", need:"📕 需要加強（Needs Improvement）" } },
+  en: { title:"Digital Logic Design Quiz", lang:"繁體中文", prev:"Previous", submit:"Submit Quiz",
+    progress:(c,t)=>`Question ${c} / ${t}`, totalLabel:"Total Score", correctLabel:"Correct", wrongLabel:"Incorrect",
+    easy:"Easy", med:"Medium", hard:"Hard", trap:"Trap", reviewTitle:"Review of Incorrect Answers",
+    retry:"Retake Quiz", copy:"Copy Result", copied:"Copied!",
+    yourAns:"Your choice", correctAns:"Correct answer", allCorrect:"Excellent! Everything correct — no mistakes to review.",
+    percentile:(p)=>`You scored higher than about ${p}% of test takers`,
+    grades:{ top:"🏆 Top Expert", adv:"⭐ Advanced", inter:"📘 Intermediate", basic:"📗 Basic", need:"📕 Needs Improvement" } },
+};
+
+const LETTERS = ["A","B","C","D"];
+let lang = "zh";
+let current = 0;
+let answers = new Array(questions.length).fill(null);
+let finished = false;
+
+// Theme
+function initTheme(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").textContent = (t === "dark") ? "☀️" : "🌙";
+}
+function toggleTheme(){
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+}
+function toggleLang(){
+  lang = (lang === "zh") ? "en" : "zh";
+  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-Hant" : "en");
+  applyUITexts();
+  if(finished) renderResults(); else renderQuestion(false);
+}
+function applyUITexts(){
+  const t = ui[lang];
+  document.getElementById("appTitle").textContent = t.title;
+  document.getElementById("langBtn").textContent = t.lang;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+  document.getElementById("rTotalLabel").textContent = t.totalLabel;
+  document.getElementById("rCorrectLabel").textContent = t.correctLabel;
+  document.getElementById("rWrongLabel").textContent = t.wrongLabel;
+  document.getElementById("rEasyLabel").textContent = t.easy;
+  document.getElementById("rMedLabel").textContent = t.med;
+  document.getElementById("rHardLabel").textContent = t.hard;
+  document.getElementById("rTrapLabel").textContent = t.trap;
+  document.getElementById("rReviewTitle").textContent = t.reviewTitle;
+  document.getElementById("retryBtn").textContent = t.retry;
+  document.getElementById("copyBtn").textContent = t.copy;
+}
+
+function renderQuestion(animate){
+  const t = ui[lang];
+  const q = questions[current];
+  const data = q[lang];
+  const card = document.getElementById("qcard");
+
+  const draw = () => {
+    document.getElementById("progressInfo").textContent = t.progress(current+1, questions.length);
+    document.getElementById("questionText").textContent = data.question;
+    const box = document.getElementById("optionsBox");
+    box.innerHTML = "";
+    data.options.forEach((opt, i) => {
+      const el = document.createElement("button");
+      el.className = "option" + (answers[current] === i ? " selected" : "");
+      el.innerHTML = `<span class="tag">${LETTERS[i]}</span>${opt}`;
+      el.onclick = () => selectOption(i);
+      box.appendChild(el);
+    });
+    // prev button
+    document.getElementById("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
+    // submit button only on last question after it is answered
+    const submitBtn = document.getElementById("submitBtn");
+    if(current === questions.length - 1 && answers[current] !== null){
+      submitBtn.classList.remove("hidden");
+    } else {
+      submitBtn.classList.add("hidden");
+    }
+    // progress bar = answered count
+    const answered = answers.filter(a => a !== null).length;
+    document.getElementById("progressFill").style.width = (answered / questions.length * 100) + "%";
+  };
+
+  if(animate){
+    card.classList.add("fading");
+    setTimeout(() => { draw(); card.classList.remove("fading"); }, 250);
+  } else {
+    draw();
+  }
+}
+
+function selectOption(i){
+  if(finished) return;
+  const wasLast = current === questions.length - 1;
+  answers[current] = i;
+  // show selected state
+  const box = document.getElementById("optionsBox");
+  Array.from(box.children).forEach((el, idx) => {
+    el.classList.toggle("selected", idx === i);
+  });
+  const answered = answers.filter(a => a !== null).length;
+  document.getElementById("progressFill").style.width = (answered / questions.length * 100) + "%";
+
+  if(wasLast){
+    // do not auto-advance; reveal submit button
+    document.getElementById("submitBtn").classList.remove("hidden");
+    return;
+  }
+  // brief selected state ~0.4s then auto-advance
+  setTimeout(() => {
+    if(current < questions.length - 1){
+      current++;
+      renderQuestion(true);
+    }
+  }, 400);
+}
+
+function goPrev(){
+  if(current > 0){
+    current--;
+    renderQuestion(true);
+  }
+}
+
+// Normal distribution CDF (Abramowitz & Stegun approximation)
+function normalCdf(x, mean, sd){
+  const z = (x - mean) / sd;
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp(-z * z / 2);
+  let p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+  p = 1 - p;
+  return z >= 0 ? p : 1 - p;
+}
+
+function computeResults(){
+  let score = 0, correctCount = 0;
+  const byDiff = { easy:{c:0,t:0}, medium:{c:0,t:0}, hard:{c:0,t:0}, trap:{c:0,t:0} };
+  const wrong = [];
+  questions.forEach((q, idx) => {
+    byDiff[q.difficulty].t++;
+    if(answers[idx] === q.answer){
+      score += q.points; correctCount++; byDiff[q.difficulty].c++;
+    } else {
+      wrong.push({ q, chosen: answers[idx] });
+    }
+  });
+  return { score, correctCount, wrongCount: questions.length - correctCount, byDiff, wrong };
+}
+
+function gradeFor(score){
+  const g = ui[lang].grades;
+  if(score >= 600) return g.top;
+  if(score >= 500) return g.adv;
+  if(score >= 380) return g.inter;
+  if(score >= 250) return g.basic;
+  return g.need;
+}
+
+function submitQuiz(){
+  finished = true;
+  document.getElementById("quizView").classList.add("hidden");
+  document.getElementById("resultView").classList.remove("hidden");
+  window.scrollTo(0,0);
+  renderResults();
+}
+
+function renderResults(){
+  const t = ui[lang];
+  const r = computeResults();
+  document.getElementById("rScore").textContent = `${r.score} / 670`;
+  document.getElementById("rGrade").textContent = gradeFor(r.score);
+  document.getElementById("rCorrect").textContent = `${r.correctCount} / 40`;
+  document.getElementById("rWrong").textContent = `${r.wrongCount} / 40`;
+  document.getElementById("rEasy").textContent = `${r.byDiff.easy.c} / 10`;
+  document.getElementById("rMed").textContent = `${r.byDiff.medium.c} / 15`;
+  document.getElementById("rHard").textContent = `${r.byDiff.hard.c} / 10`;
+  document.getElementById("rTrap").textContent = `${r.byDiff.trap.c} / 5`;
+
+  const mean = 670 * 0.45;   // 301.5
+  const sd = 670 * 0.15;     // 100.5
+  let pct = normalCdf(r.score, mean, sd) * 100;
+  pct = Math.max(0, Math.min(99.9, pct));
+  document.getElementById("rPercentile").textContent = t.percentile(pct.toFixed(1));
+
+  // review
+  const box = document.getElementById("reviewBox");
+  box.innerHTML = "";
+  if(r.wrong.length === 0){
+    const p = document.createElement("div");
+    p.className = "review-item"; p.textContent = t.allCorrect;
+    box.appendChild(p);
+  } else {
+    r.wrong.forEach(({q, chosen}) => {
+      const d = q[lang];
+      const item = document.createElement("div");
+      item.className = "review-item";
+      const chosenTxt = chosen === null ? "—" : `${LETTERS[chosen]}. ${d.options[chosen]}`;
+      const correctTxt = `${LETTERS[q.answer]}. ${d.options[q.answer]}`;
+      item.innerHTML =
+        `<div class="review-q">${q.id}. ${d.question}</div>` +
+        `<div class="review-line wrong">✗ ${t.yourAns}：${chosenTxt}</div>` +
+        `<div class="review-line correct">✓ ${t.correctAns}：${correctTxt}</div>` +
+        `<div class="review-exp">${d.explanation}</div>`;
+      box.appendChild(item);
+    });
+  }
+}
+
+function copyResult(){
+  const t = ui[lang];
+  const r = computeResults();
+  const mean = 301.5, sd = 100.5;
+  let pct = Math.max(0, Math.min(99.9, normalCdf(r.score, mean, sd) * 100));
+  const lines = [
+    t.title,
+    `${t.totalLabel}: ${r.score} / 670`,
+    `${t.correctLabel}: ${r.correctCount} / 40`,
+    gradeFor(r.score),
+    t.percentile(pct.toFixed(1)),
+  ];
+  const text = lines.join("\n");
+  const done = () => {
+    const btn = document.getElementById("copyBtn");
+    const old = btn.textContent;
+    btn.textContent = t.copied;
+    setTimeout(() => { btn.textContent = old; }, 1500);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, cb){
+  const ta = document.createElement("textarea");
+  ta.value = text; document.body.appendChild(ta); ta.select();
+  try { document.execCommand("copy"); } catch(e){}
+  document.body.removeChild(ta); cb();
+}
+
+function restart(){
+  current = 0;
+  answers = new Array(questions.length).fill(null);
+  finished = false;
+  document.getElementById("resultView").classList.add("hidden");
+  document.getElementById("quizView").classList.remove("hidden");
+  window.scrollTo(0,0);
+  renderQuestion(false);
+}
+
+// init
+initTheme();
+applyUITexts();
+renderQuestion(false);
+</script>
+</body>
+</html>

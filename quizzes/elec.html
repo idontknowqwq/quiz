@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>電子學互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --surface: #F9FAFB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --surface: #1C1C1C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    line-height: 1.6;
+    transition: background 0.2s, color 0.2s;
+  }
+  .container { max-width: 720px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 8px; padding: 8px 0 16px; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .ctrl-btn {
+    background: var(--surface); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .ctrl-btn:hover { background: var(--border); }
+  .progress-info { font-size: 14px; color: var(--text-secondary); margin: 16px 0 8px; }
+  .quiz-area { flex: 1; }
+  .question-card { opacity: 1; transition: opacity 0.25s ease; }
+  .question-card.fading { opacity: 0; }
+  .q-text { font-size: 18px; font-weight: 600; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; font-size: 15px; cursor: pointer; text-align: left;
+    color: var(--text); transition: background 0.15s, border-color 0.15s;
+    display: flex; gap: 10px; align-items: flex-start;
+  }
+  .option:hover { background: var(--surface); }
+  .option.selected { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+  .option .label { font-weight: 700; }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 24px; align-items: center; gap: 12px; }
+  .nav-btn {
+    background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 6px; padding: 10px 18px; font-size: 14px; cursor: pointer;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--surface); }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .submit-btn {
+    background: var(--accent); color: var(--accent-text); border: none;
+    border-radius: 6px; padding: 12px 24px; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  .progress-bar-wrap { margin-top: auto; padding-top: 24px; }
+  .progress-bar-bg { height: 8px; background: var(--border); border-radius: 4px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
+  /* Results */
+  .results { display: none; }
+  .result-score { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .result-grade { font-size: 24px; font-weight: 700; margin: 8px 0 4px; }
+  .result-sub { color: var(--text-secondary); margin-bottom: 24px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .stat-label { font-size: 13px; color: var(--text-secondary); }
+  .stat-val { font-size: 20px; font-weight: 700; margin-top: 2px; }
+  .section-title { font-size: 18px; font-weight: 700; margin: 24px 0 12px; }
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .review-ans { font-size: 14px; padding: 4px 0; }
+  .review-ans.user { color: var(--wrong); }
+  .review-ans.correct { color: var(--correct); }
+  .review-exp { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+  .result-actions { display: flex; gap: 12px; margin: 24px 0; flex-wrap: wrap; }
+  .percentile { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 24px; font-size: 16px; }
+  @media (max-width: 480px) {
+    .title { font-size: 15px; width: 100%; }
+    .ctrl-btn { padding: 5px 9px; font-size: 12px; }
+    .stat-grid { grid-template-columns: 1fr; }
+    .q-text { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="title" id="appTitle">電子學互動測驗</div>
+    <div class="controls">
+      <button class="ctrl-btn" id="langBtn">English</button>
+      <button class="ctrl-btn" id="themeBtn">🌙 深色</button>
+    </div>
+  </header>
+
+  <!-- Quiz -->
+  <div id="quizScreen">
+    <div class="progress-info" id="progressInfo"></div>
+    <div class="quiz-area">
+      <div class="question-card" id="questionCard">
+        <div class="q-text" id="qText"></div>
+        <div class="options" id="optionsBox"></div>
+      </div>
+      <div class="nav-row">
+        <button class="nav-btn" id="prevBtn"></button>
+        <button class="submit-btn" id="submitBtn" style="display:none;"></button>
+      </div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill"></div></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="results" id="resultScreen">
+    <div class="result-score" id="rScore"></div>
+    <div class="result-grade" id="rGrade"></div>
+    <div class="result-sub" id="rSub"></div>
+    <div class="percentile" id="rPercentile"></div>
+    <div class="stat-grid" id="rStats"></div>
+    <div class="section-title" id="reviewTitle"></div>
+    <div id="reviewBox"></div>
+    <div class="result-actions">
+      <button class="submit-btn" id="retryBtn"></button>
+      <button class="nav-btn" id="copyBtn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"RC 串聯電路的時間常數 τ 等於下列何者？", options:["R 除以 C","R 乘以 C","C 除以 R","R 加上 C"], explanation:"時間常數 τ = R×C，單位為秒。" },
+    en:{ question:"What is the time constant τ of a series RC circuit?", options:["R divided by C","R multiplied by C","C divided by R","R plus C"], explanation:"Time constant τ = R×C, in seconds." } },
+  { id:2, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"根據歐姆定律，電壓 V、電流 I 與電阻 R 的關係為何？", options:["V = I / R","V = R / I","V = I × R","V = I + R"], explanation:"歐姆定律：V = I×R。" },
+    en:{ question:"By Ohm's law, what relates voltage V, current I and resistance R?", options:["V = I / R","V = R / I","V = I × R","V = I + R"], explanation:"Ohm's law: V = I×R." } },
+  { id:3, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"非反相放大器的電壓增益為何？（Rf 為回授電阻，R1 接地）", options:["1 + Rf/R1","−Rf/R1","Rf/R1","1 − Rf/R1"], explanation:"非反相增益為 1 + Rf/R1。" },
+    en:{ question:"What is the gain of a non-inverting op-amp? (Rf feedback, R1 to ground)", options:["1 + Rf/R1","−Rf/R1","Rf/R1","1 − Rf/R1"], explanation:"Non-inverting gain is 1 + Rf/R1." } },
+  { id:4, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"電容的基本單位是下列何者？", options:["亨利（Henry）","法拉（Farad）","歐姆（Ohm）","韋伯（Weber）"], explanation:"電容單位為法拉（F）。" },
+    en:{ question:"What is the SI unit of capacitance?", options:["Henry","Farad","Ohm","Weber"], explanation:"Capacitance is measured in farads (F)." } },
+  { id:5, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"在直流穩態下，理想電感器的行為比較接近下列何者？", options:["如同開路，完全阻斷電流","如同短路，壓降趨近於零","如同固定電阻，限制電流","如同電容，儲存電荷"], explanation:"直流穩態下電感如短路，壓降為零。" },
+    en:{ question:"At DC steady state, an ideal inductor behaves most like which of these?", options:["An open circuit, fully blocking current","A short circuit, with near-zero voltage","A fixed resistor, limiting current","A capacitor, storing charge"], explanation:"At DC steady state an inductor acts as a short with zero voltage." } },
+  { id:6, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"兩個相同電阻 R 串聯接於 12V 電源，兩電阻之間的分壓為多少？", options:["12 V","3 V","6 V","0 V"], explanation:"相同電阻分壓，輸出為一半 6V。" },
+    en:{ question:"Two equal resistors R in series across 12V; what is the voltage between them?", options:["12 V","3 V","6 V","0 V"], explanation:"Equal resistors split the voltage in half: 6V." } },
+  { id:7, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"三個電阻 R1、R2、R3 串聯，總電阻如何計算？", options:["三者直接相加","三者倒數和的倒數","三者直接相乘","三者數值的平均"], explanation:"串聯電阻直接相加。" },
+    en:{ question:"Three resistors R1, R2, R3 in series; how is the total found?", options:["Sum of the three","Reciprocal of reciprocals' sum","Product of the three","Average of the three"], explanation:"Series resistances add directly." } },
+  { id:8, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"反相放大器的電壓增益為何？（Rf 為回授電阻，R1 為輸入電阻）", options:["1 + Rf/R1","−Rf/R1","−R1/Rf","1 − R1/Rf"], explanation:"反相增益為 −Rf/R1。" },
+    en:{ question:"What is the gain of an inverting op-amp? (Rf feedback, R1 input)", options:["1 + Rf/R1","−Rf/R1","−R1/Rf","1 − R1/Rf"], explanation:"Inverting gain is −Rf/R1." } },
+  { id:9, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"電容抗 Xc 與頻率 f 及電容 C 的關係式為何？", options:["1/(2πfC)","2πfC","1/(2πfL)","2πfL"], explanation:"Xc = 1/(2πfC)，頻率越高抗越小。" },
+    en:{ question:"How does capacitive reactance Xc relate to frequency f and capacitance C?", options:["1/(2πfC)","2πfC","1/(2πfL)","2πfL"], explanation:"Xc = 1/(2πfC); higher frequency lowers reactance." } },
+  { id:10, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"兩個阻值皆為 R 的電阻並聯，總電阻為何？", options:["2R","R","R/2","4R"], explanation:"兩相同電阻並聯為 R/2。" },
+    en:{ question:"Two resistors each of value R in parallel; what is the total?", options:["2R","R","R/2","4R"], explanation:"Two equal resistors in parallel give R/2." } },
+  { id:11, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"電感抗 XL 隨頻率如何變化？", options:["頻率越高，電感抗越大","頻率越高，電感抗越小","電感抗與頻率無關","頻率越高，抗先增後減"], explanation:"XL = 2πfL，頻率越高抗越大。" },
+    en:{ question:"How does inductive reactance XL change with frequency?", options:["Higher frequency, larger reactance","Higher frequency, smaller reactance","Reactance is independent of frequency","It rises then falls with frequency"], explanation:"XL = 2πfL increases with frequency." } },
+  { id:12, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"關於電容器對訊號的影響，下列敘述何者正確？", options:["阻隔交流，通過直流","阻隔直流，通過交流","直流交流皆可通過","直流交流皆被阻隔"], explanation:"電容隔直流、通交流。" },
+    en:{ question:"Regarding a capacitor's effect on signals, which statement is correct?", options:["Blocks AC, passes DC","Blocks DC, passes AC","Passes both DC and AC","Blocks both DC and AC"], explanation:"A capacitor blocks DC and passes AC." } },
+  { id:13, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"對於補償型運算放大器，增益頻寬乘積（GBW）有何特性？", options:["增益與頻寬乘積近似為定值","增益增加時頻寬等比例增加","頻寬與增益完全無關","增益增加時頻寬維持不變"], explanation:"GBW 近似為常數，增益升則頻寬降。" },
+    en:{ question:"For a compensated op-amp, what describes the gain-bandwidth product (GBW)?", options:["Gain times bandwidth stays roughly constant","Bandwidth grows in proportion to gain","Bandwidth is unrelated to gain","Bandwidth stays fixed as gain rises"], explanation:"GBW is roughly constant; higher gain means lower bandwidth." } },
+  { id:14, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"電功率 P 與電壓 V、電流 I 的關係為何？", options:["P = V / I","P = V + I","P = V × I","P = I / V"], explanation:"功率 P = V×I。" },
+    en:{ question:"What relates electrical power P to voltage V and current I?", options:["P = V / I","P = V + I","P = V × I","P = I / V"], explanation:"Power P = V×I." } },
+  { id:15, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"峰值為 Vp 的正弦波，其均方根值（RMS）為何？", options:["Vp","Vp/2","Vp/√2","Vp×√2"], explanation:"正弦波 Vrms = Vp/√2。" },
+    en:{ question:"For a sine wave with peak Vp, what is the RMS value?", options:["Vp","Vp/2","Vp/√2","Vp×√2"], explanation:"For a sine wave Vrms = Vp/√2." } },
+  { id:16, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"N 通道 MOSFET 在飽和區的汲極電流 ID 與閘源電壓的關係為何？", options:["與 (Vgs − Vt) 平方成正比","與 (Vgs − Vt) 成正比","與 Vgs 成反比","與 Vds 平方成正比"], explanation:"飽和區 ID 正比於 (Vgs−Vt)²。" },
+    en:{ question:"For an N-channel MOSFET in saturation, how does drain current ID depend on Vgs?", options:["Proportional to (Vgs − Vt) squared","Proportional to (Vgs − Vt)","Inversely proportional to Vgs","Proportional to Vds squared"], explanation:"In saturation ID ∝ (Vgs−Vt)²." } },
+  { id:17, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"LC 諧振電路的諧振頻率 f0 為何？", options:["1/(2π·LC)","2π·√(LC)","1/(2π·L·C)","1/(2π·√(LC))"], explanation:"f0 = 1/(2π√(LC))。" },
+    en:{ question:"What is the resonant frequency f0 of an LC circuit?", options:["1/(2π·LC)","2π·√(LC)","1/(2π·L·C)","1/(2π·√(LC))"], explanation:"f0 = 1/(2π√(LC))." } },
+  { id:18, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"理想二極體在順向偏壓時的行為為何？", options:["導通，允許電流通過","截止，阻斷所有電流","如電容般儲存電荷","如電感般阻礙電流"], explanation:"順偏時二極體導通。" },
+    en:{ question:"How does an ideal diode behave under forward bias?", options:["Conducts, allowing current through","Blocks, stopping all current","Stores charge like a capacitor","Opposes current like an inductor"], explanation:"A diode conducts when forward biased." } },
+  { id:19, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"在固定電壓下，將電阻值增加為兩倍，通過的電流會如何變化？", options:["電流增加為兩倍","電流維持不變","電流增加為四倍","電流減少為一半"], explanation:"定壓下電流與電阻成反比，減半。" },
+    en:{ question:"At fixed voltage, if the resistance is doubled, how does the current change?", options:["Current doubles","Current stays the same","Current becomes four times","Current halves"], explanation:"At fixed voltage current is inversely proportional to R; it halves." } },
+  { id:20, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"齊納（Zener）二極體在電路中最常見的應用為何？", options:["作為整流訊號的元件","提供穩定的參考電壓","放大微弱的輸入訊號","儲存能量供延遲使用"], explanation:"齊納二極體用於穩壓。" },
+    en:{ question:"What is the most common application of a Zener diode?", options:["Rectifying an input signal","Providing a stable reference voltage","Amplifying a weak input signal","Storing energy for later use"], explanation:"Zener diodes provide voltage regulation." } },
+  { id:21, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"在放大器中加入負回授，下列何者為主要效果？", options:["提高增益，降低頻寬穩定度","增加失真，並縮小整體頻寬","提高增益，同時增加雜訊量","降低增益，改善頻寬與穩定度"], explanation:"負回授犧牲增益換取穩定與頻寬。" },
+    en:{ question:"Adding negative feedback to an amplifier mainly does which of these?", options:["Raises gain, lowers stability and bandwidth","Adds distortion and shrinks bandwidth","Raises gain while adding more noise","Lowers gain, improves bandwidth and stability"], explanation:"Negative feedback trades gain for stability and bandwidth." } },
+  { id:22, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"克希荷夫電流定律（KCL）描述的是下列何者？", options:["迴路電壓總和等於零","電阻電壓與電流成正比","節點電流流入等於流出","功率等於電壓乘以電流"], explanation:"KCL：流入節點電流和等於流出。" },
+    en:{ question:"What does Kirchhoff's Current Law (KCL) state?", options:["Loop voltages sum to zero","Resistor voltage is proportional to current","Current into a node equals current out","Power equals voltage times current"], explanation:"KCL: current into a node equals current out." } },
+  { id:23, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"全波整流器輸入 60Hz 弦波，其輸出漣波的基本頻率為何？", options:["15 Hz","30 Hz","60 Hz","120 Hz"], explanation:"全波整流輸出頻率為輸入兩倍 120Hz。" },
+    en:{ question:"A full-wave rectifier with a 60Hz sine input has what ripple fundamental frequency?", options:["15 Hz","30 Hz","60 Hz","120 Hz"], explanation:"Full-wave rectified output ripple is twice the input: 120Hz." } },
+  { id:24, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"運算放大器的轉動率（slew rate）定義為何？", options:["輸入電壓對時間的最大變化率","輸出電壓對時間的最大變化率","輸入電流對時間的最大變化率","增益對頻率的最大變化率"], explanation:"轉動率為輸出電壓最大變化率（V/µs）。" },
+    en:{ question:"How is an op-amp's slew rate defined?", options:["Max rate of change of input voltage","Max rate of change of output voltage","Max rate of change of input current","Max rate of change of gain vs frequency"], explanation:"Slew rate is the max rate of change of output voltage (V/µs)." } },
+  { id:25, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"電感的基本單位是下列何者？", options:["法拉（Farad）","歐姆（Ohm）","庫侖（Coulomb）","亨利（Henry）"], explanation:"電感單位為亨利（H）。" },
+    en:{ question:"What is the SI unit of inductance?", options:["Farad","Ohm","Coulomb","Henry"], explanation:"Inductance is measured in henries (H)." } },
+  { id:26, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"共射極放大器的輸出與輸入訊號之間的相位關係為何？", options:["相位相差 180 度（反相）","相位相同（同相）","相位相差 90 度落後","相位相差 90 度超前"], explanation:"共射極為反相放大，相差180°。" },
+    en:{ question:"What is the phase relationship between output and input of a common-emitter amplifier?", options:["180 degrees apart (inverted)","In phase (same phase)","90 degrees lagging","90 degrees leading"], explanation:"A common-emitter amp inverts the signal (180°)." } },
+  { id:27, difficulty:"trap", points:19, answer:2,
+    zh:{ question:"關於「傳統電流方向」的定義，下列敘述何者正確？", options:["與電子實際流動方向相同","永遠由負極流向正極","規定為正電荷流動的方向","與電場方向恆為相反"], explanation:"傳統電流方向定為正電荷流向，與電子相反。" },
+    en:{ question:"Which statement about 'conventional current direction' is correct?", options:["Same as actual electron flow direction","Always from negative to positive terminal","Defined as the flow of positive charge","Always opposite to the electric field"], explanation:"Conventional current is the direction of positive charge flow, opposite to electrons." } },
+  { id:28, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"差動放大器的共模拒斥比（CMRR）越高，代表下列何者？", options:["對差模訊號的放大能力越弱","對共模訊號的放大能力越強","輸入阻抗越低且雜訊越大","對共模訊號的抑制能力越強"], explanation:"CMRR 越高，抑制共模訊號能力越強。" },
+    en:{ question:"A higher Common-Mode Rejection Ratio (CMRR) in a differential amplifier means what?", options:["Weaker amplification of differential signals","Stronger amplification of common-mode signals","Lower input impedance and more noise","Stronger rejection of common-mode signals"], explanation:"Higher CMRR means stronger rejection of common-mode signals." } },
+  { id:29, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"BJT 工作於主動（線性放大）區時，其接面偏壓條件為何？", options:["射基接面與集基接面皆順偏","射基接面順偏，集基接面逆偏","射基接面逆偏，集基接面順偏","射基接面與集基接面皆逆偏"], explanation:"主動區：射基順偏、集基逆偏。" },
+    en:{ question:"For a BJT in the active (linear) region, what are the junction bias conditions?", options:["Both base-emitter and base-collector forward","Base-emitter forward, base-collector reverse","Base-emitter reverse, base-collector forward","Both base-emitter and base-collector reverse"], explanation:"Active region: base-emitter forward, base-collector reverse biased." } },
+  { id:30, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"電容器主要以何種形式儲存能量？", options:["以磁場的形式儲存","以熱能的形式儲存","以化學能的形式儲存","以電場的形式儲存"], explanation:"電容以電場儲存能量。" },
+    en:{ question:"In what form does a capacitor primarily store energy?", options:["In a magnetic field","As thermal energy","As chemical energy","In an electric field"], explanation:"A capacitor stores energy in an electric field." } },
+  { id:31, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"米勒效應（Miller effect）對放大器有何主要影響？", options:["放大輸入端等效電容，限制高頻響應","縮小輸出端等效電容，提升高頻響應","放大輸入端等效電阻，改善低頻響應","縮小輸出端等效電阻，改善低頻響應"], explanation:"米勒效應放大輸入電容，降低高頻響應。" },
+    en:{ question:"What is the main effect of the Miller effect on an amplifier?", options:["Magnifies input capacitance, limiting high-frequency response","Shrinks output capacitance, boosting high-frequency response","Magnifies input resistance, improving low-frequency response","Shrinks output resistance, improving low-frequency response"], explanation:"The Miller effect amplifies input capacitance, limiting high-frequency response." } },
+  { id:32, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"功率增益為 100 倍時，以分貝（dB）表示約為多少？", options:["10 dB","100 dB","20 dB","40 dB"], explanation:"10·log(100) = 20 dB。" },
+    en:{ question:"A power gain of 100× expressed in decibels (dB) is approximately what?", options:["10 dB","100 dB","20 dB","40 dB"], explanation:"10·log(100) = 20 dB." } },
+  { id:33, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"關於理想運算放大器的輸入特性，下列敘述何者正確？", options:["輸入阻抗為零，輸入電流很大","輸入阻抗有限，需考慮偏壓電流","輸入阻抗為零，但無電流流入","輸入阻抗無限大，無電流流入"], explanation:"理想運放輸入阻抗無限大、無輸入電流。" },
+    en:{ question:"Which statement about an ideal op-amp's inputs is correct?", options:["Zero input impedance, large input current","Finite input impedance, bias current matters","Zero input impedance, but no current flows in","Infinite input impedance, no current flows in"], explanation:"An ideal op-amp has infinite input impedance and no input current." } },
+  { id:34, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"理想 B 類（Class B）推挽放大器的最大理論效率約為多少？", options:["約 25%","約 78.5%","約 50%","約 100%"], explanation:"B 類最大理論效率約 78.5%。" },
+    en:{ question:"What is the maximum theoretical efficiency of an ideal Class B push-pull amplifier?", options:["About 25%","About 78.5%","About 50%","About 100%"], explanation:"Class B has a maximum theoretical efficiency of ~78.5%." } },
+  { id:35, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"RC 低通濾波器的截止頻率 fc 為何？", options:["2πRC","RC/(2π)","2π/(RC)","1/(2πRC)"], explanation:"fc = 1/(2πRC)。" },
+    en:{ question:"What is the cutoff frequency fc of an RC low-pass filter?", options:["2πRC","RC/(2π)","2π/(RC)","1/(2πRC)"], explanation:"fc = 1/(2πRC)." } },
+  { id:36, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"在串聯電路中，通過各元件的電流有何特性？", options:["各元件電流皆相同","各元件電流皆不同","電流與電阻成正比","總電流為各電流之和"], explanation:"串聯電路電流處處相等。" },
+    en:{ question:"In a series circuit, what is true of the current through each element?", options:["Current is the same in all elements","Current differs in each element","Current is proportional to resistance","Total current is the sum of currents"], explanation:"In a series circuit the current is the same through all elements." } },
+  { id:37, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"BJT 作為開關且處於「導通（ON）」狀態時，電晶體工作於哪個區域？", options:["工作於截止區","工作於主動區","工作於飽和區","工作於崩潰區"], explanation:"開關導通時 BJT 處於飽和區。" },
+    en:{ question:"When a BJT switch is in the 'ON' state, in which region does it operate?", options:["The cutoff region","The active region","The saturation region","The breakdown region"], explanation:"A BJT switch in the ON state operates in saturation." } },
+  { id:38, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"在共射極放大器射極加入電阻 Re，對直流工作點有何主要作用？", options:["提高電壓增益，但降低穩定度","降低輸入阻抗，並增加失真量","提高集極電流，使增益最大化","穩定工作點，降低溫度的影響"], explanation:"射極電阻提供負回授，穩定 Q 點。" },
+    en:{ question:"Adding an emitter resistor Re to a common-emitter amplifier mainly does what to the DC operating point?", options:["Raises voltage gain but lowers stability","Lowers input impedance and adds distortion","Raises collector current to maximize gain","Stabilizes the operating point against temperature"], explanation:"An emitter resistor provides feedback that stabilizes the Q-point." } },
+  { id:39, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"求戴維寧（Thévenin）等效電阻時，正確做法為何？", options:["將獨立電源全部開路後計算","將獨立電壓源短路、電流源開路","將獨立電源全部短路後計算","將獨立電壓源開路、電流源短路"], explanation:"求 Rth 時電壓源短路、電流源開路。" },
+    en:{ question:"To find the Thévenin equivalent resistance, what is the correct procedure?", options:["Open-circuit all independent sources","Short voltage sources, open current sources","Short-circuit all independent sources","Open voltage sources, short current sources"], explanation:"For Rth, short voltage sources and open current sources." } },
+  { id:40, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"增強型 N 通道 MOSFET 要形成通道並導通，需滿足何條件？", options:["Vgs 必須小於零","Vgs 必須等於零","Vgs 必須大於臨界電壓 Vt","Vds 必須大於臨界電壓 Vt"], explanation:"增強型 NMOS 需 Vgs > Vt 才導通。" },
+    en:{ question:"For an enhancement N-channel MOSFET to form a channel and conduct, what is required?", options:["Vgs must be less than zero","Vgs must equal zero","Vgs must exceed threshold Vt","Vds must exceed threshold Vt"], explanation:"An enhancement NMOS conducts when Vgs > Vt." } },
+];
+
+const L = {
+  zh: {
+    title:"電子學互動測驗", langBtn:"English", themeDark:"🌙 深色", themeLight:"☀️ 淺色",
+    progress:(c,t)=>`第 ${c} / ${t} 題`, prev:"← 上一題", submit:"提交測驗",
+    optLabels:["A","B","C","D"],
+    rScore:(s)=>`${s} / 670`, correctN:"正確題數", wrongN:"錯誤題數",
+    byDiff:{easy:"簡單",medium:"中等",hard:"困難",trap:"陷阱"},
+    grades:{expert:"🏆 頂尖專家",adv:"⭐ 進階掌握",inter:"📘 中等水準",basic:"📗 基礎尚可",need:"📕 需要加強"},
+    percentile:(p)=>`你的成績超越了約 ${p}% 的測試者`,
+    review:"錯題回顧", yourAns:"你的選擇", correctAns:"正確答案",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！",
+    allCorrect:"太厲害了！全部答對，沒有需要回顧的題目。",
+    scoreLabel:"總分", correctRate:"各難度正確率",
+    copyText:(s,c)=>`電子學測驗結果\n總分：${s}/670\n正確：${c}/40\n等級：`,
+  },
+  en: {
+    title:"Electronics Interactive Quiz", langBtn:"繁體中文", themeDark:"🌙 Dark", themeLight:"☀️ Light",
+    progress:(c,t)=>`Question ${c} / ${t}`, prev:"← Previous", submit:"Submit Quiz",
+    optLabels:["A","B","C","D"],
+    rScore:(s)=>`${s} / 670`, correctN:"Correct", wrongN:"Incorrect",
+    byDiff:{easy:"Easy",medium:"Medium",hard:"Hard",trap:"Trap"},
+    grades:{expert:"🏆 Top Expert",adv:"⭐ Advanced",inter:"📘 Intermediate",basic:"📗 Basic",need:"📕 Needs Improvement"},
+    percentile:(p)=>`You scored higher than about ${p}% of test takers`,
+    review:"Review of Incorrect Answers", yourAns:"Your answer", correctAns:"Correct answer",
+    retry:"Retry Quiz", copy:"Copy Results", copied:"Copied!",
+    allCorrect:"Excellent! All correct — nothing to review.",
+    scoreLabel:"Total Score", correctRate:"Accuracy by Difficulty",
+    copyText:(s,c)=>`Electronics Quiz Result\nScore: ${s}/670\nCorrect: ${c}/40\nGrade: `,
+  }
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+
+// Theme
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").textContent = t==="dark" ? L[lang].themeLight : L[lang].themeDark;
+  themeState = t;
+}
+let themeState = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+applyTheme(themeState);
+
+document.getElementById("themeBtn").onclick = ()=> applyTheme(themeState==="dark"?"light":"dark");
+document.getElementById("langBtn").onclick = ()=>{
+  lang = lang==="zh"?"en":"zh";
+  document.documentElement.lang = lang==="zh"?"zh-Hant":"en";
+  applyStaticText();
+  if(document.getElementById("resultScreen").style.display==="block") showResults();
+  else renderQuestion(false);
+};
+
+function applyStaticText(){
+  const t = L[lang];
+  document.getElementById("appTitle").textContent = t.title;
+  document.title = t.title;
+  document.getElementById("langBtn").textContent = t.langBtn;
+  document.getElementById("themeBtn").textContent = themeState==="dark"?t.themeLight:t.themeDark;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+  document.getElementById("retryBtn").textContent = t.retry;
+  document.getElementById("copyBtn").textContent = t.copy;
+  document.getElementById("reviewTitle").textContent = t.review;
+}
+
+function renderQuestion(fade=true){
+  const card = document.getElementById("questionCard");
+  const draw = ()=>{
+    const t = L[lang];
+    const q = questions[current];
+    const qd = q[lang];
+    document.getElementById("progressInfo").textContent = t.progress(current+1, questions.length);
+    document.getElementById("qText").textContent = qd.question;
+    const box = document.getElementById("optionsBox");
+    box.innerHTML = "";
+    qd.options.forEach((opt,i)=>{
+      const el = document.createElement("button");
+      el.className = "option" + (answers[current]===i ? " selected" : "");
+      el.innerHTML = `<span class="label">${t.optLabels[i]}</span><span>${opt}</span>`;
+      el.onclick = ()=> selectOption(i);
+      box.appendChild(el);
+    });
+    document.getElementById("prevBtn").disabled = current===0;
+    const isLast = current===questions.length-1;
+    document.getElementById("submitBtn").style.display = (isLast && answers[current]!==null) ? "inline-block" : "none";
+    document.getElementById("progressFill").style.width = ((current+1)/questions.length*100)+"%";
+    card.classList.remove("fading");
+  };
+  if(fade){
+    card.classList.add("fading");
+    setTimeout(draw, 250);
+  } else draw();
+}
+
+function selectOption(i){
+  answers[current] = i;
+  // show selected state immediately
+  const box = document.getElementById("optionsBox");
+  [...box.children].forEach((c,idx)=> c.classList.toggle("selected", idx===i));
+  const isLast = current===questions.length-1;
+  if(isLast){
+    document.getElementById("submitBtn").style.display = "inline-block";
+  } else {
+    setTimeout(()=>{ current++; renderQuestion(true); }, 400);
+  }
+}
+
+document.getElementById("prevBtn").onclick = ()=>{ if(current>0){ current--; renderQuestion(true); } };
+document.getElementById("submitBtn").onclick = showResults;
+document.getElementById("retryBtn").onclick = ()=>{
+  for(let i=0;i<answers.length;i++) answers[i]=null;
+  current=0;
+  document.getElementById("resultScreen").style.display="none";
+  document.getElementById("quizScreen").style.display="block";
+  renderQuestion(false);
+  window.scrollTo(0,0);
+};
+
+// Normal CDF via erf approximation
+function normalCDF(x, mean, sd){
+  const z = (x-mean)/(sd*Math.SQRT2);
+  // erf approximation (Abramowitz & Stegun 7.1.26)
+  const t = 1/(1+0.3275911*Math.abs(z));
+  const y = 1 - (((((1.061405429*t -1.453152027)*t)+1.421413741)*t -0.284496736)*t +0.254829592)*t*Math.exp(-z*z);
+  const erf = z>=0 ? y : -y;
+  return 0.5*(1+erf);
+}
+
+function gradeFor(score){
+  if(score>=600) return "expert";
+  if(score>=500) return "adv";
+  if(score>=380) return "inter";
+  if(score>=250) return "basic";
+  return "need";
+}
+
+let lastScore=0, lastCorrect=0;
+
+function showResults(){
+  const t = L[lang];
+  document.getElementById("quizScreen").style.display="none";
+  document.getElementById("resultScreen").style.display="block";
+
+  let score=0, correctCount=0;
+  const byDiff = {easy:{c:0,n:0},medium:{c:0,n:0},hard:{c:0,n:0},trap:{c:0,n:0}};
+  questions.forEach((q,i)=>{
+    byDiff[q.difficulty].n++;
+    if(answers[i]===q.answer){ score+=q.points; correctCount++; byDiff[q.difficulty].c++; }
+  });
+  lastScore=score; lastCorrect=correctCount;
+  const wrongCount = questions.length - correctCount;
+
+  document.getElementById("rScore").textContent = t.rScore(score);
+  const g = gradeFor(score);
+  document.getElementById("rGrade").textContent = t.grades[g];
+  document.getElementById("rSub").textContent = t.scoreLabel;
+
+  const pct = Math.round(normalCDF(score, 301.5, 100.5)*100);
+  document.getElementById("rPercentile").textContent = t.percentile(Math.min(99,Math.max(1,pct)));
+
+  const stats = document.getElementById("rStats");
+  stats.innerHTML = "";
+  const mk = (label,val)=>`<div class="stat-box"><div class="stat-label">${label}</div><div class="stat-val">${val}</div></div>`;
+  stats.innerHTML += mk(t.correctN, `${correctCount} / 40`);
+  stats.innerHTML += mk(t.wrongN, `${wrongCount} / 40`);
+  ["easy","medium","hard","trap"].forEach(d=>{
+    stats.innerHTML += mk(t.byDiff[d], `${byDiff[d].c} / ${byDiff[d].n}`);
+  });
+
+  const box = document.getElementById("reviewBox");
+  box.innerHTML = "";
+  const wrong = questions.map((q,i)=>({q,i})).filter(x=> answers[x.i]!==x.q.answer);
+  if(wrong.length===0){
+    box.innerHTML = `<div class="review-item">${t.allCorrect}</div>`;
+  } else {
+    wrong.forEach(({q,i})=>{
+      const qd = q[lang];
+      const ua = answers[i];
+      const userTxt = ua===null ? "—" : `${t.optLabels[ua]}. ${qd.options[ua]}`;
+      const corTxt = `${t.optLabels[q.answer]}. ${qd.options[q.answer]}`;
+      const div = document.createElement("div");
+      div.className = "review-item";
+      div.innerHTML = `<div class="review-q">${qd.question}</div>
+        <div class="review-ans user">${t.yourAns}: ${userTxt}</div>
+        <div class="review-ans correct">${t.correctAns}: ${corTxt}</div>
+        <div class="review-exp">${qd.explanation}</div>`;
+      box.appendChild(div);
+    });
+  }
+  window.scrollTo(0,0);
+}
+
+document.getElementById("copyBtn").onclick = ()=>{
+  const t = L[lang];
+  const g = gradeFor(lastScore);
+  const txt = t.copyText(lastScore,lastCorrect) + t.grades[g];
+  navigator.clipboard.writeText(txt).then(()=>{
+    const b = document.getElementById("copyBtn");
+    const orig = b.textContent; b.textContent = t.copied;
+    setTimeout(()=> b.textContent = orig, 1500);
+  });
+};
+
+applyStaticText();
+renderQuestion(false);
+</script>
+</body>
+</html>

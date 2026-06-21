@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Java 程式語言互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --surface: #F9FAFB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --surface: #1A1A1A;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 10;
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; align-items: center; gap: 8px; }
+  .btn {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 0.2s;
+  }
+  .btn:hover { background: var(--surface); }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .btn-primary:hover { background: var(--accent); opacity: 0.9; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .progress-text { font-size: 14px; color: var(--text-secondary); }
+
+  main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px 100px;
+  }
+  .fade { transition: opacity 0.25s ease; }
+  .fade.hidden-fade { opacity: 0; }
+
+  .q-number { font-size: 14px; color: var(--text-secondary); margin-bottom: 10px; }
+  .q-text { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    cursor: pointer;
+    display: flex;
+    gap: 12px;
+    background: var(--bg);
+    transition: background-color 0.2s, border-color 0.2s;
+    font-size: 16px;
+  }
+  .option:hover { background: var(--surface); }
+  .option .letter {
+    font-weight: 700;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+  .option.selected {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .option.selected .letter { color: var(--accent-text); }
+
+  .nav { margin-top: 28px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+
+  .progress-bar-wrap {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--border);
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* Results */
+  .result-score { font-size: 40px; font-weight: 800; }
+  .result-grade { font-size: 24px; font-weight: 700; margin: 8px 0; }
+  .result-line { font-size: 16px; margin: 4px 0; color: var(--text); }
+  .result-section-title { font-size: 18px; font-weight: 700; margin: 28px 0 12px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+  .stat-card .label { font-size: 13px; color: var(--text-secondary); }
+  .stat-card .value { font-size: 22px; font-weight: 700; }
+  .percentile { font-size: 18px; font-weight: 600; margin-top: 16px; }
+
+  .review-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .review-q { font-weight: 600; margin-bottom: 10px; }
+  .review-ans { font-size: 14px; margin: 4px 0; }
+  .review-ans.user { color: var(--wrong); }
+  .review-ans.correct { color: var(--correct); }
+  .review-exp { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+  .result-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body data-theme="light">
+<header>
+  <div class="title" id="appTitle">Java 程式語言互動測驗</div>
+  <div class="controls">
+    <span class="progress-text" id="progressText">第 1 / 40 題</span>
+    <button class="btn" id="langBtn">EN</button>
+    <button class="btn" id="themeBtn">🌙</button>
+  </div>
+</header>
+
+<main>
+  <div id="quizView" class="fade">
+    <div class="q-number" id="qNumber"></div>
+    <div class="q-text" id="qText"></div>
+    <div class="options" id="options"></div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+    </div>
+  </div>
+
+  <div id="resultView" class="fade hidden">
+    <div class="result-score"><span id="scoreVal"></span> / 670</div>
+    <div class="result-grade" id="gradeVal"></div>
+    <div class="percentile" id="percentileVal"></div>
+
+    <div class="result-section-title" id="statsTitle"></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label" id="lblCorrect"></div><div class="value" id="correctVal"></div></div>
+      <div class="stat-card"><div class="label" id="lblWrong"></div><div class="value" id="wrongVal"></div></div>
+    </div>
+
+    <div class="result-section-title" id="byDiffTitle"></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label" id="lblEasy"></div><div class="value" id="easyVal"></div></div>
+      <div class="stat-card"><div class="label" id="lblMed"></div><div class="value" id="medVal"></div></div>
+      <div class="stat-card"><div class="label" id="lblHard"></div><div class="value" id="hardVal"></div></div>
+      <div class="stat-card"><div class="label" id="lblTrap"></div><div class="value" id="trapVal"></div></div>
+    </div>
+
+    <div class="result-section-title" id="reviewTitle"></div>
+    <div id="reviewList"></div>
+
+    <div class="result-actions">
+      <button class="btn btn-primary" id="retryBtn"></button>
+      <button class="btn" id="copyBtn"></button>
+    </div>
+  </div>
+</main>
+
+<div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+
+<script>
+const questions = [
+  // ---------- EASY (10) ----------
+  { id:1, difficulty:"easy", points:10, answer:1,
+    zh:{question:"宣告常數（不可重新指派的變數）應使用哪個關鍵字？",
+        options:["static","final","const","sealed"],
+        explanation:"final 表示不可重新指派；Java 沒有 const 關鍵字。"},
+    en:{question:"Which keyword declares a constant (a variable that cannot be reassigned)?",
+        options:["static","final","const","sealed"],
+        explanation:"final means it cannot be reassigned; Java has no const keyword."} },
+
+  { id:2, difficulty:"easy", points:10, answer:2,
+    zh:{question:"int 型別的成員變數若未明確初始化，預設值為何？",
+        options:["null（空值）","1（整數一）","0（整數零）","未定義的隨機值"],
+        explanation:"數值型別的成員變數預設為 0。"},
+    en:{question:"What is the default value of an uninitialized int instance field?",
+        options:["null reference","1 (integer one)","0 (integer zero)","an undefined random value"],
+        explanation:"Numeric instance fields default to 0."} },
+
+  { id:3, difficulty:"easy", points:10, answer:0,
+    zh:{question:"下列何者是 Java 的基本資料型別（primitive type）？",
+        options:["int 整數型別","String 字串類別","Integer 包裝類別","ArrayList 集合"],
+        explanation:"int 是基本型別；其餘皆為參考型別（類別）。"},
+    en:{question:"Which of the following is a Java primitive type?",
+        options:["int integer type","String text class","Integer wrapper class","ArrayList collection"],
+        explanation:"int is primitive; the others are reference types (classes)."} },
+
+  { id:4, difficulty:"easy", points:10, answer:3,
+    zh:{question:"Java 應用程式的進入點方法簽章是下列何者？",
+        options:["public void main(String a)","static void main(int[] args)","public int main(String[] a)","public static void main(String[] args)"],
+        explanation:"標準進入點為 public static void main(String[] args)。"},
+    en:{question:"Which is the correct entry-point method signature for a Java application?",
+        options:["public void main(String a)","static void main(int[] args)","public int main(String[] a)","public static void main(String[] args)"],
+        explanation:"The standard entry point is public static void main(String[] args)."} },
+
+  { id:5, difficulty:"easy", points:10, answer:1,
+    zh:{question:"要比較兩個基本型別數值是否相等，應使用哪個運算子？",
+        options:["指派運算子 =","等值運算子 ==","方法 .equals()","比較器 compareTo"],
+        explanation:"基本型別用 == 比較數值；.equals 用於物件。"},
+    en:{question:"Which operator compares two primitive values for equality?",
+        options:["assignment operator =","equality operator ==","the .equals() method","the compareTo comparator"],
+        explanation:"Primitives use == for value comparison; .equals is for objects."} },
+
+  { id:6, difficulty:"easy", points:10, answer:2,
+    zh:{question:"下列何者可在主控台輸出一行文字並換行？",
+        options:["Console.write(text)","System.print(text)","System.out.println(text)","print.line(text)"],
+        explanation:"System.out.println 會輸出文字並換行。"},
+    en:{question:"Which statement prints a line of text to the console with a newline?",
+        options:["Console.write(text)","System.print(text)","System.out.println(text)","print.line(text)"],
+        explanation:"System.out.println outputs text followed by a newline."} },
+
+  { id:7, difficulty:"easy", points:10, answer:0,
+    zh:{question:"下列何種集合是有序且允許重複元素的清單實作？",
+        options:["ArrayList 動態陣列","HashSet 雜湊集合","TreeSet 排序集合","HashMap 雜湊映射"],
+        explanation:"ArrayList 為有序、允許重複的 List 實作。"},
+    en:{question:"Which collection is an ordered list that allows duplicate elements?",
+        options:["ArrayList dynamic array","HashSet hashed set","TreeSet sorted set","HashMap hashed map"],
+        explanation:"ArrayList is an ordered List implementation that allows duplicates."} },
+
+  { id:8, difficulty:"easy", points:10, answer:3,
+    zh:{question:"建立一個新的物件實例應使用哪個關鍵字？",
+        options:["create 建立","make 製造","alloc 配置","new 新建"],
+        explanation:"new 關鍵字用於配置並建立物件實例。"},
+    en:{question:"Which keyword is used to create a new object instance?",
+        options:["create keyword","make keyword","alloc keyword","new keyword"],
+        explanation:"The new keyword allocates and creates an object instance."} },
+
+  { id:9, difficulty:"easy", points:10, answer:1,
+    zh:{question:"下列何者是合法的 Java 單行註解寫法？",
+        options:["# 這是註解內容","// 這是註解內容","-- 這是註解內容","** 這是註解內容"],
+        explanation:"Java 單行註解以 // 開頭。"},
+    en:{question:"Which is a valid single-line comment in Java?",
+        options:["# this is a comment","// this is a comment","-- this is a comment","** this is a comment"],
+        explanation:"Java single-line comments start with //."} },
+
+  { id:10, difficulty:"easy", points:10, answer:2,
+    zh:{question:"boolean 型別的變數可以儲存下列哪一組值？",
+        options:["0 或 1 兩種整數","yes 或 no 兩種字串","true 或 false 兩種值","null 或 empty 兩種"],
+        explanation:"boolean 僅能存放 true 或 false。"},
+    en:{question:"Which pair of values can a boolean variable hold?",
+        options:["the integers 0 or 1","the strings yes or no","the values true or false","null or empty value"],
+        explanation:"A boolean can only hold true or false."} },
+
+  // ---------- MEDIUM (15) ----------
+  { id:11, difficulty:"medium", points:15, answer:3,
+    zh:{question:"關於 Java 的 String 物件，下列敘述何者正確？",
+        options:["String 內容可被原地修改","String 是基本資料型別","每次拼接都會修改原物件","String 不可變，拼接會產生新物件"],
+        explanation:"String 不可變，拼接會建立新的字串物件。"},
+    en:{question:"Which statement about Java String objects is correct?",
+        options:["A String can be modified in place","String is a primitive type","Each concatenation edits the original","String is immutable; concatenation makes new objects"],
+        explanation:"Strings are immutable; concatenation creates new String objects."} },
+
+  { id:12, difficulty:"medium", points:15, answer:0,
+    zh:{question:"比較兩個 String 的「內容」是否相同，應使用下列何者？",
+        options:["呼叫 a.equals(b) 方法","使用 a == b 運算子","使用 a > b 運算子","使用 a & b 運算子"],
+        explanation:"== 比較參考位址；equals 比較字元內容。"},
+    en:{question:"To compare whether two Strings have the same content, you should use:",
+        options:["call the a.equals(b) method","use the a == b operator","use the a > b operator","use the a & b operator"],
+        explanation:"== compares references; equals compares character content."} },
+
+  { id:13, difficulty:"medium", points:15, answer:1,
+    zh:{question:"下列關於受檢例外（checked exception）的敘述何者正確？",
+        options:["執行期才出現且不需處理","必須在編譯期宣告或捕捉","只能由 JVM 自行拋出","等同於 RuntimeException 子類"],
+        explanation:"受檢例外須在編譯期以 throws 宣告或以 try-catch 捕捉。"},
+    en:{question:"Which statement about checked exceptions is correct?",
+        options:["They appear only at runtime, unhandled","They must be declared or caught at compile time","They can be thrown only by the JVM","They are subclasses of RuntimeException"],
+        explanation:"Checked exceptions must be declared with throws or caught at compile time."} },
+
+  { id:14, difficulty:"medium", points:15, answer:2,
+    zh:{question:"關於 interface 與 abstract class 的差異，何者正確？",
+        options:["介面可以擁有實例欄位狀態","抽象類別不能含已實作方法","一個類別可實作多個介面","抽象類別支援多重繼承"],
+        explanation:"類別可實作多個介面，但只能繼承單一類別。"},
+    en:{question:"Which statement about interfaces vs. abstract classes is correct?",
+        options:["Interfaces can hold instance field state","Abstract classes cannot have implemented methods","A class may implement multiple interfaces","Abstract classes allow multiple inheritance"],
+        explanation:"A class can implement many interfaces but extend only one class."} },
+
+  { id:15, difficulty:"medium", points:15, answer:3,
+    zh:{question:"方法覆寫（overriding）與方法多載（overloading）的關鍵差異是什麼？",
+        options:["兩者都需相同的參數列","兩者都發生在同一類別中","多載必須改變回傳型別","覆寫在子類別重新定義父類方法"],
+        explanation:"覆寫是子類重新定義父類同簽章方法；多載是同名不同參數。"},
+    en:{question:"What is the key difference between overriding and overloading?",
+        options:["Both require identical parameter lists","Both occur within one single class","Overloading must change the return type","Overriding redefines a parent method in a subclass"],
+        explanation:"Overriding redefines a parent method in a subclass; overloading is same name with different parameters."} },
+
+  { id:16, difficulty:"medium", points:15, answer:0,
+    zh:{question:"在清單中段頻繁插入與刪除元素時，下列何者通常效能較佳？",
+        options:["LinkedList 連結串列","ArrayList 動態陣列","String 字串型別","HashSet 雜湊集合"],
+        explanation:"LinkedList 在中段插刪不需搬移元素，通常較佳。"},
+    en:{question:"For frequent insertions and deletions in the middle of a list, which usually performs better?",
+        options:["LinkedList linked list","ArrayList dynamic array","String text type","HashSet hashed set"],
+        explanation:"LinkedList avoids shifting elements on mid-list insert/delete."} },
+
+  { id:17, difficulty:"medium", points:15, answer:1,
+    zh:{question:"在理想情況下，HashMap 的 get 操作平均時間複雜度為何？",
+        options:["線性時間 O(n)","常數時間 O(1)","對數時間 O(log n)","平方時間 O(n²)"],
+        explanation:"雜湊分布良好時，get 平均為 O(1)。"},
+    en:{question:"Under ideal conditions, what is the average time complexity of HashMap get?",
+        options:["linear time O(n)","constant time O(1)","logarithmic time O(log n)","quadratic time O(n²)"],
+        explanation:"With good hashing, get averages O(1)."} },
+
+  { id:18, difficulty:"medium", points:15, answer:2,
+    zh:{question:"將基本型別 int 自動轉換為 Integer 物件的機制稱為什麼？",
+        options:["型別轉型 casting","泛型擦除 erasure","自動裝箱 autoboxing","靜態繫結 binding"],
+        explanation:"自動裝箱（autoboxing）將基本型別自動包裝為對應物件。"},
+    en:{question:"What is the mechanism that automatically converts an int to an Integer object called?",
+        options:["type casting conversion","generic type erasure","autoboxing conversion","static method binding"],
+        explanation:"Autoboxing automatically wraps a primitive into its object type."} },
+
+  { id:19, difficulty:"medium", points:15, answer:3,
+    zh:{question:"關於 static（靜態）方法的敘述，下列何者正確？",
+        options:["可直接存取實例欄位","每個物件各有一份副本","必須透過物件才能呼叫","屬於類別，可用類別名呼叫"],
+        explanation:"靜態方法屬於類別本身，可用類別名直接呼叫。"},
+    en:{question:"Which statement about static methods is correct?",
+        options:["They can directly access instance fields","Each object has its own copy","They require an object to be called","They belong to the class, called by class name"],
+        explanation:"Static methods belong to the class and are called via the class name."} },
+
+  { id:20, difficulty:"medium", points:15, answer:0,
+    zh:{question:"finally 區塊在 try-catch 結構中的作用是什麼？",
+        options:["無論是否發生例外都會執行","僅在沒有例外時才執行","僅在發生例外時才執行","用來宣告會拋出的例外"],
+        explanation:"finally 區塊不論例外與否都會執行，常用於釋放資源。"},
+    en:{question:"What is the role of a finally block in a try-catch structure?",
+        options:["It runs whether or not an exception occurs","It runs only when no exception occurs","It runs only when an exception occurs","It declares which exceptions are thrown"],
+        explanation:"A finally block always runs, commonly to release resources."} },
+
+  { id:21, difficulty:"medium", points:15, answer:1,
+    zh:{question:"使用泛型（generics）撰寫 List<String> 的主要好處是什麼？",
+        options:["可大幅提升執行速度","提供編譯期型別安全檢查","允許存放任意混合型別","自動將元素排序"],
+        explanation:"泛型在編譯期提供型別檢查，減少轉型錯誤。"},
+    en:{question:"What is the main benefit of using generics such as List<String>?",
+        options:["It greatly increases runtime speed","It provides compile-time type safety","It allows storing any mixed types","It automatically sorts elements"],
+        explanation:"Generics give compile-time type checking, reducing cast errors."} },
+
+  { id:22, difficulty:"medium", points:15, answer:2,
+    zh:{question:"try-with-resources 語法的主要用途為何？",
+        options:["建立多個平行執行緒","捕捉所有受檢例外","自動關閉實作 AutoCloseable 的資源","重複執行區塊直到成功"],
+        explanation:"try-with-resources 會自動關閉實作 AutoCloseable 的資源。"},
+    en:{question:"What is the main purpose of try-with-resources?",
+        options:["To create several parallel threads","To catch all checked exceptions","To auto-close resources implementing AutoCloseable","To retry a block until it succeeds"],
+        explanation:"try-with-resources automatically closes AutoCloseable resources."} },
+
+  { id:23, difficulty:"medium", points:15, answer:3,
+    zh:{question:"下列存取修飾子中，何者的可見範圍最為受限？",
+        options:["public 公開存取","protected 保護存取","預設（套件）存取","private 私有存取"],
+        explanation:"private 僅限同一類別內可見，範圍最小。"},
+    en:{question:"Among these access modifiers, which has the most restricted visibility?",
+        options:["public open access","protected family access","default package access","private class-only access"],
+        explanation:"private is visible only within the same class, the narrowest scope."} },
+
+  { id:24, difficulty:"medium", points:15, answer:0,
+    zh:{question:"三元運算子 (a > b) ? x : y 的執行結果是什麼？",
+        options:["條件為真回傳 x，否則回傳 y","一律回傳布林值 true","同時回傳 x 與 y 兩者","條件為真回傳 y，否則回傳 x"],
+        explanation:"三元運算子在條件為真時取第一值，否則取第二值。"},
+    en:{question:"What does the ternary expression (a > b) ? x : y evaluate to?",
+        options:["x if the condition is true, else y","always the boolean value true","both x and y at the same time","y if the condition is true, else x"],
+        explanation:"The ternary yields the first value when true, otherwise the second."} },
+
+  { id:25, difficulty:"medium", points:15, answer:1,
+    zh:{question:"在傳統 switch 語句中，若 case 後未加 break 會發生什麼？",
+        options:["編譯器會直接報錯","會繼續執行後續的 case（穿透）","會自動跳出整個 switch","會回到 switch 開頭重跑"],
+        explanation:"缺少 break 會造成 fall-through，繼續執行後續 case。"},
+    en:{question:"In a traditional switch statement, what happens if a case has no break?",
+        options:["The compiler reports an error","Execution falls through to following cases","It automatically exits the whole switch","It restarts the switch from the top"],
+        explanation:"Missing break causes fall-through into subsequent cases."} },
+
+  // ---------- HARD (10) ----------
+  { id:26, difficulty:"hard", points:25, answer:2,
+    zh:{question:"執行 Integer a=100,b=100; 與 Integer c=200,d=200; 後，a==b 與 c==d 結果為何？",
+        options:["兩者皆為 true 相等","兩者皆為 false 不等","a==b 為 true，c==d 為 false","a==b 為 false，c==d 為 true"],
+        explanation:"Integer 快取 -128~127，故 100 相等而 200 不相等。"},
+    en:{question:"After Integer a=100,b=100; and Integer c=200,d=200;, what are a==b and c==d?",
+        options:["both are true and equal","both are false and unequal","a==b is true, c==d is false","a==b is false, c==d is true"],
+        explanation:"Integer caches -128..127, so 100 is equal but 200 is not."} },
+
+  { id:27, difficulty:"hard", points:25, answer:3,
+    zh:{question:"關於字串常量池（String pool）與 intern()，下列敘述何者正確？",
+        options:["所有 new String 都會自動入池","字面量字串不會放進池中","intern() 會刪除池中字串","intern() 回傳池中等值的共用參考"],
+        explanation:"intern() 回傳常量池中內容相同的共用字串參考。"},
+    en:{question:"Which statement about the String pool and intern() is correct?",
+        options:["Every new String is auto-pooled","String literals are never pooled","intern() removes strings from the pool","intern() returns the pooled shared reference"],
+        explanation:"intern() returns the shared pooled reference for equal content."} },
+
+  { id:28, difficulty:"hard", points:25, answer:0,
+    zh:{question:"在 for-each 迴圈中直接呼叫集合的 remove() 通常會導致什麼？",
+        options:["拋出 ConcurrentModificationException","靜默忽略該次刪除","自動切換為安全模式","編譯期就無法通過"],
+        explanation:"迭代中結構性修改集合會觸發 ConcurrentModificationException。"},
+    en:{question:"Calling a collection's remove() directly inside a for-each loop typically causes what?",
+        options:["a ConcurrentModificationException is thrown","the removal is silently ignored","an automatic switch to safe mode","a compile-time failure"],
+        explanation:"Structurally modifying a collection while iterating triggers ConcurrentModificationException."} },
+
+  { id:29, difficulty:"hard", points:25, answer:1,
+    zh:{question:"關於 volatile 與 synchronized 的差異，下列何者正確？",
+        options:["volatile 可保證複合操作的原子性","volatile 保證可見性但不保證原子性","synchronized 只保證可見性","兩者效果完全相同可互換"],
+        explanation:"volatile 保證可見性與順序，但不保證複合操作原子性。"},
+    en:{question:"Which statement about volatile vs. synchronized is correct?",
+        options:["volatile guarantees atomicity of compound ops","volatile ensures visibility but not atomicity","synchronized only ensures visibility","both are identical and interchangeable"],
+        explanation:"volatile guarantees visibility and ordering but not compound-operation atomicity."} },
+
+  { id:30, difficulty:"hard", points:25, answer:2,
+    zh:{question:"關於 equals() 與 hashCode() 的契約，下列敘述何者正確？",
+        options:["hashCode 相同則物件必定相等","equals 相等但 hashCode 可不同","equals 相等則 hashCode 必須相同","hashCode 不同物件仍可能 equals"],
+        explanation:"契約要求：equals 相等的物件其 hashCode 必須相同。"},
+    en:{question:"Which statement about the equals()/hashCode() contract is correct?",
+        options:["Equal hashCodes imply objects are equal","Equal objects may have different hashCodes","Equal objects must have the same hashCode","Different hashCodes can still be equal objects"],
+        explanation:"The contract requires equal objects to return the same hashCode."} },
+
+  { id:31, difficulty:"hard", points:25, answer:3,
+    zh:{question:"Comparable 與 Comparator 的主要區別是什麼？",
+        options:["兩者都定義於被比較的類別內","Comparator 定義類別的自然排序","Comparable 可建立多種排序規則","Comparable 是自然排序，Comparator 是外部排序"],
+        explanation:"Comparable 定義類別自然排序；Comparator 為外部可替換排序。"},
+    en:{question:"What is the main difference between Comparable and Comparator?",
+        options:["Both are defined inside the compared class","Comparator defines the class's natural order","Comparable enables many ordering rules","Comparable is natural order, Comparator is external"],
+        explanation:"Comparable defines a class's natural ordering; Comparator is external, swappable ordering."} },
+
+  { id:32, difficulty:"hard", points:25, answer:0,
+    zh:{question:"在 Java 中呼叫物件的 wait() 方法之前，執行緒必須先做什麼？",
+        options:["持有該物件的監視器鎖（synchronized）","將該物件設為 volatile","啟動一個新的執行緒","呼叫該物件的 notify()"],
+        explanation:"wait() 必須在持有該物件監視器鎖（synchronized）時呼叫。"},
+    en:{question:"Before calling an object's wait() method, a thread must first do what?",
+        options:["hold that object's monitor lock (synchronized)","mark the object as volatile","start a brand-new thread","call that object's notify() first"],
+        explanation:"wait() must be called while holding the object's monitor (synchronized)."} },
+
+  { id:33, difficulty:"hard", points:25, answer:1,
+    zh:{question:"依 PECS 原則，僅供讀取資料的泛型來源容器應使用哪種萬用字元？",
+        options:["下界萬用字元 <? super T>","上界萬用字元 <? extends T>","無界萬用字元 <?>","具體型別 <T> 即可"],
+        explanation:"PECS：Producer 用 extends（讀取），Consumer 用 super（寫入）。"},
+    en:{question:"By the PECS rule, a generic producer (read-only source) should use which wildcard?",
+        options:["lower-bounded <? super T>","upper-bounded <? extends T>","unbounded wildcard <?>","just the concrete type <T>"],
+        explanation:"PECS: Producer uses extends (read); Consumer uses super (write)."} },
+
+  { id:34, difficulty:"hard", points:25, answer:2,
+    zh:{question:"關於 Java 記憶體中堆疊（stack）與堆積（heap）的敘述，何者正確？",
+        options:["物件實例都存放在堆疊中","區域變數都存放在堆積中","物件存於堆積，區域變數與參考存於堆疊","堆積由各執行緒各自獨立擁有"],
+        explanation:"物件配置於堆積；區域變數與參考置於各執行緒的堆疊。"},
+    en:{question:"Which statement about Java stack and heap memory is correct?",
+        options:["Object instances are stored on the stack","Local variables are stored on the heap","Objects live on the heap; locals/refs on the stack","The heap is owned privately per thread"],
+        explanation:"Objects are allocated on the heap; local variables and references live on each thread's stack."} },
+
+  { id:35, difficulty:"hard", points:25, answer:3,
+    zh:{question:"下列何者可以被指派為 Lambda 運算式的目標型別？",
+        options:["任何含多個抽象方法的介面","任意具體類別實例","所有抽象類別皆可","僅含單一抽象方法的函式介面"],
+        explanation:"Lambda 目標須為函式介面（恰一個抽象方法）。"},
+    en:{question:"Which can serve as the target type for a lambda expression?",
+        options:["any interface with multiple abstract methods","any concrete class instance","all abstract classes qualify","a functional interface with one abstract method"],
+        explanation:"A lambda's target must be a functional interface (exactly one abstract method)."} },
+
+  // ---------- TRAP (5) ----------
+  { id:36, difficulty:"trap", points:19, answer:0,
+    zh:{question:"執行 String x=\"ab\"; String y=\"a\"+\"b\"; 後，x==y 的結果為何？",
+        options:["true，因常數拼接於編譯期入池","false，因 y 在執行期才建立","編譯失敗，型別不相容","執行期拋出例外"],
+        explanation:"陷阱：常數運算式拼接在編譯期完成並入池，故相等。"},
+    en:{question:"After String x=\"ab\"; String y=\"a\"+\"b\";, what is the result of x==y?",
+        options:["true, constant concat is pooled at compile time","false, y is created only at runtime","compile error due to type mismatch","an exception is thrown at runtime"],
+        explanation:"Trap: constant-expression concatenation is folded and pooled at compile time, so they are equal."} },
+
+  { id:37, difficulty:"trap", points:19, answer:1,
+    zh:{question:"運算式 (0.1 + 0.2 == 0.3) 在 Java 中求值結果為何？",
+        options:["true，浮點加法精確相等","false，因二進位浮點有捨入誤差","編譯時即被判定為錯誤","結果不確定每次都不同"],
+        explanation:"陷阱：double 為二進位浮點，0.1+0.2 略大於 0.3，結果為 false。"},
+    en:{question:"What does the expression (0.1 + 0.2 == 0.3) evaluate to in Java?",
+        options:["true, floating addition is exact","false, binary floating point has rounding error","a compile-time error is reported","undefined, differs on each run"],
+        explanation:"Trap: doubles are binary floats; 0.1+0.2 is slightly above 0.3, so it is false."} },
+
+  { id:38, difficulty:"trap", points:19, answer:2,
+    zh:{question:"若 try 區塊回傳 1，而 finally 區塊內也有 return 2，方法實際回傳什麼？",
+        options:["回傳 1，try 的值優先","拋出例外，禁止雙重 return","回傳 2，finally 的值覆蓋","回傳 3，兩值相加"],
+        explanation:"陷阱：finally 中的 return 會覆蓋 try 的回傳值，結果為 2。"},
+    en:{question:"If a try block returns 1 and the finally block also has return 2, what does the method return?",
+        options:["returns 1, the try value wins","throws an error for double return","returns 2, finally overrides the value","returns 3, the two values are summed"],
+        explanation:"Trap: a return in finally overrides the try's return value, yielding 2."} },
+
+  { id:39, difficulty:"trap", points:19, answer:3,
+    zh:{question:"關於 String s=null; s+=\"x\"; 這段程式碼，結果為何？",
+        options:["拋出 NullPointerException 例外","s 仍維持為 null 值","編譯期即報語法錯誤","s 變成字串 \"nullx\""],
+        explanation:"陷阱：拼接時 null 會被轉成字串 \"null\"，結果為 \"nullx\"。"},
+    en:{question:"Given String s=null; s+=\"x\";, what is the result?",
+        options:["a NullPointerException is thrown","s remains the null value","a compile-time syntax error occurs","s becomes the string \"nullx\""],
+        explanation:"Trap: in concatenation null is converted to \"null\", giving \"nullx\"."} },
+
+  { id:40, difficulty:"trap", points:19, answer:0,
+    zh:{question:"在迴圈中對 byte b=10; 執行 b=b+1; 與 b+=1; 兩種寫法，何者正確？",
+        options:["b+=1 可編譯，b=b+1 會編譯失敗","兩者都能正常編譯通過","兩者都會編譯失敗","b=b+1 可編譯，b+=1 會失敗"],
+        explanation:"陷阱：b+1 提升為 int 需轉型；複合指派 += 隱含轉型故可編譯。"},
+    en:{question:"For byte b=10;, comparing b=b+1; and b+=1;, which is correct?",
+        options:["b+=1 compiles, b=b+1 fails to compile","both compile without any problem","both fail to compile entirely","b=b+1 compiles, b+=1 fails to compile"],
+        explanation:"Trap: b+1 promotes to int needing a cast; compound += has an implicit cast, so it compiles."} },
+];
+
+// ---------- i18n strings ----------
+const i18n = {
+  zh: {
+    appTitle: "Java 程式語言互動測驗",
+    progress: (c,t)=>`第 ${c} / ${t} 題`,
+    qLabel: (c,t)=>`第 ${c} 題 / 共 ${t} 題`,
+    prev: "上一題",
+    submit: "提交測驗",
+    langBtn: "EN",
+    statsTitle: "作答統計",
+    correct: "正確題數",
+    wrong: "錯誤題數",
+    byDiff: "各難度正確率",
+    easy: "簡單", med: "中等", hard: "困難", trap: "陷阱",
+    review: "錯題回顧",
+    retry: "重新測驗",
+    copy: "複製結果",
+    copied: "已複製！",
+    percentile: (p)=>`你的成績超越了約 ${p}% 的測試者`,
+    yourAns: "你的選擇",
+    correctAns: "正確答案",
+    grades: {
+      top:"🏆 頂尖專家（Top Expert）", adv:"⭐ 進階掌握（Advanced）",
+      inter:"📘 中等水準（Intermediate）", basic:"📗 基礎尚可（Basic）", need:"📕 需要加強（Needs Improvement）"
+    },
+    copyText: (s,c,p,g)=>`Java 程式語言測驗結果\n總分：${s} / 670\n答對：${c} / 40\n超越約 ${p}% 的測試者\n等級：${g}`
+  },
+  en: {
+    appTitle: "Java Programming Interactive Quiz",
+    progress: (c,t)=>`Question ${c} / ${t}`,
+    qLabel: (c,t)=>`Question ${c} of ${t}`,
+    prev: "Previous",
+    submit: "Submit Quiz",
+    langBtn: "中",
+    statsTitle: "Answer Statistics",
+    correct: "Correct",
+    wrong: "Incorrect",
+    byDiff: "Accuracy by Difficulty",
+    easy: "Easy", med: "Medium", hard: "Hard", trap: "Trap",
+    review: "Review of Mistakes",
+    retry: "Retake Quiz",
+    copy: "Copy Result",
+    copied: "Copied!",
+    percentile: (p)=>`You scored better than about ${p}% of test takers`,
+    yourAns: "Your choice",
+    correctAns: "Correct answer",
+    grades: {
+      top:"🏆 Top Expert", adv:"⭐ Advanced",
+      inter:"📘 Intermediate", basic:"📗 Basic", need:"📕 Needs Improvement"
+    },
+    copyText: (s,c,p,g)=>`Java Programming Quiz Result\nScore: ${s} / 670\nCorrect: ${c} / 40\nBetter than about ${p}% of test takers\nGrade: ${g}`
+  }
+};
+
+let lang = "zh";
+let current = 0;
+const TOTAL = questions.length;
+const letters = ["A","B","C","D"];
+
+// Shuffle display order so difficulties are mixed (difficulty stays internal only)
+let order = [];
+function shuffleOrder(){
+  order = questions.map((_,i)=>i);
+  for(let i=order.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [order[i],order[j]] = [order[j],order[i]];
+  }
+}
+shuffleOrder();
+const answers = new Array(questions.length).fill(null);
+const Q = (pos)=> questions[order[pos]];
+
+// ---------- theme ----------
+function initTheme(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+}
+function setTheme(t){
+  document.body.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
+}
+document.getElementById("themeBtn").addEventListener("click", ()=>{
+  const cur = document.body.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+
+// ---------- language ----------
+document.getElementById("langBtn").addEventListener("click", ()=>{
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  applyStaticText();
+  if(document.getElementById("resultView").classList.contains("hidden")){
+    renderQuestion(false);
+  } else {
+    renderResults();
+  }
+});
+
+function applyStaticText(){
+  const t = i18n[lang];
+  document.getElementById("appTitle").textContent = t.appTitle;
+  document.getElementById("langBtn").textContent = t.langBtn;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+  document.title = t.appTitle;
+}
+
+// ---------- quiz rendering ----------
+function renderQuestion(fade=true){
+  const t = i18n[lang];
+  const q = Q(current);
+  const view = document.getElementById("quizView");
+  const draw = ()=>{
+    document.getElementById("qNumber").textContent = t.qLabel(current+1, TOTAL);
+    document.getElementById("qText").textContent = q[lang].question;
+    document.getElementById("progressText").textContent = t.progress(current+1, TOTAL);
+    const opts = document.getElementById("options");
+    opts.innerHTML = "";
+    q[lang].options.forEach((text, i)=>{
+      const div = document.createElement("div");
+      div.className = "option" + (answers[current]===i ? " selected" : "");
+      div.innerHTML = `<span class="letter">${letters[i]}</span><span>${text}</span>`;
+      div.addEventListener("click", ()=> selectOption(i));
+      opts.appendChild(div);
+    });
+    document.getElementById("prevBtn").disabled = (current === 0);
+    const submitBtn = document.getElementById("submitBtn");
+    if(current === TOTAL-1 && answers[current] !== null){
+      submitBtn.classList.remove("hidden");
+    } else {
+      submitBtn.classList.add("hidden");
+    }
+    updateProgressBar();
+    view.classList.remove("hidden-fade");
+  };
+  if(fade){
+    view.classList.add("hidden-fade");
+    setTimeout(draw, 200);
+  } else { draw(); }
+}
+
+function selectOption(i){
+  answers[current] = i;
+  // show selected state on all options
+  const opts = document.getElementById("options").children;
+  for(let k=0;k<opts.length;k++){
+    opts[k].classList.toggle("selected", k===i);
+  }
+  if(current === TOTAL-1){
+    document.getElementById("submitBtn").classList.remove("hidden");
+    return; // do not auto-advance on last question
+  }
+  setTimeout(()=>{
+    current++;
+    renderQuestion(true);
+  }, 400);
+}
+
+document.getElementById("prevBtn").addEventListener("click", ()=>{
+  if(current > 0){ current--; renderQuestion(true); }
+});
+document.getElementById("submitBtn").addEventListener("click", showResults);
+
+function updateProgressBar(){
+  const answered = answers.filter(a=>a!==null).length;
+  document.getElementById("progressFill").style.width = (answered/TOTAL*100) + "%";
+}
+
+// ---------- normal CDF for percentile ----------
+function normalCdf(x, mean, sd){
+  const z = (x - mean) / (sd * Math.sqrt(2));
+  return 0.5 * (1 + erf(z));
+}
+function erf(x){
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function gradeFor(score){
+  const g = i18n[lang].grades;
+  if(score>=600) return g.top;
+  if(score>=500) return g.adv;
+  if(score>=380) return g.inter;
+  if(score>=250) return g.basic;
+  return g.need;
+}
+
+function computeStats(){
+  let score=0, correct=0;
+  const byDiff = {easy:{c:0,t:0}, medium:{c:0,t:0}, hard:{c:0,t:0}, trap:{c:0,t:0}};
+  for(let pos=0; pos<TOTAL; pos++){
+    const q = Q(pos);
+    byDiff[q.difficulty].t++;
+    if(answers[pos] === q.answer){
+      score += q.points; correct++; byDiff[q.difficulty].c++;
+    }
+  }
+  return {score, correct, wrong: TOTAL-correct, byDiff};
+}
+
+function showResults(){
+  document.getElementById("quizView").classList.add("hidden");
+  document.getElementById("resultView").classList.remove("hidden");
+  document.getElementById("progressFill").style.width = "100%";
+  renderResults();
+}
+
+function renderResults(){
+  const t = i18n[lang];
+  const s = computeStats();
+  document.getElementById("scoreVal").textContent = s.score;
+  document.getElementById("gradeVal").textContent = gradeFor(s.score);
+
+  const mean = 670*0.45, sd = 670*0.15;
+  let pct = Math.round(normalCdf(s.score, mean, sd)*100);
+  pct = Math.max(0, Math.min(99, pct));
+  document.getElementById("percentileVal").textContent = t.percentile(pct);
+
+  document.getElementById("statsTitle").textContent = t.statsTitle;
+  document.getElementById("lblCorrect").textContent = t.correct;
+  document.getElementById("correctVal").textContent = `${s.correct} / 40`;
+  document.getElementById("lblWrong").textContent = t.wrong;
+  document.getElementById("wrongVal").textContent = `${s.wrong} / 40`;
+
+  document.getElementById("byDiffTitle").textContent = t.byDiff;
+  document.getElementById("lblEasy").textContent = t.easy;
+  document.getElementById("easyVal").textContent = `${s.byDiff.easy.c} / ${s.byDiff.easy.t}`;
+  document.getElementById("lblMed").textContent = t.med;
+  document.getElementById("medVal").textContent = `${s.byDiff.medium.c} / ${s.byDiff.medium.t}`;
+  document.getElementById("lblHard").textContent = t.hard;
+  document.getElementById("hardVal").textContent = `${s.byDiff.hard.c} / ${s.byDiff.hard.t}`;
+  document.getElementById("lblTrap").textContent = t.trap;
+  document.getElementById("trapVal").textContent = `${s.byDiff.trap.c} / ${s.byDiff.trap.t}`;
+
+  // review
+  document.getElementById("reviewTitle").textContent = t.review;
+  const list = document.getElementById("reviewList");
+  list.innerHTML = "";
+  for(let pos=0; pos<TOTAL; pos++){
+    const q = Q(pos);
+    if(answers[pos] === q.answer) continue;
+    const userIdx = answers[pos];
+    const div = document.createElement("div");
+    div.className = "review-item";
+    const userText = userIdx===null ? "—" : `${letters[userIdx]}. ${q[lang].options[userIdx]}`;
+    div.innerHTML =
+      `<div class="review-q">${pos+1}. ${q[lang].question}</div>`+
+      `<div class="review-ans user">✗ ${t.yourAns}: ${userText}</div>`+
+      `<div class="review-ans correct">✓ ${t.correctAns}: ${letters[q.answer]}. ${q[lang].options[q.answer]}</div>`+
+      `<div class="review-exp">${q[lang].explanation}</div>`;
+    list.appendChild(div);
+  }
+
+  const retryBtn = document.getElementById("retryBtn");
+  retryBtn.textContent = t.retry;
+  retryBtn.onclick = ()=>{
+    current = 0;
+    shuffleOrder();
+    for(let i=0;i<answers.length;i++) answers[i]=null;
+    document.getElementById("resultView").classList.add("hidden");
+    document.getElementById("quizView").classList.remove("hidden");
+    renderQuestion(false);
+  };
+  const copyBtn = document.getElementById("copyBtn");
+  copyBtn.textContent = t.copy;
+  copyBtn.onclick = ()=>{
+    const txt = t.copyText(s.score, s.correct, pct, gradeFor(s.score));
+    navigator.clipboard.writeText(txt).then(()=>{
+      copyBtn.textContent = t.copied;
+      setTimeout(()=> copyBtn.textContent = t.copy, 1500);
+    });
+  };
+}
+
+// ---------- init ----------
+initTheme();
+applyStaticText();
+renderQuestion(false);
+</script>
+</body>
+</html>

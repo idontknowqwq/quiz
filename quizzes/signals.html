@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>訊號與系統 互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --track: #E5E7EB;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --track: #374151;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", "PingFang TC", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    transition: background 0.2s, color 0.2s;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--border); margin-bottom: 24px;
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font: inherit; font-size: 14px; cursor: pointer;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 12px; transition: background 0.15s, border-color 0.15s;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn-primary {
+    background: var(--accent); color: var(--accent-text); border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent); opacity: 0.9; }
+  .progress-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; }
+  .question {
+    font-size: 18px; font-weight: 600; margin-bottom: 20px;
+    transition: opacity 0.25s; opacity: 1;
+  }
+  .question.fade { opacity: 0; }
+  .options { display: flex; flex-direction: column; gap: 10px; transition: opacity 0.25s; }
+  .options.fade { opacity: 0; }
+  .option {
+    display: flex; align-items: flex-start; gap: 10px;
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; cursor: pointer; background: var(--bg);
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .option:hover { background: var(--hover); }
+  .option.selected { border-color: var(--accent); background: var(--hover); }
+  .option .label { font-weight: 700; color: var(--accent); min-width: 20px; }
+  .nav { display: flex; justify-content: space-between; margin-top: 24px; }
+  .progress-bar-track {
+    height: 6px; background: var(--track); border-radius: 3px;
+    margin-top: 28px; overflow: hidden;
+  }
+  .progress-bar-fill { height: 100%; width: 0%; background: var(--accent); transition: width 0.3s; }
+  /* result */
+  .result h2 { font-size: 22px; margin-bottom: 16px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .grade { font-size: 24px; font-weight: 700; margin: 12px 0; }
+  .stat-row {
+    display: flex; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid var(--border);
+  }
+  .stat-row .k { color: var(--text-secondary); }
+  .section-title { font-size: 16px; font-weight: 700; margin: 24px 0 12px; }
+  .review-item {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 12px;
+  }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .rev-line { font-size: 14px; margin: 3px 0; }
+  .rev-wrong { color: var(--wrong); }
+  .rev-correct { color: var(--correct); }
+  .rev-exp { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+  .result-btns { display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">訊號與系統 測驗</div>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <main id="quizView">
+    <div class="progress-text" id="progressText"></div>
+    <div class="question" id="questionText"></div>
+    <div class="options" id="optionsBox"></div>
+    <div class="nav">
+      <button class="btn" id="prevBtn"></button>
+      <button class="btn btn-primary hidden" id="submitBtn"></button>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="progressFill"></div></div>
+  </main>
+
+  <main id="resultView" class="result hidden"></main>
+</div>
+
+<script>
+const questions = [
+  // 1
+  { id:1, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"連續時間單位脈衝 δ(t) 的篩選性質，∫ x(t)δ(t−t₀) dt 等於下列何者？",
+      options:["等於 x(t) 在整個區間上的積分值","等於 x(t₀)，即訊號在 t₀ 的取樣值","等於 x(0)，與位移量 t₀ 完全無關","等於 δ(t) 與 x(t) 兩者的乘積值"],
+      explanation:"篩選性質取出 t₀ 處的值。" },
+    en:{ question:"By the sifting property of the unit impulse δ(t), ∫ x(t)δ(t−t₀) dt equals which of the following?",
+      options:["The integral of x(t) over the entire interval","x(t₀), the value of the signal at t₀","x(0), independent of the shift amount t₀","The product of δ(t) and x(t) together"],
+      explanation:"Sifting extracts the value at t₀." } },
+  // 2
+  { id:2, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"因果訊號 x(t)=e^{−at}u(t)（a>0）的拉氏轉換，其收斂域 (ROC) 為？",
+      options:["Re{s} > −a，位於某垂直線右側","Re{s} < −a，位於某垂直線的左側","|s| > a，位於某個圓形區域外","涵蓋整個 s 平面，無收斂的限制"],
+      explanation:"右側訊號 ROC 在極點右方。" },
+    en:{ question:"For the causal signal x(t)=e^{−at}u(t) (a>0), the region of convergence (ROC) of its Laplace transform is?",
+      options:["Re{s} > −a, to the right of a vertical line","Re{s} < −a, to the left of a vertical line","|s| > a, outside a certain circular region","The entire s-plane, with no convergence limit"],
+      explanation:"Right-sided: ROC is right of the pole." } },
+  // 3
+  { id:3, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"連續因果系統 H(s)=1/(s²+3s+2)，其穩定性為何？",
+      options:["穩定，兩極點皆在左半平面","不穩定，有極點在右半平面","不穩定，有極點落在虛軸上","臨界穩定，極點皆在虛軸上"],
+      explanation:"極點 −1、−2 在左半平面。" },
+    en:{ question:"For the continuous causal system H(s)=1/(s²+3s+2), what is its stability?",
+      options:["Stable, both poles in the left half-plane","Unstable, a pole in the right half-plane","Unstable, a pole lying on the jω axis","Marginally stable, all poles on jω axis"],
+      explanation:"Poles at −1, −2 are in the LHP." } },
+  // 4
+  { id:4, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"時不變 (time-invariant) 系統具有下列哪一項特性？",
+      options:["輸入放大時輸出依比例同步放大","輸入延遲 t₀，輸出也僅延遲 t₀","輸出僅取決於當前時刻的輸入值","輸出對任意輸入皆維持有界範圍"],
+      explanation:"時不變：平移輸入只平移輸出。" },
+    en:{ question:"Which property characterizes a time-invariant system?",
+      options:["Scaling the input scales the output too","Delaying input by t₀ delays output by t₀","Output depends only on the present input","Output stays bounded for any input given"],
+      explanation:"Time-invariant: shift in → same shift out." } },
+  // 5
+  { id:5, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"系統 y(t)=t·x(t) 屬於下列何種分類？",
+      options:["既是線性也是時不變的系統","是線性但並非時不變的系統","是時不變但並非線性的系統","既非線性也並非時不變系統"],
+      explanation:"乘以 t 為線性但時變。" },
+    en:{ question:"The system y(t)=t·x(t) belongs to which classification?",
+      options:["Both linear and time-invariant system","Linear but not time-invariant system","Time-invariant but not linear system","Neither linear nor time-invariant system"],
+      explanation:"Multiplying by t is linear but time-varying." } },
+  // 6
+  { id:6, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"Parseval 定理主要描述下列哪一項守恆關係？",
+      options:["時域總能量等於頻域總能量","時域平均值等於頻域平均值","時域最大值等於頻域最大值","時域相位等於頻域相位總和"],
+      explanation:"能量在兩域之間守恆。" },
+    en:{ question:"Parseval's theorem mainly describes which conservation relation?",
+      options:["Total time-domain energy equals freq energy","Time-domain mean equals frequency-domain mean","Time-domain peak equals frequency-domain peak","Time-domain phase equals total freq phase"],
+      explanation:"Energy is conserved across both domains." } },
+  // 7
+  { id:7, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"一個系統具有「線性」必須同時滿足下列何種條件？",
+      options:["同時滿足疊加性與齊次性兩條件","只需滿足輸入與輸出的因果關係","只需滿足對時間平移的不變性質","只需滿足有界輸入有界輸出條件"],
+      explanation:"線性 = 可加性 + 齊次性。" },
+    en:{ question:"For a system to be linear, it must simultaneously satisfy which condition?",
+      options:["Both additivity and homogeneity conditions","Only the causal relation of input and output","Only invariance under shifts along the time","Only the bounded-input bounded-output rule"],
+      explanation:"Linearity = additivity + homogeneity." } },
+  // 8
+  { id:8, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"離散因果 LTI 系統穩定的條件（以極點位置表示）為何？",
+      options:["所有極點都位於單位圓的外部","所有極點都位於單位圓的內部","所有零點都位於單位圓的內部","所有極點都位於虛軸的左半側"],
+      explanation:"因果穩定 ⇔ 極點在單位圓內。" },
+    en:{ question:"For a discrete causal LTI system, the stability condition (in terms of poles) is?",
+      options:["All poles lie outside the unit circle area","All poles lie inside the unit circle region","All zeros lie inside the unit circle region","All poles lie to the left of the jω axis"],
+      explanation:"Causal stable ⇔ poles inside unit circle." } },
+  // 9
+  { id:9, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"x(t)=cos(2t)+cos(3t) 的基本週期 (fundamental period) 為何？",
+      options:["π，由較高頻率成分所決定","2π/5，由兩頻率之和決定","3π，由較低頻率成分所決定","2π，為兩成分週期最小公倍數"],
+      explanation:"取各週期的最小公倍數。" },
+    en:{ question:"What is the fundamental period of x(t)=cos(2t)+cos(3t)?",
+      options:["π, determined by the higher frequency","2π/5, determined by the sum of the two","3π, determined by the lower frequency","2π, the LCM of the two component periods"],
+      explanation:"Take the LCM of the periods." } },
+  // 10
+  { id:10, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"能量訊號 (energy signal) 具有下列哪一組特徵？",
+      options:["平均功率有限且總能量為無限大","總能量為零而平均功率為無限大","總能量有限且其平均功率等於零","總能量與平均功率兩者皆無限大"],
+      explanation:"能量訊號能量有限、功率為零。" },
+    en:{ question:"Which set of characteristics describes an energy signal?",
+      options:["Finite average power but infinite total energy","Zero total energy but infinite average power","Finite total energy and zero average power","Both total energy and average power infinite"],
+      explanation:"Energy signal: finite energy, zero power." } },
+  // 11
+  { id:11, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"連續週期訊號的傅立葉級數係數，代表下列哪一項物理意義？",
+      options:["訊號在時域中的瞬時功率分佈","訊號自相關函數的時間平均值","各時刻取樣值的加權移動平均","各諧波頻率成分的複數振幅值"],
+      explanation:"FS 係數即各諧波的振幅。" },
+    en:{ question:"The Fourier series coefficients of a periodic signal represent which physical meaning?",
+      options:["Instantaneous power distribution in the time","Time average of the autocorrelation function","Weighted moving average of sampled values","Complex amplitudes of harmonic components"],
+      explanation:"FS coefficients are harmonic amplitudes." } },
+  // 12
+  { id:12, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"「只要系統的極點都在左半平面，系統就一定穩定」此敘述？",
+      options:["完全正確，由極點位置即可判定","正確，因左半平面保證絕對可積","錯誤，應改看零點是否在左半側","不一定，須同時確認收斂域範圍"],
+      explanation:"穩定取決於 ROC 而非僅極點。" },
+    en:{ question:"\"As long as all poles are in the left half-plane, the system must be stable.\" This statement is?",
+      options:["Completely correct, decided by pole location","Correct, since LHP guarantees integrability","Wrong, one should check zeros on left side","Not necessarily, the ROC must also be checked"],
+      explanation:"Stability depends on the ROC, not poles alone." } },
+  // 13
+  { id:13, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"用有限項傅立葉級數逼近方波時，跳變處出現的固定過衝稱為？",
+      options:["混疊現象，由訊號欠取樣所造成","量化誤差，由位元數不足所造成","吉布斯現象，過衝量約為 9%","頻譜洩漏，由時域截斷窗造成"],
+      explanation:"吉布斯現象過衝固定約 9%。" },
+    en:{ question:"When approximating a square wave with a finite Fourier series, the fixed overshoot near jumps is called?",
+      options:["Aliasing, caused by undersampling signal","Quantization error, from insufficient bits","Gibbs phenomenon, overshoot of about 9%","Spectral leakage, from time-domain windowing"],
+      explanation:"Gibbs phenomenon: fixed ~9% overshoot." } },
+  // 14
+  { id:14, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"取樣定理 (sampling theorem) 要求取樣頻率須滿足何條件？",
+      options:["大於訊號最高頻率的 0.5 倍以上","大於訊號最高頻率的 2 倍以上","等於訊號最高頻率本身的數值即可","與訊號的最高頻率完全沒有關係"],
+      explanation:"fs > 2·fmax 方可避免混疊。" },
+    en:{ question:"The sampling theorem requires the sampling rate to satisfy which condition?",
+      options:["Greater than 0.5 times the highest frequency","Greater than 2 times the highest frequency","Equal to the highest frequency of the signal","Completely unrelated to the highest frequency"],
+      explanation:"fs > 2·fmax to avoid aliasing." } },
+  // 15
+  { id:15, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"LTI 系統的頻率響應 H(ω) 應如何取得？",
+      options:["對系統輸出 y(t) 直接取傅立葉轉換","對步階響應 s(t) 取一次微分運算","對脈衝響應 h(t) 進行傅立葉轉換","對輸入輸出比值取反傅立葉轉換"],
+      explanation:"H(ω) 為脈衝響應的傅立葉轉換。" },
+    en:{ question:"How is the frequency response H(ω) of an LTI system obtained?",
+      options:["Take the Fourier transform of output y(t)","Take the first derivative of step response","Take the Fourier transform of impulse h(t)","Take inverse transform of input/output ratio"],
+      explanation:"H(ω) is the Fourier transform of h(t)." } },
+  // 16
+  { id:16, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"兩個 LTI 系統 h₁ 與 h₂ 串接 (cascade)，整體脈衝響應為下列何者？",
+      options:["h₁ + h₂，兩響應直接相加結果","h₁ * h₂，兩響應的卷積結果","h₁ · h₂，兩響應逐點相乘結果","h₁ / h₂，兩響應相除運算結果"],
+      explanation:"串接系統 = 脈衝響應的卷積。" },
+    en:{ question:"When two LTI systems h₁ and h₂ are cascaded, the overall impulse response is which of the following?",
+      options:["h₁ + h₂, the direct sum of two responses","h₁ * h₂, the convolution of two responses","h₁ · h₂, the pointwise product of responses","h₁ / h₂, the division of the two responses"],
+      explanation:"Cascade = convolution of impulse responses." } },
+  // 17
+  { id:17, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"週期訊號 (periodic signal) 的定義為下列何者？",
+      options:["訊號能量為有限且不隨時間變化","訊號在每一個時刻的值皆完全相同","存在某正數 T 使 x(t)=x(t+T) 恆成立","訊號平均功率為零且總能量無限大"],
+      explanation:"存在週期 T 使訊號重複。" },
+    en:{ question:"What is the definition of a periodic signal?",
+      options:["The signal energy is finite and time-constant","The signal value is identical at every instant","Some positive T makes x(t)=x(t+T) hold always","The average power is zero and energy infinite"],
+      explanation:"Periodic if x(t)=x(t+T) holds." } },
+  // 18
+  { id:18, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"系統相位響應對 ω 微分後取負值（−dφ/dω），代表下列何種量？",
+      options:["系統對訊號的增益放大倍率大小","訊號通過系統所產生的群延遲","系統輸出訊號的總諧波失真程度","系統頻寬所能涵蓋的範圍大小"],
+      explanation:"群延遲定義為 −dφ/dω。" },
+    en:{ question:"The negative derivative of the phase response with respect to ω (−dφ/dω) represents which quantity?",
+      options:["The gain amplification factor of the system","The group delay of a signal through system","The total harmonic distortion of the output","The coverage range of the system bandwidth"],
+      explanation:"Group delay is defined as −dφ/dω." } },
+  // 19
+  { id:19, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"卷積 (convolution) 與相關 (correlation) 兩種運算之間的關係為何？",
+      options:["兩者完全相同，可以互相替換使用","相關運算過程中不含任何位移操作","卷積不需翻摺而相關需翻摺其訊號","相關等於與翻摺後訊號進行的卷積"],
+      explanation:"相關即與翻摺訊號的卷積。" },
+    en:{ question:"What is the relationship between convolution and correlation?",
+      options:["They are identical and fully interchangeable","Correlation involves no shifting operation","Convolution skips folding but correlation folds","Correlation equals convolution with a folded one"],
+      explanation:"Correlation = convolution with a reversed signal." } },
+  // 20
+  { id:20, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"X(z)=1/[(1−0.5z⁻¹)(1−2z⁻¹)]，若該系統為穩定，其收斂域為？",
+      options:["|z|>2，對應一個因果穩定系統","|z|<0.5，對應一個反因果系統","0.5<|z|<2，對應一個雙邊訊號","|z|>0.5，對應一個因果的系統"],
+      explanation:"穩定的 ROC 必須包含單位圓。" },
+    en:{ question:"Given X(z)=1/[(1−0.5z⁻¹)(1−2z⁻¹)], if the system is stable, its ROC is?",
+      options:["|z|>2, corresponding to a causal stable one","|z|<0.5, corresponding to an anti-causal one","0.5<|z|<2, corresponding to a two-sided signal","|z|>0.5, corresponding to a causal system one"],
+      explanation:"A stable ROC must include the unit circle." } },
+  // 21
+  { id:21, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"卷積 (convolution) 運算具備下列哪一組代數性質？",
+      options:["不具交換律但具有結合律的性質","不具結合律但具有分配律的性質","既不具交換律也不具有分配律性","具有交換律、結合律與分配律性質"],
+      explanation:"卷積滿足交換、結合、分配律。" },
+    en:{ question:"Which set of algebraic properties does the convolution operation possess?",
+      options:["No commutativity but has associativity rule","No associativity but has distributivity rule","Neither commutativity nor distributivity rule","Commutativity, associativity and distributivity"],
+      explanation:"Convolution: commutative, associative, distributive." } },
+  // 22
+  { id:22, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"訊號的傅立葉轉換 X(ω) 在 ω=0 時的值 X(0)，等於下列何者？",
+      options:["訊號在時域中的瞬時最大振幅","訊號在全時間上的總能量積分","訊號的平均功率乘上週期長度","訊號對全時間範圍的積分總值"],
+      explanation:"X(0) = ∫ x(t) dt。" },
+    en:{ question:"The value X(0) of the Fourier transform X(ω) at ω=0 equals which of the following?",
+      options:["The instantaneous peak amplitude in time","The total energy integral over all the time","The average power times the period length","The integral of x(t) over all of the time"],
+      explanation:"X(0) = ∫ x(t) dt." } },
+  // 23
+  { id:23, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"任意訊號 x[n] 與位移脈衝 δ[n−n₀] 的卷積，其結果為下列何者？",
+      options:["x[n] 乘以位移後的脈衝值結果","x[0] 並平移 n₀ 個取樣點的結果","x[n−n₀]，即訊號平移 n₀ 取樣點","x[n+n₀]，即訊號反向平移 n₀ 點"],
+      explanation:"與位移脈衝卷積即平移訊號。" },
+    en:{ question:"The convolution of any signal x[n] with a shifted impulse δ[n−n₀] gives which result?",
+      options:["x[n] multiplied by the shifted impulse value","x[0] then shifted by n₀ sampling points away","x[n−n₀], the signal shifted by n₀ samples","x[n+n₀], the signal shifted backward n₀ samples"],
+      explanation:"Convolving with a shifted impulse shifts the signal." } },
+  // 24
+  { id:24, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"長度為 N 的矩形脈衝序列，其離散時間傅立葉轉換 (DTFT) 形狀為？",
+      options:["理想矩形，整個頻帶完全平坦","單一脈衝，能量集中於零頻率","隨頻率單調遞減的指數衰減曲線","狄利克雷函數（即週期 sinc 形式）"],
+      explanation:"矩形序列轉換為週期 sinc。" },
+    en:{ question:"For a rectangular pulse sequence of length N, the shape of its DTFT is?",
+      options:["An ideal rectangle, perfectly flat in band","A single impulse concentrated at zero freq","A monotonically decaying exponential curve","A Dirichlet function (a periodic sinc form)"],
+      explanation:"Rectangular sequence → periodic sinc." } },
+  // 25
+  { id:25, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"因果系統 (causal system) 的定義為下列何者？",
+      options:["輸出只取決於現在與過去的輸入","輸出只取決於未來時刻的輸入值","輸出與輸入之間呈線性比例關係","輸出對有界輸入恆保持有界範圍"],
+      explanation:"因果系統不依賴未來的輸入。" },
+    en:{ question:"What is the definition of a causal system?",
+      options:["Output depends only on present and past input","Output depends only on the future input value","Output is linearly proportional to the input","Output stays bounded for any bounded input"],
+      explanation:"A causal system does not use future input." } },
+  // 26
+  { id:26, difficulty:"trap", points:19, answer:2,
+    zh:{ question:"「能量訊號也可以同時是週期訊號」此敘述是否正確？",
+      options:["正確，弦波即是最典型的例子","正確，只要單一週期的能量有限","錯誤，非零週期訊號的能量無限","錯誤，因週期訊號無法定義能量"],
+      explanation:"非零週期訊號能量為無限大。" },
+    en:{ question:"\"An energy signal can also be a periodic signal at the same time.\" Is this statement correct?",
+      options:["Correct, a sinusoid is the most typical case","Correct, since one period has finite energy here","Wrong, a nonzero periodic signal has infinite energy","Wrong, a periodic signal cannot have defined energy"],
+      explanation:"A nonzero periodic signal has infinite energy." } },
+  // 27
+  { id:27, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"若 x(t) ↔ X(ω)，則時間平移後的訊號 x(t−t₀) 的傅立葉轉換為？",
+      options:["X(ω)·e^{+jωt₀}，振幅被同步放大","X(ω)·e^{−jωt₀}，僅相位產生改變","X(ω−t₀)，整個頻譜往右側平移","X(ω)/jω，低頻成分受到了抑制"],
+      explanation:"時移對應線性相位變化。" },
+    en:{ question:"If x(t) ↔ X(ω), the Fourier transform of the time-shifted signal x(t−t₀) is?",
+      options:["X(ω)·e^{+jωt₀}, with amplitude amplified up","X(ω)·e^{−jωt₀}, only the phase is changed","X(ω−t₀), the whole spectrum shifts rightward","X(ω)/jω, the low-frequency part suppressed"],
+      explanation:"Time shift corresponds to a linear phase." } },
+  // 28
+  { id:28, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"從取樣值理想地重建連續訊號（理想低通濾波），對應到時域的何種運算？",
+      options:["與矩形脈衝串進行卷積的運算","與三角脈衝逐點相乘的運算結果","與 sinc 函數進行卷積的內插運算","與高斯脈衝串相加疊合的運算"],
+      explanation:"理想重建即 sinc 內插。" },
+    en:{ question:"Ideally reconstructing a continuous signal from samples (ideal low-pass) corresponds to which time-domain operation?",
+      options:["Convolution with a train of rectangular pulses","Pointwise multiplication with triangular pulse","Convolution with sinc function (interpolation)","Additive overlay with a train of Gaussian pulses"],
+      explanation:"Ideal reconstruction = sinc interpolation." } },
+  // 29
+  { id:29, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"偶訊號 (even signal) 的定義為下列哪一項？",
+      options:["滿足 x(t) = −x(−t) 的對稱訊號","滿足 x(t) = x(t−T) 的週期性訊號","滿足 x(t) = 1/x(−t) 的反比訊號","滿足 x(t) = x(−t) 的對稱性訊號"],
+      explanation:"偶訊號對 y 軸對稱。" },
+    en:{ question:"Which is the definition of an even signal?",
+      options:["A symmetric signal with x(t) = −x(−t)","A periodic signal with x(t) = x(t−T)","An inverse signal with x(t) = 1/x(−t)","A symmetric signal with x(t) = x(−t)"],
+      explanation:"An even signal is symmetric about the y-axis." } },
+  // 30
+  { id:30, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"任意一個訊號 x(t) 都可以被唯一地分解為下列哪一組成分之和？",
+      options:["唯一的偶分量與奇分量兩者之和","唯一的週期分量與非週期分量之和","唯一的因果分量與反因果分量之和","唯一的實部分量與相位分量之乘積"],
+      explanation:"任意訊號 = 偶部 + 奇部。" },
+    en:{ question:"Any signal x(t) can be uniquely decomposed into the sum of which set of components?",
+      options:["The unique sum of its even and odd parts","The unique sum of periodic and aperiodic parts","The unique sum of causal and anti-causal parts","The unique product of real part and phase part"],
+      explanation:"Any signal = even part + odd part." } },
+  // 31
+  { id:31, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"拉氏轉換 L{ t·e^{−at}u(t) } 的結果為下列何者？",
+      options:["1/(s+a)，對應一個一階極點","a/(s+a)²，含有一個比例係數","s/(s+a)²，分子中含有變數 s","1/(s+a)²，為一個二重極點形式"],
+      explanation:"乘以 t 使極點變為二重。" },
+    en:{ question:"The Laplace transform L{ t·e^{−at}u(t) } gives which result?",
+      options:["1/(s+a), corresponding to a first-order pole","a/(s+a)², containing a proportional constant","s/(s+a)², with the variable s in numerator","1/(s+a)², being a double (second-order) pole"],
+      explanation:"Multiplying by t makes the pole double." } },
+  // 32
+  { id:32, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"當取樣頻率低於 Nyquist 率（欠取樣）時，會造成下列哪一種後果？",
+      options:["量化雜訊增大使輸出解析度下降","訊號振幅被過度壓縮而產生截波","高頻成分混疊成為低頻的假訊號","頻譜整體往高頻方向發生了平移"],
+      explanation:"欠取樣造成混疊現象。" },
+    en:{ question:"When the sampling rate is below the Nyquist rate (undersampling), which consequence occurs?",
+      options:["Quantization noise rises, resolution drops","The amplitude is over-compressed into clipping","High-freq components alias into low-freq fakes","The whole spectrum shifts toward high frequency"],
+      explanation:"Undersampling causes aliasing." } },
+  // 33
+  { id:33, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"連續時間單位脈衝 δ(t) 的傅立葉轉換結果為下列何者？",
+      options:["等於常數 1，涵蓋所有頻率成分","等於 2πδ(ω)，集中在零頻率處","等於 1/(jω)，隨頻率遞減而衰減","等於 sinc 函數，呈現週期性振盪"],
+      explanation:"脈衝含所有頻率，轉換為 1。" },
+    en:{ question:"The Fourier transform of the continuous unit impulse δ(t) gives which result?",
+      options:["A constant 1, covering all frequency content","2πδ(ω), concentrated at the zero frequency","1/(jω), decaying as the frequency increases","A sinc function, showing periodic oscillation"],
+      explanation:"Impulse contains all frequencies; transform is 1." } },
+  // 34
+  { id:34, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"訊號最高頻率為 fmax，取樣率恰好等於 fs=2·fmax，是否一定能完美重建？",
+      options:["不保證，正弦落在 fmax 時可能失敗","一定可以，等於最高頻率兩倍就足夠","一定可以，因為符合 Nyquist 率規定","無法重建，必須取四倍才能完整還原"],
+      explanation:"須嚴格 fs > 2·fmax 才保證。" },
+    en:{ question:"A signal's highest frequency is fmax and the rate is exactly fs=2·fmax. Can it always be perfectly reconstructed?",
+      options:["Not guaranteed, a sinusoid at fmax may fail","Always, twice the highest frequency suffices","Always, since it satisfies the Nyquist rate rule","Cannot reconstruct, four times is required here"],
+      explanation:"Strictly fs > 2·fmax is required to guarantee it." } },
+  // 35
+  { id:35, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"連續 LTI 系統達到 BIBO 穩定的充要條件為下列何者？",
+      options:["脈衝響應 h(t) 必須為有限的長度","脈衝響應 h(t) 必須為絕對可積分","脈衝響應 h(t) 必須為偶對稱函數","脈衝響應 h(t) 須具有有限的能量值"],
+      explanation:"BIBO 穩定 ⇔ h(t) 絕對可積。" },
+    en:{ question:"What is the necessary and sufficient condition for a continuous LTI system to be BIBO stable?",
+      options:["The impulse response h(t) must be finite length","The impulse response h(t) must be absolutely integrable","The impulse response h(t) must be an even function","The impulse response h(t) must have finite energy"],
+      explanation:"BIBO stable ⇔ h(t) absolutely integrable." } },
+  // 36
+  { id:36, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"兩個單位步階訊號的卷積 u[n] * u[n]，其結果為下列何者？",
+      options:["u[n]，結果仍維持為單位步階","(n+1)u[n]，結果為一個斜坡訊號","δ[n]，結果為一個單位脈衝訊號","n·u[n]，結果為斜率較緩的斜坡"],
+      explanation:"步階自卷積為斜坡 (n+1)u[n]。" },
+    en:{ question:"The convolution of two unit step signals, u[n] * u[n], gives which result?",
+      options:["u[n], the result remains a unit step signal","(n+1)u[n], the result is a ramp-type signal","δ[n], the result is a unit impulse signal","n·u[n], the result is a gentler sloped ramp"],
+      explanation:"Step ⊛ step = ramp (n+1)u[n]." } },
+  // 37
+  { id:37, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"x[n]=aⁿu[n] 的 z 轉換及其收斂域為下列何者？",
+      options:["1/(1+az⁻¹)，收斂域為 |z|<|a|","az⁻¹/(1−az⁻¹)，收斂域 |z|>|a|","1/(1−a⁻¹z)，收斂域為 |z|<|a|","1/(1−az⁻¹)，收斂域為 |z|>|a|"],
+      explanation:"幾何級數和，ROC 為 |z|>|a|。" },
+    en:{ question:"What is the z-transform of x[n]=aⁿu[n] and its ROC?",
+      options:["1/(1+az⁻¹), with the ROC being |z|<|a|","az⁻¹/(1−az⁻¹), with the ROC |z|>|a|","1/(1−a⁻¹z), with the ROC being |z|<|a|","1/(1−az⁻¹), with the ROC being |z|>|a|"],
+      explanation:"Geometric series sum, ROC is |z|>|a|." } },
+  // 38
+  { id:38, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"拉氏轉換在何種條件下會退化（特殊化）為傅立葉轉換？",
+      options:["令 s=jω 且收斂域包含虛軸時","令 s=σ 為任意一個實數的時候","令 s=0 並且忽略相位資訊的時候","令 |s|=1 落在單位圓上面的時候"],
+      explanation:"s=jω 且 ROC 含虛軸。" },
+    en:{ question:"Under what condition does the Laplace transform reduce (specialize) to the Fourier transform?",
+      options:["When s=jω and the ROC includes the jω axis","When s=σ is taken as any arbitrary real number","When s=0 and the phase information is ignored","When |s|=1, lying on the unit circle boundary"],
+      explanation:"Set s=jω with the ROC including the jω axis." } },
+  // 39
+  { id:39, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"利用 Parseval 定理，能量積分 ∫|x(t)|²dt 在頻域中可表示為下列何者？",
+      options:["(1/2π)∫|X(ω)|²dω 的積分結果","(1/2π)∫ X(ω) dω 的積分結果值","∫|X(ω)| dω 且不含任何係數結果","2π∫|X(ω)|²dω 的整個積分結果"],
+      explanation:"能量 = 頻譜平方的積分。" },
+    en:{ question:"By Parseval's theorem, the energy integral ∫|x(t)|²dt can be expressed in the frequency domain as which of these?",
+      options:["The integral (1/2π)∫|X(ω)|²dω as a result","The integral (1/2π)∫ X(ω) dω as a value here","The integral ∫|X(ω)| dω without any coefficient","The integral 2π∫|X(ω)|²dω as the whole result"],
+      explanation:"Energy = integral of the squared spectrum." } },
+  // 40
+  { id:40, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"時域中的卷積運算，對應到頻域中的何種運算？",
+      options:["對應頻域中的卷積積分的運算","對應頻域中的線性相加的運算","對應頻域中的逐點相乘的運算","對應頻域中的逐點相除的運算"],
+      explanation:"時域卷積 = 頻域相乘。" },
+    en:{ question:"Convolution in the time domain corresponds to which operation in the frequency domain?",
+      options:["It corresponds to a convolution integral there","It corresponds to a linear addition operation","It corresponds to a pointwise multiplication","It corresponds to a pointwise division operation"],
+      explanation:"Time-domain convolution = frequency multiplication." } },
+];
+
+const i18n = {
+  zh: {
+    title: "訊號與系統 測驗", lang: "English", progress: (c,t)=>`第 ${c} / ${t} 題`,
+    prev: "上一題", submit: "提交測驗",
+    resultTitle: "測驗結果", totalScore: "總分", correctCount: "正確題數",
+    wrongCount: "錯誤題數", byDiff: "各難度正確率",
+    easy: "簡單", medium: "中等", hard: "困難", trap: "陷阱",
+    percentile: (p)=>`你的成績超越了約 ${p}% 的測試者`,
+    gradeLabel: "等級評定", reviewTitle: "錯題回顧",
+    yourAns: "你的選擇", correctAns: "正確答案", retry: "重新測驗", copy: "複製結果",
+    copied: "已複製！", noWrong: "太厲害了，全部答對！",
+    grades: [[600,"🏆 頂尖專家"],[500,"⭐ 進階掌握"],[380,"📘 中等水準"],[250,"📗 基礎尚可"],[0,"📕 需要加強"]],
+    summary: (s,c)=>`【訊號與系統測驗】總分 ${s}/670，答對 ${c}/40 題。`
+  },
+  en: {
+    title: "Signals & Systems Quiz", lang: "繁體中文", progress: (c,t)=>`Question ${c} / ${t}`,
+    prev: "Previous", submit: "Submit Quiz",
+    resultTitle: "Quiz Result", totalScore: "Total Score", correctCount: "Correct",
+    wrongCount: "Incorrect", byDiff: "Accuracy by Difficulty",
+    easy: "Easy", medium: "Medium", hard: "Hard", trap: "Trap",
+    percentile: (p)=>`You scored higher than about ${p}% of test takers`,
+    gradeLabel: "Grade", reviewTitle: "Review of Wrong Answers",
+    yourAns: "Your choice", correctAns: "Correct answer", retry: "Retry", copy: "Copy Result",
+    copied: "Copied!", noWrong: "Excellent — all correct!",
+    grades: [[600,"🏆 Top Expert"],[500,"⭐ Advanced"],[380,"📘 Intermediate"],[250,"📗 Basic"],[0,"📕 Needs Improvement"]],
+    summary: (s,c)=>`[Signals & Systems Quiz] Score ${s}/670, ${c}/40 correct.`
+  }
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const LETTERS = ["A","B","C","D"];
+
+// theme init
+(function initTheme(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+})();
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
+}
+document.getElementById("themeBtn").addEventListener("click", ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+});
+document.getElementById("langBtn").addEventListener("click", ()=>{
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  applyStaticText();
+  if(!document.getElementById("resultView").classList.contains("hidden")) renderResult();
+  else renderQuestion(false);
+});
+
+function applyStaticText(){
+  const t = i18n[lang];
+  document.getElementById("appTitle").textContent = t.title;
+  document.getElementById("langBtn").textContent = t.lang;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+}
+
+function renderQuestion(fade=true){
+  const t = i18n[lang];
+  const q = questions[current];
+  const qData = q[lang];
+  const qEl = document.getElementById("questionText");
+  const oEl = document.getElementById("optionsBox");
+
+  const paint = ()=>{
+    document.getElementById("progressText").textContent = t.progress(current+1, questions.length);
+    qEl.textContent = `${current+1}. ${qData.question}`;
+    oEl.innerHTML = "";
+    qData.options.forEach((opt, i)=>{
+      const div = document.createElement("div");
+      div.className = "option" + (answers[current]===i ? " selected" : "");
+      div.innerHTML = `<span class="label">${LETTERS[i]}</span><span>${opt}</span>`;
+      div.addEventListener("click", ()=> selectOption(i, div));
+      oEl.appendChild(div);
+    });
+    // nav
+    document.getElementById("prevBtn").style.visibility = current===0 ? "hidden" : "visible";
+    const submitBtn = document.getElementById("submitBtn");
+    if(current === questions.length-1 && answers[current]!==null) submitBtn.classList.remove("hidden");
+    else submitBtn.classList.add("hidden");
+    // progress bar
+    const answered = answers.filter(a=>a!==null).length;
+    document.getElementById("progressFill").style.width = (answered/questions.length*100) + "%";
+    qEl.classList.remove("fade"); oEl.classList.remove("fade");
+  };
+
+  if(fade){
+    qEl.classList.add("fade"); oEl.classList.add("fade");
+    setTimeout(paint, 200);
+  } else paint();
+}
+
+function selectOption(i, div){
+  answers[current] = i;
+  document.querySelectorAll(".option").forEach(o=>o.classList.remove("selected"));
+  div.classList.add("selected");
+  const answered = answers.filter(a=>a!==null).length;
+  document.getElementById("progressFill").style.width = (answered/questions.length*100) + "%";
+
+  if(current === questions.length-1){
+    document.getElementById("submitBtn").classList.remove("hidden");
+    return; // 最後一題不自動提交
+  }
+  setTimeout(()=>{ current++; renderQuestion(true); }, 400);
+}
+
+document.getElementById("prevBtn").addEventListener("click", ()=>{
+  if(current>0){ current--; renderQuestion(true); }
+});
+document.getElementById("submitBtn").addEventListener("click", showResult);
+
+// normal CDF via erf approximation
+function normalCdf(x, mean, sd){
+  const z = (x - mean) / (sd * Math.SQRT2);
+  // Abramowitz-Stegun erf
+  const t = 1/(1+0.3275911*Math.abs(z));
+  const y = 1 - (((((1.061405429*t -1.453152027)*t)+1.421413741)*t -0.284496736)*t +0.254829592)*t*Math.exp(-z*z);
+  const erf = z>=0 ? y : -y;
+  return 0.5*(1+erf);
+}
+
+function computeStats(){
+  let score=0, correct=0;
+  const diffStat = { easy:[0,0], medium:[0,0], hard:[0,0], trap:[0,0] };
+  const wrong = [];
+  questions.forEach((q,idx)=>{
+    diffStat[q.difficulty][1]++;
+    if(answers[idx]===q.answer){ score+=q.points; correct++; diffStat[q.difficulty][0]++; }
+    else wrong.push({q, chosen:answers[idx]});
+  });
+  return {score, correct, wrong:questions.length-correct, diffStat, wrongList:wrong};
+}
+
+function showResult(){
+  document.getElementById("quizView").classList.add("hidden");
+  document.getElementById("resultView").classList.remove("hidden");
+  renderResult();
+}
+
+function renderResult(){
+  const t = i18n[lang];
+  const s = computeStats();
+  const mean = 670*0.45, sd = 670*0.15;
+  const pct = Math.round(normalCdf(s.score, mean, sd)*100);
+  let grade = t.grades[t.grades.length-1][1];
+  for(const [thr,label] of t.grades){ if(s.score>=thr){ grade=label; break; } }
+
+  const el = document.getElementById("resultView");
+  let html = `<h2>${t.resultTitle}</h2>`;
+  html += `<div class="score-big">${s.score} / 670</div>`;
+  html += `<div class="grade">${t.gradeLabel}: ${grade}</div>`;
+  html += `<div class="stat-row"><span class="k">${t.correctCount}</span><span>${s.correct} / 40</span></div>`;
+  html += `<div class="stat-row"><span class="k">${t.wrongCount}</span><span>${s.wrong} / 40</span></div>`;
+  html += `<div class="section-title">${t.byDiff}</div>`;
+  [["easy",10],["medium",15],["hard",10],["trap",5]].forEach(([d])=>{
+    html += `<div class="stat-row"><span class="k">${t[d]}</span><span>${s.diffStat[d][0]} / ${s.diffStat[d][1]}</span></div>`;
+  });
+  html += `<div class="section-title">${t.percentile(pct)}</div>`;
+
+  html += `<div class="result-btns">
+    <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+    <button class="btn" id="copyBtn">${t.copy}</button>
+  </div>`;
+
+  // review
+  html += `<div class="section-title">${t.reviewTitle}</div>`;
+  if(s.wrongList.length===0){
+    html += `<div class="rev-line">${t.noWrong}</div>`;
+  } else {
+    s.wrongList.forEach(({q,chosen})=>{
+      const d = q[lang];
+      const chosenTxt = chosen===null ? "—" : `${LETTERS[chosen]}. ${d.options[chosen]}`;
+      html += `<div class="review-item">
+        <div class="review-q">${q.id}. ${d.question}</div>
+        <div class="rev-line rev-wrong">✗ ${t.yourAns}: ${chosenTxt}</div>
+        <div class="rev-line rev-correct">✓ ${t.correctAns}: ${LETTERS[q.answer]}. ${d.options[q.answer]}</div>
+        <div class="rev-exp">${d.explanation}</div>
+      </div>`;
+    });
+  }
+  el.innerHTML = html;
+
+  document.getElementById("retryBtn").addEventListener("click", ()=>{
+    current=0; answers.fill(null);
+    document.getElementById("resultView").classList.add("hidden");
+    document.getElementById("quizView").classList.remove("hidden");
+    renderQuestion(false);
+  });
+  document.getElementById("copyBtn").addEventListener("click", (e)=>{
+    const text = t.summary(s.score, s.correct) + " " + t.percentile(pct);
+    navigator.clipboard.writeText(text).then(()=>{
+      e.target.textContent = t.copied;
+      setTimeout(()=>{ e.target.textContent = t.copy; }, 1500);
+    });
+  });
+}
+
+// start
+applyStaticText();
+renderQuestion(false);
+</script>
+</body>
+</html>

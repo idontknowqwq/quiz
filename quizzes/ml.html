@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機器學習 / AI 互動測驗</title>
+<style>
+  :root{
+    --bg:#FFFFFF; --text:#1A1A1A; --muted:#6B7280; --border:#E5E7EB;
+    --accent:#2563EB; --accent-text:#FFFFFF; --card:#FFFFFF; --hover:#F3F4F6;
+    --bar-track:#E5E7EB; --correct:#16A34A; --wrong:#DC2626;
+  }
+  [data-theme="dark"]{
+    --bg:#111111; --text:#E5E7EB; --muted:#9CA3AF; --border:#374151;
+    --accent:#60A5FA; --accent-text:#111111; --card:#1A1A1A; --hover:#1F2937;
+    --bar-track:#374151; --correct:#4ADE80; --wrong:#F87171;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;
+    line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:760px; margin:0 auto; padding:20px 18px 80px;}
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; flex-wrap:wrap; padding:14px 0; border-bottom:1px solid var(--border);
+  }
+  .title{font-size:18px; font-weight:700; margin:0;}
+  .controls{display:flex; gap:8px; align-items:center;}
+  .btn{
+    background:var(--card); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:7px 12px; font-size:14px; cursor:pointer;
+    transition:background .15s ease;
+  }
+  .btn:hover{background:var(--hover);}
+  .btn-primary{background:var(--accent); color:var(--accent-text); border-color:var(--accent);}
+  .btn-primary:hover{background:var(--accent); opacity:.9;}
+  .progress-info{font-size:14px; color:var(--muted); margin:18px 0 8px;}
+  .qcard{transition:opacity .25s ease; opacity:1;}
+  .qcard.fade{opacity:0;}
+  .question{font-size:19px; font-weight:600; margin:6px 0 20px;}
+  .options{display:flex; flex-direction:column; gap:12px;}
+  .option{
+    display:flex; align-items:flex-start; gap:12px;
+    border:1px solid var(--border); border-radius:10px;
+    padding:14px 16px; cursor:pointer; background:var(--card);
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .option:hover{background:var(--hover);}
+  .option.selected{border-color:var(--accent); background:var(--hover);}
+  .option .key{
+    flex:0 0 26px; height:26px; border:1px solid var(--border);
+    border-radius:6px; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; color:var(--muted);
+  }
+  .option.selected .key{background:var(--accent); color:var(--accent-text); border-color:var(--accent);}
+  .option .text{flex:1; font-size:15px;}
+  .nav{display:flex; justify-content:space-between; align-items:center; margin-top:24px;}
+  .nav .spacer{flex:1;}
+  /* progress bar */
+  .bar-outer{position:fixed; left:0; right:0; bottom:0; height:6px; background:var(--bar-track);}
+  .bar-inner{height:100%; width:0; background:var(--accent); transition:width .25s ease;}
+  /* results */
+  .result h2{font-size:22px; margin:8px 0 4px;}
+  .score-big{font-size:46px; font-weight:800; margin:10px 0 2px; color:var(--accent);}
+  .grade{font-size:22px; font-weight:700; margin:6px 0 18px;}
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:18px 0;}
+  .stat{border:1px solid var(--border); border-radius:10px; padding:14px;}
+  .stat .label{font-size:13px; color:var(--muted);}
+  .stat .val{font-size:20px; font-weight:700; margin-top:2px;}
+  .percentile{border:1px solid var(--border); border-radius:10px; padding:16px; margin:16px 0; font-size:16px;}
+  .section-title{font-size:17px; font-weight:700; margin:26px 0 12px;}
+  .review-item{border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:12px;}
+  .review-q{font-weight:600; margin-bottom:8px;}
+  .review-line{font-size:14px; margin:3px 0;}
+  .tag-wrong{color:var(--wrong); font-weight:600;}
+  .tag-correct{color:var(--correct); font-weight:600;}
+  .review-exp{font-size:13px; color:var(--muted); margin-top:8px;}
+  .result-actions{display:flex; gap:10px; margin-top:22px; flex-wrap:wrap;}
+  .hidden{display:none;}
+  @media (max-width:520px){
+    .stat-grid{grid-template-columns:1fr;}
+    .title{font-size:16px;}
+    .question{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 class="title" id="appTitle">機器學習 / AI 測驗</h1>
+    <div class="controls">
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <!-- Quiz -->
+  <main id="quizView">
+    <div class="progress-info" id="progressInfo">第 1 / 40 題</div>
+    <div class="qcard" id="qcard">
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="btn" id="prevBtn">上一題</button>
+      <div class="spacer"></div>
+      <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+    </div>
+  </main>
+
+  <!-- Results -->
+  <section id="resultView" class="result hidden"></section>
+</div>
+<div class="bar-outer"><div class="bar-inner" id="barInner"></div></div>
+
+<script>
+const questions = [
+ {id:1,difficulty:"easy",points:10,answer:0,
+  zh:{question:"下列何者最能描述「監督式學習」？",options:["從帶有標籤的資料中學習輸入到輸出的對應關係","從無標籤的資料中自行尋找潛在的分群結構","透過與環境互動並依據獎勵訊號調整其策略","利用少量規則手動推導出明確的決策流程"],explanation:"監督式學習以標籤資料學輸入對輸出。"},
+  en:{question:"Which best describes supervised learning?",options:["Learning an input-to-output mapping from labeled training data","Discovering hidden cluster structure from unlabeled data","Adjusting a policy from reward signals via environment interaction","Deriving explicit decision rules manually from a few cases"],explanation:"It learns input→output from labeled data."}},
+
+ {id:2,difficulty:"medium",points:15,answer:1,
+  zh:{question:"模型在訓練集表現很好但在測試集表現很差，最可能的原因是？",options:["模型偏誤過高，對資料的假設過於簡化","模型變異過高，過度擬合了訓練資料的雜訊","學習率設定過低，導致尚未收斂到最佳解","訓練資料與測試資料來自完全相同的分布"],explanation:"訓練好、測試差是典型過擬合。"},
+  en:{question:"A model does well on training but poorly on test data. Most likely cause?",options:["The model has high bias and oversimplifies its assumptions","The model has high variance and overfits noise in training data","The learning rate is too low so it has not yet converged","The training and test data come from an identical distribution"],explanation:"Train-good test-bad signals overfitting."}},
+
+ {id:3,difficulty:"hard",points:25,answer:2,
+  zh:{question:"關於 L1 與 L2 正則化，下列敘述何者正確？",options:["L2 正則化傾向產生稀疏解，使許多權重恰為零","L1 與 L2 對權重的懲罰方式相同，差別僅在係數","L1 正則化傾向產生稀疏解，較常用於特徵選擇","L2 正則化無法以梯度下降最佳化，須用座標下降"],explanation:"L1 產生稀疏解，可做特徵選擇。"},
+  en:{question:"Which statement about L1 and L2 regularization is correct?",options:["L2 tends to produce sparse solutions with many exactly-zero weights","L1 and L2 penalize weights identically, differing only by coefficient","L1 tends to produce sparse solutions, useful for feature selection","L2 cannot be optimized by gradient descent, needing coordinate descent"],explanation:"L1 yields sparsity, aiding feature selection."}},
+
+ {id:4,difficulty:"easy",points:10,answer:3,
+  zh:{question:"資料切分為訓練 / 驗證 / 測試集時，驗證集的主要用途是？",options:["計算最終模型對外部資料的真實泛化誤差","提供最多的樣本數量以加速模型收斂速度","在部署之後持續監控模型於線上環境表現","調整超參數與選擇模型，避免動用到測試集"],explanation:"驗證集用於調參與選模型。"},
+  en:{question:"In a train/validation/test split, the validation set is mainly used to?",options:["Compute the final model's true generalization error on outside data","Provide the most samples so the model converges more quickly","Monitor the model's online performance after it is deployed","Tune hyperparameters and select models without using the test set"],explanation:"Validation tunes params and selects models."}},
+
+ {id:5,difficulty:"medium",points:15,answer:1,
+  zh:{question:"在梯度下降中，若學習率設定過大，最可能發生什麼？",options:["模型收斂速度極慢，需要遠多於預期的迭代數","損失函數震盪甚至發散，無法穩定收斂到最小值","模型必定收斂到全域最小值，但耗費大量記憶體","梯度恆為零，導致權重在訓練過程中完全不更新"],explanation:"學習率過大會震盪或發散。"},
+  en:{question:"In gradient descent, if the learning rate is too large, what most likely happens?",options:["Convergence becomes extremely slow, needing far more iterations","The loss oscillates or even diverges and fails to settle at a minimum","It always converges to the global minimum but uses much memory","The gradient stays zero so weights never update during training"],explanation:"Too-large LR oscillates or diverges."}},
+
+ {id:6,difficulty:"trap",points:19,answer:2,
+  zh:{question:"垃圾郵件分類器準確率達 99%，但資料中正常郵件佔 99%。何者最正確？",options:["準確率高達九成九，代表此分類器已具優異實用價值","準確率是分類問題最可靠指標，無須再參考其他數據","在類別極不平衡時，高準確率可能來自全猜多數類","只要再增加訓練資料量，準確率就一定能進一步提升"],explanation:"不平衡下高準確率可能無意義。"},
+  en:{question:"A spam classifier hits 99% accuracy, but 99% of data is non-spam. Most correct judgment?",options:["A 99% accuracy means the classifier already has excellent practical value","Accuracy is the most reliable metric and no other numbers are needed","Under severe imbalance, high accuracy may just mean predicting the majority","Simply adding more training data will certainly raise accuracy further"],explanation:"Imbalanced accuracy can be misleading."}},
+
+ {id:7,difficulty:"medium",points:15,answer:3,
+  zh:{question:"k-fold 交叉驗證的主要目的為何？",options:["透過增加訓練輪數讓模型更深入記住訓練資料","將測試集重複使用多次以取得更高的最終準確率","自動選擇神經網路的層數與每層的神經元個數","更穩健地估計泛化能力並降低資料切分的偶然性"],explanation:"交叉驗證穩健估計泛化能力。"},
+  en:{question:"What is the main purpose of k-fold cross-validation?",options:["Increase training epochs so the model memorizes the data more deeply","Reuse the test set many times to obtain a higher final accuracy","Automatically choose the layers and neurons of a neural network","Estimate generalization more robustly and reduce split randomness"],explanation:"It estimates generalization robustly."}},
+
+ {id:8,difficulty:"hard",points:25,answer:0,
+  zh:{question:"深層網路用 sigmoid 激活時常見的「梯度消失」，根本原因是？",options:["sigmoid 導數最大僅 0.25，多層連乘後梯度趨近於零","sigmoid 輸出範圍為負一到一，導致反向時梯度被放大","sigmoid 為非連續函數，在零點不可微而中斷梯度","sigmoid 計算成本過高，使反向傳播在數值上直接溢位"],explanation:"導數≤0.25，連乘後梯度消失。"},
+  en:{question:"With sigmoid activations in deep nets, the root cause of vanishing gradients is?",options:["The sigmoid derivative peaks at 0.25, so layer products shrink to zero","The sigmoid output ranges from -1 to 1, amplifying gradients on backprop","The sigmoid is discontinuous and non-differentiable at zero, cutting gradients","The sigmoid is so costly that backpropagation simply overflows numerically"],explanation:"Derivative ≤0.25; products vanish."}},
+
+ {id:9,difficulty:"easy",points:10,answer:2,
+  zh:{question:"下列哪一個任務屬於「迴歸」問題而非「分類」問題？",options:["判斷一封電子郵件是否為垃圾郵件","辨識手寫數字圖片對應到零至九的哪一個","根據房屋坪數與位置預測其成交的價格","判別一張照片中的動物究竟是貓還是狗"],explanation:"預測連續價格屬於迴歸。"},
+  en:{question:"Which task is a regression problem rather than a classification problem?",options:["Deciding whether a given email message is spam or not","Recognizing which digit zero to nine a handwriting image shows","Predicting a house's final sale price from its size and location","Telling whether the animal shown in a photo is a cat or dog"],explanation:"Predicting continuous price is regression."}},
+
+ {id:10,difficulty:"medium",points:15,answer:3,
+  zh:{question:"在二元分類中，「精確率(Precision)」的定義是？",options:["所有實際為正的樣本中，被正確預測為正的比例","所有樣本中被模型正確分類（含正負）的整體比例","所有實際為負的樣本中，被正確預測為負的比例","所有被預測為正的樣本中，實際確為正類的比例"],explanation:"精確率=預測為正中真正為正。"},
+  en:{question:"In binary classification, precision is defined as?",options:["Of all truly positive samples, the fraction predicted as positive","Of all the samples, the overall fraction classified correctly","Of all truly negative samples, the fraction predicted as negative","Of all samples predicted positive, the fraction truly positive"],explanation:"Precision = true positives / predicted positives."}},
+
+ {id:11,difficulty:"hard",points:25,answer:0,
+  zh:{question:"關於 Dropout 正則化技術，下列敘述何者正確？",options:["訓練時隨機關閉部分神經元，可降低神經元間共適應","它在測試階段隨機關閉神經元以增加預測的多樣性","它透過刪除整層網路來大幅減少模型的參數總量","它會永久移除被選中的神經元，使網路結構變小"],explanation:"訓練時隨機丟棄，減少共適應。"},
+  en:{question:"Which statement about Dropout regularization is correct?",options:["It randomly disables neurons during training, reducing their co-adaptation","It randomly disables neurons at test time to diversify the predictions","It removes whole layers to drastically cut the total parameter count","It permanently deletes chosen neurons, shrinking the network over time"],explanation:"Random drop at train time cuts co-adaptation."}},
+
+ {id:12,difficulty:"medium",points:15,answer:1,
+  zh:{question:"為何常將類別型特徵（如「城市」）做 one-hot 編碼而非整數標籤？",options:["整數標籤會佔用較多記憶體，one-hot 能壓縮儲存空間","整數會引入不存在的順序與大小關係，誤導了模型","one-hot 編碼能保證所有特徵彼此達到完全線性相關","整數標籤無法輸入神經網路，網路只接受二進位向量"],explanation:"整數會引入假的順序關係。"},
+  en:{question:"Why one-hot encode a categorical feature (e.g. city) instead of integer labels?",options:["Integer labels use more memory; one-hot compresses the storage well","Integers impose a fake order and magnitude that misleads the model","One-hot encoding guarantees all features become perfectly correlated","Integer labels cannot enter a neural network, which needs binary input"],explanation:"Integers imply a false ordering."}},
+
+ {id:13,difficulty:"easy",points:10,answer:3,
+  zh:{question:"下列何者是典型的「非監督式學習」演算法？",options:["線性迴歸（Linear Regression）模型","邏輯迴歸（Logistic Regression）模型","支援向量機（Support Vector Machine）","K-平均分群（K-means Clustering）法"],explanation:"K-means 為非監督式分群。"},
+  en:{question:"Which is a typical unsupervised learning algorithm?",options:["Linear Regression predictive model","Logistic Regression classifier model","Support Vector Machine classifier","K-means Clustering algorithm"],explanation:"K-means is unsupervised clustering."}},
+
+ {id:14,difficulty:"trap",points:19,answer:0,
+  zh:{question:"關於特徵標準化(feature scaling)，下列何者最正確？",options:["對依賴距離或梯度的模型有益，但決策樹通常不需要","任何機器學習模型在標準化之後表現都一定明顯提升","標準化會改變特徵間的相對關係，因此應盡量避免","只有深度學習需要標準化，傳統機器學習一律不需"],explanation:"樹模型通常不需標準化。"},
+  en:{question:"Which is most correct about feature scaling?",options:["It helps distance- or gradient-based models, but trees usually do not need it","Every machine learning model will certainly improve a lot after scaling","Scaling changes the relations among features, so it should be avoided","Only deep learning needs scaling; classical ML never requires it at all"],explanation:"Tree models usually need no scaling."}},
+
+ {id:15,difficulty:"medium",points:15,answer:1,
+  zh:{question:"支援向量機(SVM)的核心目標是？",options:["最小化所有訓練點到分類邊界的距離之總和","找出能使兩類間隔(margin)最大化的決策邊界","讓決策邊界盡可能通過資料密度最高的區域","將所有資料點都正確分類，完全不容許任何誤差"],explanation:"SVM 最大化類別間隔。"},
+  en:{question:"What is the core objective of a Support Vector Machine (SVM)?",options:["Minimize the total distance from all points to the boundary","Find the decision boundary that maximizes the margin between classes","Make the boundary pass through the densest region of the data","Classify every single point correctly, allowing no error at all"],explanation:"SVM maximizes the class margin."}},
+
+ {id:16,difficulty:"hard",points:25,answer:2,
+  zh:{question:"關於 Bagging 與 Boosting，下列敘述何者正確？",options:["Bagging 透過序列方式逐步修正前一個模型的錯誤","Boosting 各弱學習器彼此獨立，可以完全平行訓練","Bagging 主要降低變異，而 Boosting 主要降低偏誤","兩者皆只能搭配決策樹，無法用於其他種基學習器"],explanation:"Bagging 降變異，Boosting 降偏誤。"},
+  en:{question:"Which statement about Bagging and Boosting is correct?",options:["Bagging sequentially corrects the errors of the previous model","Boosting trains independent learners that are fully parallelizable","Bagging mainly reduces variance while boosting mainly reduces bias","Both work only with decision trees and no other base learner type"],explanation:"Bagging cuts variance; boosting cuts bias."}},
+
+ {id:17,difficulty:"easy",points:10,answer:0,
+  zh:{question:"一個人工神經元的基本運算順序為何？",options:["加權求和所有輸入後，再通過非線性激活函數輸出","先套用激活函數，再對結果取加權平均之後輸出","直接將所有的輸入相乘，不經過任何權重的調整","僅比較各輸入的大小，輸出其中數值最大的一個"],explanation:"先加權求和，再過激活函數。"},
+  en:{question:"What is the basic order of operations in an artificial neuron?",options:["Take a weighted sum of all inputs, then apply a nonlinear activation","Apply the activation first, then output a weighted average of results","Multiply all of the inputs together with no weight adjustment at all","Just compare the inputs and output the single largest value among them"],explanation:"Weighted sum, then activation."}},
+
+ {id:18,difficulty:"medium",points:15,answer:1,
+  zh:{question:"CNN 中的「卷積層」相較於全連接層，主要優勢是？",options:["能完全捨棄激活函數，因此可大幅加快整體推論速度","透過參數共享與局部連接擷取空間特徵並減少參數量","保證網路永遠不會過擬合，因此完全無須任何正則化","將整張影像展平成一維向量，使每個像素獨立處理"],explanation:"參數共享擷取局部特徵且少參數。"},
+  en:{question:"Compared with a fully connected layer, a CNN convolution layer's main advantage is?",options:["It can drop activation functions entirely, which greatly speeds inference","It shares weights via local connections, capturing spatial features with fewer parameters","It guarantees the network never overfits, so regularization is unnecessary","It flattens each image into a one-dimensional vector and treats pixels alone"],explanation:"Weight sharing: local features, fewer params."}},
+
+ {id:19,difficulty:"hard",points:25,answer:2,
+  zh:{question:"Transformer 架構相較於傳統 RNN 的主要優勢是？",options:["它以嚴格的時間順序逐步處理序列，確保資訊不遺漏","它完全不需要任何位置資訊即可理解詞語先後的順序","自注意力機制可平行處理序列並建模長距離的依賴","它的參數量遠少於 RNN，因此一定更不容易過度擬合"],explanation:"自注意力可平行並建模長距依賴。"},
+  en:{question:"What is the main advantage of the Transformer over a traditional RNN?",options:["It processes the sequence strictly step by step to avoid losing information","It needs no positional information at all to understand the order of words","Self-attention processes sequences in parallel and models long-range dependencies","It has far fewer parameters than an RNN and so always overfits much less"],explanation:"Self-attention: parallel, long-range deps."}},
+
+ {id:20,difficulty:"medium",points:15,answer:3,
+  zh:{question:"相較於 sigmoid，使用 ReLU 激活函數的主要好處是？",options:["它的輸出嚴格介於零與一之間，可直接解釋為機率","它是平滑且處處可微的函數，使最佳化過程更加穩定","它對所有負值輸入皆輸出固定的負常數以保留資訊","它在正區間梯度恆定，能有效緩解梯度消失的問題"],explanation:"ReLU 正區間梯度恆定，緩解梯度消失。"},
+  en:{question:"Compared with sigmoid, the main benefit of using a ReLU activation is?",options:["Its output lies strictly between 0 and 1 and reads directly as a probability","It is a smooth, everywhere-differentiable function that stabilizes optimization","It outputs a fixed negative constant for all negative inputs to keep information","Its gradient is constant for positive inputs, easing the vanishing-gradient issue"],explanation:"Constant positive gradient eases vanishing."}},
+
+ {id:21,difficulty:"easy",points:10,answer:1,
+  zh:{question:"在訓練神經網路時，一個「epoch」代表什麼？",options:["模型權重完成一次隨機初始化設定的整個過程","整個訓練資料集被完整地前向與反向傳播一次","單一批次(batch)資料通過網路運算的一次過程","學習率依照排程下降了一個階段所經過的時間"],explanation:"一個 epoch=走完整個訓練集一次。"},
+  en:{question:"When training a neural network, what does one epoch represent?",options:["One full process of randomly initializing the model's weight values","One complete forward and backward pass over the entire training set","A single batch of data passing through the network one single time","The time for the learning rate to drop one scheduled step interval"],explanation:"One epoch = one full pass over data."}},
+
+ {id:22,difficulty:"trap",points:19,answer:2,
+  zh:{question:"在建模流程中，下列哪種做法會造成「資料洩漏(data leakage)」？",options:["在切分訓練與測試集之後，僅用訓練集統計量標準化","將時間序列資料依照時間的先後切分為訓練與測試集","在切分之前先用全體資料計算平均值來填補缺失值","對訓練集與測試集分別獨立地進行特徵縮放的處理"],explanation:"切分前用全資料統計即洩漏。"},
+  en:{question:"In a modeling pipeline, which practice causes data leakage?",options:["Standardizing with training-set statistics only, after the train/test split","Splitting time-series data into train and test by chronological order","Imputing missing values using the whole dataset's mean before splitting","Scaling the training set and the test set independently from each other"],explanation:"Using all data before split leaks info."}},
+
+ {id:23,difficulty:"medium",points:15,answer:3,
+  zh:{question:"邏輯迴歸雖名為迴歸卻常用於分類，原因是？",options:["它輸出一條最佳擬合的直線，再四捨五入成整數類別","它本質上與線性迴歸完全相同，僅僅是名稱上的差異","它直接輸出離散的類別標籤，並不產生任何連續數值","它經 sigmoid 把輸出壓到零至一，作為類別的機率值"],explanation:"sigmoid 把輸出轉為類別機率。"},
+  en:{question:"Logistic regression is named 'regression' yet used for classification because?",options:["It outputs a best-fit straight line and rounds it to integer class labels","It is essentially identical to linear regression, differing only in its name","It directly outputs discrete class labels and produces no continuous value","A sigmoid squashes its output to between 0 and 1, read as class probability"],explanation:"Sigmoid turns output into class probability."}},
+
+ {id:24,difficulty:"hard",points:25,answer:0,
+  zh:{question:"相較於批次梯度下降，隨機梯度下降(SGD)的特性是？",options:["每次僅用一筆樣本來更新，更新有雜訊但計算更快","每次都使用完整的資料集，因此每步更新都極為精確","它保證每一步都會使損失下降，絕不會出現上升情形","它完全不需要設定學習率，便能自動找到最佳的步長"],explanation:"SGD 單樣本更新，快但有雜訊。"},
+  en:{question:"Compared with batch gradient descent, stochastic gradient descent (SGD) is?",options:["It updates from one sample at a time, noisier but faster per step","It uses the full dataset each step, so every update is highly precise","It guarantees the loss decreases at every step and never rises at all","It needs no learning rate and finds the optimal step size on its own"],explanation:"SGD: per-sample updates, fast but noisy."}},
+
+ {id:25,difficulty:"easy",points:10,answer:2,
+  zh:{question:"在監督式學習中，「標籤(label)」指的是？",options:["用來描述每一個樣本的各項輸入特徵的數值","控制模型訓練行為的那些超參數的設定數值","每個訓練樣本對應、希望模型去預測的目標答案","衡量模型預測值與真實值差距的那個損失函數"],explanation:"標籤是樣本的目標答案。"},
+  en:{question:"In supervised learning, what is a label?",options:["The input feature values that describe each individual sample","The hyperparameter setting values that control training behavior","The target answer for each training sample the model should predict","The loss function measuring the gap between prediction and truth"],explanation:"A label is the sample's target answer."}},
+
+ {id:26,difficulty:"medium",points:15,answer:3,
+  zh:{question:"下列何者屬於「超參數」而非模型在訓練中學到的參數？",options:["線性迴歸中各個特徵所對應到的權重係數值","神經網路裡每一個神經元連結上的權重數值","邏輯迴歸中決定分類邊界位置的偏置(bias)項","梯度下降的學習率以及神經網路設定的層數"],explanation:"學習率與層數屬超參數。"},
+  en:{question:"Which is a hyperparameter, not a parameter learned during training?",options:["The weight coefficient values of each feature in linear regression","The connection weight values of every neuron inside a network","The bias term that sets the decision-boundary position in logistic regression","The learning rate of gradient descent and the number of network layers"],explanation:"Learning rate and layer count are hyperparams."}},
+
+ {id:27,difficulty:"hard",points:25,answer:0,
+  zh:{question:"關於 ROC 曲線與 AUC，下列敘述何者正確？",options:["AUC 可解讀為隨機正樣本分數高於隨機負樣本的機率","AUC 會隨著分類閾值的選擇不同而大幅地改變數值","ROC 曲線的橫軸為精確率，而縱軸則為召回率","AUC 等於 0.5 即代表分類器達到了完美分類效果"],explanation:"AUC=正樣本分數高於負樣本之機率。"},
+  en:{question:"Which statement about the ROC curve and AUC is correct?",options:["AUC equals the probability a random positive scores above a random negative","AUC changes substantially depending on the chosen classification threshold","The ROC curve plots precision on the x-axis and recall on the y-axis","An AUC equal to 0.5 means the classifier achieves perfect classification"],explanation:"AUC = P(positive scored above negative)."}},
+
+ {id:28,difficulty:"medium",points:15,answer:1,
+  zh:{question:"k-最近鄰(k-NN)演算法的運作方式是？",options:["在訓練階段建立明確的決策邊界方程式以供查詢","預測時找出最接近的 k 個樣本並以多數決定類別","透過反覆迭代調整權重來最小化整體的損失函數","在訓練時將資料投影到低維空間之後再進行分群"],explanation:"k-NN 找最近 k 個鄰居多數決。"},
+  en:{question:"How does the k-nearest neighbors (k-NN) algorithm work?",options:["It builds an explicit decision-boundary equation during the training phase","At prediction it finds the k nearest samples and votes by their majority","It iteratively adjusts the weights to minimize an overall loss function","It projects data into a low-dimensional space and then clusters the points"],explanation:"k-NN: majority vote of nearest neighbors."}},
+
+ {id:29,difficulty:"trap",points:19,answer:3,
+  zh:{question:"關於深度學習與傳統機器學習的選擇，下列何者最正確？",options:["深度學習在任何任務上都優於傳統方法，應一律優先","資料量很小時，深度學習通常仍能穩定勝過傳統模型","傳統機器學習已被淘汰，實務上不再具任何使用價值","資料少或需可解釋性時，傳統模型常是更務實的選擇"],explanation:"資料少或需解釋時傳統模型更實用。"},
+  en:{question:"Choosing between deep learning and classical ML, which is most correct?",options:["Deep learning beats classical methods on any task and is always preferred","With very little data, deep learning still reliably beats classical models","Classical machine learning is obsolete and has no practical value at all","With little data or a need for interpretability, classical models are often more practical"],explanation:"Small data/interpretability favors classical ML."}},
+
+ {id:30,difficulty:"easy",points:10,answer:0,
+  zh:{question:"在機器學習中，「損失函數(loss function)」的作用是？",options:["量化模型的預測值與真實目標之間存在的差距","決定一個神經網路究竟要使用幾層與多少神經元","在資料前處理的階段移除掉資料中的離群值與雜訊","將連續的輸出結果直接轉換成最終的類別標籤"],explanation:"損失函數量化預測與真實差距。"},
+  en:{question:"In machine learning, what does a loss function do?",options:["It quantifies the gap between the model's prediction and the true target","It decides how many layers and how many neurons a network should use","It removes the outliers and noise during the data preprocessing stage","It converts the continuous output results into the final class labels"],explanation:"Loss quantifies prediction-vs-truth gap."}},
+
+ {id:31,difficulty:"hard",points:25,answer:1,
+  zh:{question:"Batch Normalization 在深度網路中的主要作用是？",options:["它取代了激活函數，使網路得以省去非線性的轉換","對每層的輸入做正規化，穩定分布並加速訓練的收斂","它隨機丟棄部分的神經元以防止網路過度擬合資料","它將所有權重強制限制在零與一之間以避免其爆炸"],explanation:"BN 正規化各層輸入，加速收斂。"},
+  en:{question:"What is the main role of Batch Normalization in deep networks?",options:["It replaces the activation function, letting the network skip nonlinearity","It normalizes each layer's inputs, stabilizing distributions and speeding convergence","It randomly drops some neurons to keep the network from overfitting the data","It forces all of the weights to lie between 0 and 1 to avoid exploding"],explanation:"BN normalizes layer inputs, speeds convergence."}},
+
+ {id:32,difficulty:"medium",points:15,answer:2,
+  zh:{question:"主成分分析(PCA)最主要的用途是？",options:["在保留標籤資訊的前提下訓練出一個分類的模型","為缺失的資料欄位自動填補上最為合理的數值","將高維資料投影到保留最大變異的低維空間中","把連續型的數值特徵轉換成離散的類別型欄位"],explanation:"PCA 降維並保留最大變異。"},
+  en:{question:"What is the main use of Principal Component Analysis (PCA)?",options:["To train a classification model while preserving the label information","To automatically fill the most reasonable values for missing data fields","To project high-dimensional data onto a low-dim space preserving most variance","To convert continuous numeric features into discrete categorical fields"],explanation:"PCA reduces dimensions, keeping max variance."}},
+
+ {id:33,difficulty:"easy",points:10,answer:0,
+  zh:{question:"關於人工智慧、機器學習與深度學習的關係，何者正確？",options:["深度學習是機器學習子集，機器學習又是人工智慧子集","三者互不包含，是彼此之間完全獨立並列的領域","機器學習涵蓋人工智慧，而深度學習又涵蓋機器學習","人工智慧只是深度學習底下的一種特殊應用分支"],explanation:"DL⊂ML⊂AI 的包含關係。"},
+  en:{question:"Which is correct about the relation among AI, machine learning, and deep learning?",options:["Deep learning is a subset of machine learning, which is a subset of AI","The three do not contain one another and are entirely independent fields","Machine learning contains AI, and deep learning in turn contains ML","Artificial intelligence is just one special application branch of deep learning"],explanation:"DL ⊂ ML ⊂ AI."}},
+
+ {id:34,difficulty:"hard",points:25,answer:1,
+  zh:{question:"決策樹若不加限制地持續分裂，最可能發生的問題是？",options:["因樹的深度不足而欠擬合，無法捕捉資料中的關係","樹過深而過擬合，對訓練雜訊過度敏感、泛化能力差","訓練的時間過短，使樹來不及學到任何有效的規則","所有的葉節點都被合併，最終退化成單一預測數值"],explanation:"無限分裂使樹過深而過擬合。"},
+  en:{question:"If a decision tree keeps splitting without limit, what problem is most likely?",options:["It underfits from insufficient depth and misses relations in the data","The tree grows too deep and overfits, oversensitive to noise, generalizing poorly","Training time is too short for the tree to learn any useful rule at all","All of the leaf nodes merge until it degenerates into a single value"],explanation:"Unlimited splits make it overfit."}},
+
+ {id:35,difficulty:"medium",points:15,answer:2,
+  zh:{question:"強化學習與監督式學習最主要的差異是？",options:["強化學習一定需要大量人工標註好的輸入輸出配對","強化學習只能處理分類問題，無法用於連續控制任務","強化學習透過與環境互動並從獎勵訊號中學習其策略","強化學習完全不需要任何回饋訊號便可自行地學習"],explanation:"強化學習從環境互動與獎勵學習。"},
+  en:{question:"What is the main difference between reinforcement learning and supervised learning?",options:["Reinforcement learning always needs many human-labeled input-output pairs","Reinforcement learning handles only classification, not continuous control","It learns a policy by interacting with an environment and from reward signals","It needs no feedback signal of any kind in order to learn on its own"],explanation:"RL learns from interaction and rewards."}},
+
+ {id:36,difficulty:"trap",points:19,answer:3,
+  zh:{question:"模型在訓練資料上達到 100% 準確率，下列推論何者最正確？",options:["這代表模型已完美學會任務，可以直接放心地部署上線","訓練的準確率越高，模型在新資料上的表現必定就越好","這保證了模型沒有偏誤，因為它擬合了所有訓練樣本","這可能是過擬合的徵兆，須以驗證或測試集再行評估"],explanation:"訓練滿分常是過擬合徵兆。"},
+  en:{question:"A model reaches 100% accuracy on training data. Which inference is most correct?",options:["It means the model has perfectly learned the task and is safe to deploy now","The higher the training accuracy is, the better it must do on new data","It guarantees the model has no bias since it fits every training sample","It may signal overfitting and must be checked on validation or test data"],explanation:"Perfect train accuracy often means overfitting."}},
+
+ {id:37,difficulty:"medium",points:15,answer:3,
+  zh:{question:"詞嵌入(word embedding，如 Word2Vec)的核心概念是？",options:["為每個詞分配一個彼此正交且互不相關的獨熱向量","依照字母順序將每個詞轉換成對應的整數索引編號","統計每個詞在語料中出現的總次數作為其表示法","將詞映射到連續向量，使語意相近的詞距離較近"],explanation:"嵌入使語意相近詞向量靠近。"},
+  en:{question:"What is the core idea of word embeddings (e.g. Word2Vec)?",options:["Assigning each word a one-hot vector orthogonal and uncorrelated to others","Converting each word into an integer index number by alphabetical order","Counting each word's total frequency in the corpus as its representation","Mapping words to continuous vectors so similar meanings lie close together"],explanation:"Embeddings put similar words near each other."}},
+
+ {id:38,difficulty:"hard",points:25,answer:2,
+  zh:{question:"關於生成對抗網路(GAN)，下列敘述何者正確？",options:["生成器與判別器擁有相同目標，共同最小化同一個損失","判別器負責產生假的資料，生成器負責辨別真假的樣本","生成器與判別器互相對抗，形成一種極小極大的賽局","GAN 屬於監督式學習，訓練時需要大量人工標註標籤"],explanation:"GAN 是生成器與判別器的對抗賽局。"},
+  en:{question:"Which statement about Generative Adversarial Networks (GANs) is correct?",options:["The generator and discriminator share one goal, minimizing the same loss","The discriminator produces fake data while the generator tells real from fake","The generator and discriminator compete, forming a minimax game between them","GANs are supervised learning and need many human-labeled annotations to train"],explanation:"GAN: generator vs discriminator minimax game."}},
+
+ {id:39,difficulty:"easy",points:10,answer:1,
+  zh:{question:"機器學習模型「從資料中學習」，主要指的是？",options:["工程師手動撰寫所有判斷規則並寫死在程式碼當中","模型依據資料自動調整內部參數以改善其預測表現","模型把訓練資料整批儲存起來，查詢時再逐筆比對","模型隨機猜測答案，再由使用者一次次地手動修正"],explanation:"模型自動調整參數以改善預測。"},
+  en:{question:"When a machine learning model 'learns from data', this mainly means?",options:["Engineers hand-write all the judgment rules and hard-code them in","The model automatically adjusts internal parameters to improve predictions","The model stores all training data and compares row by row at query time","The model guesses answers at random and users fix them one by one"],explanation:"It auto-adjusts parameters to improve."}},
+
+ {id:40,difficulty:"medium",points:15,answer:0,
+  zh:{question:"「早停(early stopping)」這項技術的作用是？",options:["當驗證誤差不再下降時就停止訓練，以避免過度擬合","在訓練的一開始就提早固定住學習率以加速其收斂","移除掉訓練集中過於困難的樣本以縮短訓練的時間","提早結束資料的蒐集流程，以節省標註所需的成本"],explanation:"驗證誤差不降時停訓練防過擬合。"},
+  en:{question:"What does the early stopping technique do?",options:["Stop training once the validation error stops improving, to avoid overfitting","Fix the learning rate early at the very start to speed up the convergence","Remove the hardest samples from the training set to shorten training time","End the data collection process early to save on the annotation costs"],explanation:"Stop when validation error plateaus."}}
+];
+
+const T={
+  zh:{title:"機器學習 / AI 測驗",prog:(a,b)=>`第 ${a} / ${b} 題`,prev:"上一題",submit:"提交測驗",
+    resultTitle:"測驗結果",totalScore:"總分",correctN:"正確題數",wrongN:"錯誤題數",
+    byDiff:"各難度正確率",easy:"簡單",medium:"中等",hard:"困難",trap:"陷阱",
+    percentile:p=>`你的成績超越了約 ${p}% 的測試者`,
+    grades:{expert:"🏆 頂尖專家",adv:"⭐ 進階掌握",inter:"📘 中等水準",basic:"📗 基礎尚可",need:"📕 需要加強"},
+    reviewTitle:"錯題回顧",yourAns:"你的選擇",correctAns:"正確答案",noWrong:"太厲害了！全部答對，沒有錯題。",
+    retry:"重新測驗",copy:"複製結果",copied:"已複製！",
+    summary:(s,c)=>`我在機器學習 / AI 測驗得到 ${s} / 670 分，答對 ${c} / 40 題。`,langBtn:"English"},
+  en:{title:"Machine Learning / AI Quiz",prog:(a,b)=>`Question ${a} / ${b}`,prev:"Previous",submit:"Submit Quiz",
+    resultTitle:"Your Results",totalScore:"Total Score",correctN:"Correct",wrongN:"Wrong",
+    byDiff:"Accuracy by Difficulty",easy:"Easy",medium:"Medium",hard:"Hard",trap:"Trap",
+    percentile:p=>`You scored higher than about ${p}% of test takers`,
+    grades:{expert:"🏆 Top Expert",adv:"⭐ Advanced",inter:"📘 Intermediate",basic:"📗 Basic",need:"📕 Needs Improvement"},
+    reviewTitle:"Review of Mistakes",yourAns:"Your answer",correctAns:"Correct answer",noWrong:"Perfect! Every answer correct, no mistakes.",
+    retry:"Retake Quiz",copy:"Copy Result",copied:"Copied!",
+    summary:(s,c)=>`I scored ${s} / 670 on the Machine Learning / AI quiz, with ${c} / 40 correct.`,langBtn:"中文"}
+};
+
+const LETTERS=["A","B","C","D"];
+let lang="zh";
+let current=0;
+const answers=new Array(questions.length).fill(null);
+
+const $=id=>document.getElementById(id);
+
+// theme
+function initTheme(){
+  const saved=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";
+  setTheme(saved);
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  $("themeBtn").textContent=t==="dark"?"☀️":"🌙";
+}
+$("themeBtn").onclick=()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  setTheme(cur==="dark"?"light":"dark");
+};
+
+// language
+$("langBtn").onclick=()=>{
+  lang=lang==="zh"?"en":"zh";
+  document.documentElement.lang=lang==="zh"?"zh-Hant":"en";
+  applyStaticText();
+  if($("resultView").classList.contains("hidden")) renderQuestion(false);
+  else renderResult();
+};
+function applyStaticText(){
+  const t=T[lang];
+  $("appTitle").textContent=t.title;
+  $("langBtn").textContent=t.langBtn;
+  $("prevBtn").textContent=t.prev;
+  $("submitBtn").textContent=t.submit;
+  document.title=t.title;
+}
+
+// render question
+function renderQuestion(fade=true){
+  const t=T[lang];
+  const q=questions[current];
+  const data=q[lang];
+  const draw=()=>{
+    $("progressInfo").textContent=t.prog(current+1,questions.length);
+    $("questionText").textContent=data.question;
+    const box=$("optionsBox");
+    box.innerHTML="";
+    data.options.forEach((opt,i)=>{
+      const el=document.createElement("div");
+      el.className="option"+(answers[current]===i?" selected":"");
+      el.innerHTML=`<div class="key">${LETTERS[i]}</div><div class="text"></div>`;
+      el.querySelector(".text").textContent=opt;
+      el.onclick=()=>selectOption(i);
+      box.appendChild(el);
+    });
+    $("prevBtn").style.visibility=current===0?"hidden":"visible";
+    const last=current===questions.length-1;
+    $("submitBtn").classList.toggle("hidden",!(last&&answers[current]!==null));
+    $("barInner").style.width=((current+1)/questions.length*100)+"%";
+    $("qcard").classList.remove("fade");
+  };
+  if(fade){
+    $("qcard").classList.add("fade");
+    setTimeout(draw,160);
+  }else draw();
+}
+
+function selectOption(i){
+  answers[current]=i;
+  // show selection
+  const opts=$("optionsBox").children;
+  for(let k=0;k<opts.length;k++) opts[k].classList.toggle("selected",k===i);
+  const last=current===questions.length-1;
+  if(last){
+    $("submitBtn").classList.remove("hidden");
+    return; // no auto-advance on last
+  }
+  setTimeout(()=>{ current++; renderQuestion(true); },400);
+}
+
+$("prevBtn").onclick=()=>{ if(current>0){ current--; renderQuestion(true);} };
+$("submitBtn").onclick=()=>{ showResult(); };
+
+// normal CDF
+function normCdf(x,mean,sd){
+  const z=(x-mean)/(sd*Math.SQRT2);
+  // erf approximation (Abramowitz & Stegun 7.1.26)
+  const t=1/(1+0.3275911*Math.abs(z));
+  const y=1-(((((1.061405429*t-1.453152027)*t)+1.421413741)*t-0.284496736)*t+0.254829592)*t*Math.exp(-z*z);
+  const erf=z>=0?y:-y;
+  return 0.5*(1+erf);
+}
+
+let resultCache=null;
+function computeResult(){
+  let score=0,correct=0;
+  const diff={easy:[0,0],medium:[0,0],hard:[0,0],trap:[0,0]};
+  const wrong=[];
+  questions.forEach((q,idx)=>{
+    diff[q.difficulty][1]++;
+    if(answers[idx]===q.answer){ score+=q.points; correct++; diff[q.difficulty][0]++; }
+    else wrong.push({q,chosen:answers[idx]});
+  });
+  const mean=670*0.45, sd=670*0.15;
+  let pct=Math.round(normCdf(score,mean,sd)*100);
+  pct=Math.max(1,Math.min(99,pct));
+  return {score,correct,wrong:questions.length-correct,diff,pct,wrongList:wrong};
+}
+
+function gradeKey(s){
+  if(s>=600)return "expert"; if(s>=500)return "adv";
+  if(s>=380)return "inter"; if(s>=250)return "basic"; return "need";
+}
+
+function showResult(){
+  resultCache=computeResult();
+  $("quizView").classList.add("hidden");
+  $("resultView").classList.remove("hidden");
+  renderResult();
+  window.scrollTo(0,0);
+}
+
+function renderResult(){
+  const t=T[lang], r=resultCache;
+  const g=t.grades[gradeKey(r.score)];
+  let html=`<h2>${t.resultTitle}</h2>
+    <div class="score-big">${r.score} / 670</div>
+    <div class="grade">${g}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="label">${t.correctN}</div><div class="val">${r.correct} / 40</div></div>
+      <div class="stat"><div class="label">${t.wrongN}</div><div class="val">${r.wrong} / 40</div></div>
+    </div>
+    <div class="section-title">${t.byDiff}</div>
+    <div class="stat-grid">
+      <div class="stat"><div class="label">${t.easy}</div><div class="val">${r.diff.easy[0]} / ${r.diff.easy[1]}</div></div>
+      <div class="stat"><div class="label">${t.medium}</div><div class="val">${r.diff.medium[0]} / ${r.diff.medium[1]}</div></div>
+      <div class="stat"><div class="label">${t.hard}</div><div class="val">${r.diff.hard[0]} / ${r.diff.hard[1]}</div></div>
+      <div class="stat"><div class="label">${t.trap}</div><div class="val">${r.diff.trap[0]} / ${r.diff.trap[1]}</div></div>
+    </div>
+    <div class="percentile">${t.percentile(r.pct)}</div>
+    <div class="section-title">${t.reviewTitle}</div>`;
+  if(r.wrongList.length===0){
+    html+=`<div class="review-item">${t.noWrong}</div>`;
+  }else{
+    r.wrongList.forEach(({q,chosen})=>{
+      const d=q[lang];
+      const chosenTxt=chosen===null?"—":`${LETTERS[chosen]}. ${d.options[chosen]}`;
+      const correctTxt=`${LETTERS[q.answer]}. ${d.options[q.answer]}`;
+      html+=`<div class="review-item">
+        <div class="review-q">${d.question}</div>
+        <div class="review-line"><span class="tag-wrong">✗ ${t.yourAns}:</span> ${escapeHtml(chosenTxt)}</div>
+        <div class="review-line"><span class="tag-correct">✓ ${t.correctAns}:</span> ${escapeHtml(correctTxt)}</div>
+        <div class="review-exp">${escapeHtml(d.explanation)}</div>
+      </div>`;
+    });
+  }
+  html+=`<div class="result-actions">
+      <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+      <button class="btn" id="copyBtn">${t.copy}</button>
+    </div>`;
+  $("resultView").innerHTML=html;
+  $("retryBtn").onclick=retry;
+  $("copyBtn").onclick=copyResult;
+}
+
+function escapeHtml(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));}
+
+function copyResult(){
+  const t=T[lang], r=resultCache;
+  const text=t.summary(r.score,r.correct)+" "+t.percentile(r.pct)+" "+T[lang].grades[gradeKey(r.score)];
+  navigator.clipboard.writeText(text).then(()=>{
+    const b=$("copyBtn"); const old=b.textContent; b.textContent=t.copied;
+    setTimeout(()=>b.textContent=old,1500);
+  });
+}
+
+function retry(){
+  for(let i=0;i<answers.length;i++) answers[i]=null;
+  current=0; resultCache=null;
+  $("resultView").classList.add("hidden");
+  $("quizView").classList.remove("hidden");
+  renderQuestion(false);
+  window.scrollTo(0,0);
+}
+
+// init
+initTheme();
+applyStaticText();
+renderQuestion(false);
+</script>
+</body>
+</html>

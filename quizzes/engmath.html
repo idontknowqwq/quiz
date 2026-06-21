@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程數學測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-secondary: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --track: #E5E7EB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-secondary: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --track: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans TC", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 0 16px 80px; }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+  .header-inner {
+    max-width: 760px; margin: 0 auto;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  .btn {
+    font-family: inherit; font-size: 14px;
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 12px;
+    cursor: pointer; transition: background .15s;
+  }
+  .btn:hover { background: var(--hover); }
+  .btn-primary {
+    background: var(--accent); color: var(--accent-text);
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent); opacity: .9; }
+  .progress-text { font-size: 14px; color: var(--text-secondary); margin: 18px 0 6px; }
+  .quiz-area { transition: opacity .25s ease; }
+  .quiz-area.fade { opacity: 0; }
+  .question {
+    font-size: 19px; font-weight: 600;
+    margin: 8px 0 22px; line-height: 1.5;
+  }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .option {
+    display: flex; align-items: flex-start; gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px 16px;
+    cursor: pointer; transition: background .15s, border-color .15s;
+    font-size: 16px; background: var(--bg);
+  }
+  .option:hover { background: var(--hover); }
+  .option.selected { border-color: var(--accent); background: var(--hover); }
+  .option-label {
+    flex-shrink: 0; font-weight: 700; color: var(--accent);
+    width: 22px;
+  }
+  .nav-row { display: flex; justify-content: space-between; margin-top: 28px; }
+  .progress-bar-outer {
+    position: fixed; left: 0; bottom: 0; width: 100%;
+    height: 6px; background: var(--track);
+  }
+  .progress-bar-inner {
+    height: 100%; width: 0%; background: var(--accent);
+    transition: width .3s ease;
+  }
+  /* Results */
+  .result h2 { font-size: 24px; margin: 24px 0 8px; }
+  .score-big { font-size: 44px; font-weight: 800; color: var(--accent); margin: 12px 0; }
+  .grade { font-size: 22px; font-weight: 700; margin: 6px 0 18px; }
+  .stat-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 20px 0;
+  }
+  .stat-card {
+    border: 1px solid var(--border); border-radius: 8px; padding: 14px;
+  }
+  .stat-card .label { font-size: 13px; color: var(--text-secondary); }
+  .stat-card .val { font-size: 22px; font-weight: 700; margin-top: 4px; }
+  .percentile {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 16px; margin: 16px 0; font-size: 17px; text-align: center;
+  }
+  .diff-table { width: 100%; border-collapse: collapse; margin: 12px 0 24px; }
+  .diff-table td {
+    border-bottom: 1px solid var(--border); padding: 10px 6px; font-size: 15px;
+  }
+  .diff-table td:last-child { text-align: right; font-weight: 700; }
+  .review h3 { font-size: 18px; margin: 24px 0 12px; }
+  .review-item {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px; margin-bottom: 12px;
+  }
+  .review-q { font-weight: 600; margin-bottom: 10px; }
+  .review-line { font-size: 14px; margin: 4px 0; }
+  .mark-wrong { color: var(--wrong); }
+  .mark-correct { color: var(--correct); }
+  .review-exp { font-size: 13px; color: var(--text-secondary); margin-top: 8px; }
+  .result-actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
+  .hidden { display: none; }
+  @media (max-width: 520px) {
+    .title { font-size: 15px; width: 100%; }
+    .stat-grid { grid-template-columns: 1fr 1fr; }
+    .btn { padding: 6px 10px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <div class="title" id="appTitle">工程數學測驗</div>
+    <div class="controls">
+      <span class="progress-text" id="progTop" style="margin:0;"></span>
+      <button class="btn" id="langBtn">English</button>
+      <button class="btn" id="themeBtn">🌙</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <!-- Quiz -->
+  <div id="quizScreen">
+    <div class="progress-text" id="progText"></div>
+    <div class="quiz-area" id="quizArea">
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+      <div class="nav-row">
+        <button class="btn" id="prevBtn">← 上一題</button>
+        <button class="btn btn-primary hidden" id="submitBtn">提交測驗</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultScreen" class="result hidden"></div>
+</div>
+
+<div class="progress-bar-outer"><div class="progress-bar-inner" id="progBar"></div></div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"求一階線性微分方程 y′ + (2/x)y = x³ 的積分因子。",
+      options:["μ = x","μ = x²","μ = x³","μ = 1/x²"],
+      explanation:"積分因子 μ = e^∫(2/x)dx = x²。" },
+    en:{ question:"Find the integrating factor of the linear ODE y′ + (2/x)y = x³.",
+      options:["μ = x","μ = x²","μ = x³","μ = 1/x²"],
+      explanation:"μ = e^∫(2/x)dx = x²." } },
+
+  { id:2, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"下列何者為 y′ = ky 的通解？",
+      options:["y = Ce^{kx}","y = Ckx","y = C + kx","y = Ce^{−kx}"],
+      explanation:"指數成長／衰減解為 y = Ce^{kx}。" },
+    en:{ question:"What is the general solution of y′ = ky?",
+      options:["y = Ce^{kx}","y = Ckx","y = C + kx","y = Ce^{−kx}"],
+      explanation:"Exponential growth/decay: y = Ce^{kx}." } },
+
+  { id:3, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"函數 t·e^{at} 的拉普拉斯轉換為何？",
+      options:["1/(s−a)","a/(s²+a²)","1/(s−a)²","s/(s²−a²)"],
+      explanation:"L{t·e^{at}} = 1/(s−a)²。" },
+    en:{ question:"What is the Laplace transform of t·e^{at}?",
+      options:["1/(s−a)","a/(s²+a²)","1/(s−a)²","s/(s²−a²)"],
+      explanation:"L{t·e^{at}} = 1/(s−a)²." } },
+
+  { id:4, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"矩陣 [[4,1],[2,3]] 的特徵值為何？",
+      options:["1 和 6","3 和 4","2 和 4","2 和 5"],
+      explanation:"λ²−7λ+10=0，得 λ=2, 5。" },
+    en:{ question:"What are the eigenvalues of [[4,1],[2,3]]?",
+      options:["1 and 6","3 and 4","2 and 4","2 and 5"],
+      explanation:"λ²−7λ+10=0 gives λ=2, 5." } },
+
+  { id:5, difficulty:"trap", points:19, answer:1,
+    zh:{ question:"關於線性微分方程的敘述，下列何者正確？",
+      options:["每個一階線性方程都是可分離的","齊次線性方程的解滿足疊加原理","可分離方程一定是恰當方程","非齊次方程的解構成向量空間"],
+      explanation:"疊加原理僅對齊次線性方程成立。" },
+    en:{ question:"Which statement about linear ODEs is correct?",
+      options:["Every first-order linear ODE is separable","Solutions of a homogeneous linear ODE obey superposition","Every separable equation is exact","Solutions of a nonhomogeneous ODE form a vector space"],
+      explanation:"Superposition holds only for homogeneous linear ODEs." } },
+
+  { id:6, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"微分方程 y‴ + 2y′ = x 的階數（order）為何？",
+      options:["1","2","3","4"],
+      explanation:"最高階導數為三階，故階數為 3。" },
+    en:{ question:"What is the order of the ODE y‴ + 2y′ = x?",
+      options:["1","2","3","4"],
+      explanation:"Highest derivative is third order, so order is 3." } },
+
+  { id:7, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"方程 y″ − 5y′ + 6y = 0 的通解為何？",
+      options:["y = C₁e^{2x} + C₂e^{3x}","y = C₁e^{−2x} + C₂e^{−3x}","y = C₁e^{2x} + C₂xe^{2x}","y = C₁e^{3x} + C₂xe^{3x}"],
+      explanation:"特徵根為 2 與 3，解為兩指數和。" },
+    en:{ question:"What is the general solution of y″ − 5y′ + 6y = 0?",
+      options:["y = C₁e^{2x} + C₂e^{3x}","y = C₁e^{−2x} + C₂e^{−3x}","y = C₁e^{2x} + C₂xe^{2x}","y = C₁e^{3x} + C₂xe^{3x}"],
+      explanation:"Roots are 2 and 3, giving a sum of exponentials." } },
+
+  { id:8, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"函數 f(z) = 1/(z²+1) 在 z = i 處的留數為何？",
+      options:["i/2","1/2","−1/2","−i/2"],
+      explanation:"留數 = 1/(2i) = −i/2。" },
+    en:{ question:"What is the residue of f(z) = 1/(z²+1) at z = i?",
+      options:["i/2","1/2","−1/2","−i/2"],
+      explanation:"Residue = 1/(2i) = −i/2." } },
+
+  { id:9, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"週期函數若為奇函數，其傅立葉級數只含哪些項？",
+      options:["僅常數項","僅餘弦項","僅正弦項","餘弦與常數項"],
+      explanation:"奇函數展開只含正弦項。" },
+    en:{ question:"If a periodic function is odd, its Fourier series contains only which terms?",
+      options:["The constant term only","Cosine terms only","Sine terms only","Cosine and constant terms"],
+      explanation:"An odd function expands into sine terms only." } },
+
+  { id:10, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"行列式 det[[1,2],[3,4]] 的值為何？",
+      options:["2","−2","10","−10"],
+      explanation:"1×4 − 2×3 = −2。" },
+    en:{ question:"What is the value of det[[1,2],[3,4]]?",
+      options:["2","−2","10","−10"],
+      explanation:"1×4 − 2×3 = −2." } },
+
+  { id:11, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"熱傳導方程 u_t = α·u_xx 屬於哪一類偏微分方程？",
+      options:["拋物線型（parabolic）","雙曲線型（hyperbolic）","橢圓型（elliptic）","混合型（mixed）"],
+      explanation:"熱方程的判別式為零，屬拋物線型。" },
+    en:{ question:"The heat equation u_t = α·u_xx is which type of PDE?",
+      options:["Parabolic","Hyperbolic","Elliptic","Mixed type"],
+      explanation:"Its discriminant is zero, so it is parabolic." } },
+
+  { id:12, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"s/(s²+4) 的拉普拉斯逆轉換為何？",
+      options:["sin 2t","(1/2)sin 2t","(1/2)cos 2t","cos 2t"],
+      explanation:"L⁻¹{s/(s²+4)} = cos 2t。" },
+    en:{ question:"What is the inverse Laplace transform of s/(s²+4)?",
+      options:["sin 2t","(1/2)sin 2t","(1/2)cos 2t","cos 2t"],
+      explanation:"L⁻¹{s/(s²+4)} = cos 2t." } },
+
+  { id:13, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"純量場的梯度（gradient）是一個什麼量？",
+      options:["純量","矩陣","向量","常數"],
+      explanation:"梯度的結果是一個向量場。" },
+    en:{ question:"The gradient of a scalar field is what kind of quantity?",
+      options:["A scalar","A matrix","A vector","A constant"],
+      explanation:"The gradient yields a vector field." } },
+
+  { id:14, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"下列關於向量場的敘述，何者正確？",
+      options:["保守場的旋度恆為零","旋度為零的場其積分必與路徑相關","散度為零即代表場為保守場","梯度場的散度恆為零"],
+      explanation:"保守場無旋；梯度散度為拉普拉斯算子。" },
+    en:{ question:"Which statement about vector fields is correct?",
+      options:["A conservative field has zero curl","A curl-free field is always path-dependent","Zero divergence means the field is conservative","The divergence of a gradient field is always zero"],
+      explanation:"Conservative fields are curl-free; div of grad is the Laplacian." } },
+
+  { id:15, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"n×n 矩陣可逆的充要條件為何？",
+      options:["行列式等於零","行列式不等於零","跡（trace）不等於零","矩陣為對稱矩陣"],
+      explanation:"可逆⇔行列式不為零（滿秩）。" },
+    en:{ question:"What is the necessary and sufficient condition for an n×n matrix to be invertible?",
+      options:["The determinant equals zero","The determinant is nonzero","The trace is nonzero","The matrix is symmetric"],
+      explanation:"Invertible ⇔ nonzero determinant (full rank)." } },
+
+  { id:16, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"微分方程 y″ + ω²y = 0 的通解為何？",
+      options:["C₁e^{ωx} + C₂e^{−ωx}","C₁e^{ωx} + C₂xe^{ωx}","(C₁ + C₂x)cos ωx","C₁cos ωx + C₂sin ωx"],
+      explanation:"特徵根為 ±iω，得三角函數解。" },
+    en:{ question:"What is the general solution of y″ + ω²y = 0?",
+      options:["C₁e^{ωx} + C₂e^{−ωx}","C₁e^{ωx} + C₂xe^{ωx}","(C₁ + C₂x)cos ωx","C₁cos ωx + C₂sin ωx"],
+      explanation:"Roots ±iω give a trigonometric solution." } },
+
+  { id:17, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"常數函數 1 的拉普拉斯轉換為何？",
+      options:["1/s","1","s","1/s²"],
+      explanation:"L{1} = 1/s（s>0）。" },
+    en:{ question:"What is the Laplace transform of the constant function 1?",
+      options:["1/s","1","s","1/s²"],
+      explanation:"L{1} = 1/s for s>0." } },
+
+  { id:18, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"格林定理將平面區域上的二重積分與什麼相連結？",
+      options:["體積分","曲面積分","封閉曲線的線積分","單一點的函數值"],
+      explanation:"格林定理連結二重積分與邊界線積分。" },
+    en:{ question:"Green's theorem connects a double integral over a plane region with what?",
+      options:["A volume integral","A surface integral","A line integral over a closed curve","The value at a single point"],
+      explanation:"Green's theorem links the double integral to a boundary line integral." } },
+
+  { id:19, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"設 f = u + iv 解析，柯西–黎曼方程為何？",
+      options:["u_x = v_x，u_y = v_y","u_x = v_y，u_y = −v_x","u_x = −v_y，u_y = v_x","u_x = v_y，u_y = v_x"],
+      explanation:"柯西–黎曼：u_x = v_y，u_y = −v_x。" },
+    en:{ question:"If f = u + iv is analytic, what are the Cauchy–Riemann equations?",
+      options:["u_x = v_x, u_y = v_y","u_x = v_y, u_y = −v_x","u_x = −v_y, u_y = v_x","u_x = v_y, u_y = v_x"],
+      explanation:"Cauchy–Riemann: u_x = v_y, u_y = −v_x." } },
+
+  { id:20, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"函數 e^{at} 的拉普拉斯轉換為何？",
+      options:["1/s","1/(s+a)","s/(s²−a²)","1/(s−a)"],
+      explanation:"L{e^{at}} = 1/(s−a)，s>a。" },
+    en:{ question:"What is the Laplace transform of e^{at}?",
+      options:["1/s","1/(s+a)","s/(s²−a²)","1/(s−a)"],
+      explanation:"L{e^{at}} = 1/(s−a) for s>a." } },
+
+  { id:21, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"對 y″ − 3y′ + 2y = e^{4x}，未定係數法的試解形式應設為？",
+      options:["Ax·e^{4x}","A·cos 4x","A·e^{4x}","Ax²·e^{4x}"],
+      explanation:"4 非特徵根，試解設 A·e^{4x}。" },
+    en:{ question:"For y″ − 3y′ + 2y = e^{4x}, what trial form does undetermined coefficients use?",
+      options:["Ax·e^{4x}","A·cos 4x","A·e^{4x}","Ax²·e^{4x}"],
+      explanation:"4 is not a root, so the trial is A·e^{4x}." } },
+
+  { id:22, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"對 y″ − 3y′ + 2y = e^{2x}（2 為特徵根），試解形式應設為？",
+      options:["Ax·e^{2x}","A·e^{2x}","Ax²·e^{2x}","A·e^{−2x}"],
+      explanation:"2 為單根，須乘 x：Ax·e^{2x}。" },
+    en:{ question:"For y″ − 3y′ + 2y = e^{2x} where 2 is a root, the trial form should be?",
+      options:["Ax·e^{2x}","A·e^{2x}","Ax²·e^{2x}","A·e^{−2x}"],
+      explanation:"2 is a simple root, so multiply by x: Ax·e^{2x}." } },
+
+  { id:23, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"一個 n×n 矩陣可對角化的充要條件為何？",
+      options:["相異特徵值且行列式為零","具有 n 個線性獨立的特徵向量","所有特徵值彼此相等","該矩陣為奇異矩陣"],
+      explanation:"可對角化⇔有 n 個線性獨立特徵向量。" },
+    en:{ question:"What is the condition for an n×n matrix to be diagonalizable?",
+      options:["Distinct eigenvalues with zero determinant","It has n linearly independent eigenvectors","All eigenvalues are equal","The matrix is singular"],
+      explanation:"Diagonalizable ⇔ n linearly independent eigenvectors." } },
+
+  { id:24, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"卷積定理指出兩函數卷積的傅立葉轉換等於什麼？",
+      options:["兩者轉換之和","兩者轉換之差","兩者轉換之商","兩者轉換之乘積"],
+      explanation:"F{f∗g} = F(f)·F(g)。" },
+    en:{ question:"The convolution theorem states the Fourier transform of a convolution equals what?",
+      options:["The sum of the transforms","The difference of the transforms","The quotient of the transforms","The product of the transforms"],
+      explanation:"F{f∗g} = F(f)·F(g)." } },
+
+  { id:25, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"向量場的散度（divergence）是一個什麼量？",
+      options:["純量","向量","矩陣","張量"],
+      explanation:"散度的結果是一個純量場。" },
+    en:{ question:"The divergence of a vector field is what kind of quantity?",
+      options:["A scalar","A vector","A matrix","A tensor"],
+      explanation:"The divergence yields a scalar field." } },
+
+  { id:26, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"沿單位圓正向積分 ∮ (1/z) dz 的值為何？",
+      options:["0","πi","2πi","−2πi"],
+      explanation:"由留數定理，∮(1/z)dz = 2πi。" },
+    en:{ question:"What is the value of ∮ (1/z) dz around the unit circle (positive orientation)?",
+      options:["0","πi","2πi","−2πi"],
+      explanation:"By the residue theorem, ∮(1/z)dz = 2πi." } },
+
+  { id:27, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"可分離方程 dy/dx = xy 的通解為何？",
+      options:["y = Ce^{x²}","y = Ce^{x²/2}","y = Cx²/2","y = Ce^{x}"],
+      explanation:"分離變數積分得 y = Ce^{x²/2}。" },
+    en:{ question:"What is the general solution of the separable equation dy/dx = xy?",
+      options:["y = Ce^{x²}","y = Ce^{x²/2}","y = Cx²/2","y = Ce^{x}"],
+      explanation:"Separating and integrating gives y = Ce^{x²/2}." } },
+
+  { id:28, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"3×3 單位矩陣的秩（rank）為何？",
+      options:["0","1","2","3"],
+      explanation:"單位矩陣為滿秩，秩等於 3。" },
+    en:{ question:"What is the rank of the 3×3 identity matrix?",
+      options:["0","1","2","3"],
+      explanation:"The identity matrix has full rank, equal to 3." } },
+
+  { id:29, difficulty:"trap", points:19, answer:2,
+    zh:{ question:"導數的拉普拉斯轉換 L{f′(t)} 等於下列何者？",
+      options:["s·F(s)","F(s)/s","s·F(s) − f(0)","s·F(s) + f(0)"],
+      explanation:"須減初始值：s·F(s) − f(0)。" },
+    en:{ question:"The Laplace transform of a derivative L{f′(t)} equals which of the following?",
+      options:["s·F(s)","F(s)/s","s·F(s) − f(0)","s·F(s) + f(0)"],
+      explanation:"Subtract the initial value: s·F(s) − f(0)." } },
+
+  { id:30, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"斯托克斯定理連結旋度的曲面積分與什麼？",
+      options:["邊界曲線的線積分","區域的體積分","散度的體積分","單一點的函數值"],
+      explanation:"斯托克斯定理連結旋度曲面積分與邊界線積分。" },
+    en:{ question:"Stokes' theorem connects the surface integral of curl with what?",
+      options:["A line integral over the boundary curve","A volume integral of the region","A volume integral of the divergence","The value at a single point"],
+      explanation:"Stokes' theorem links the curl surface integral to a boundary line integral." } },
+
+  { id:31, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"函數組 {e^{x}, e^{−x}} 的朗斯基行列式（Wronskian）為何？",
+      options:["0","2","e^{x}","−2"],
+      explanation:"W = e^x(−e^{−x}) − e^{−x}e^x = −2。" },
+    en:{ question:"What is the Wronskian of the set {e^{x}, e^{−x}}?",
+      options:["0","2","e^{x}","−2"],
+      explanation:"W = e^x(−e^{−x}) − e^{−x}e^x = −2." } },
+
+  { id:32, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"虛數單位的平方 i² 等於多少？",
+      options:["1","−1","i","−i"],
+      explanation:"依定義 i² = −1。" },
+    en:{ question:"What does the square of the imaginary unit i² equal?",
+      options:["1","−1","i","−i"],
+      explanation:"By definition, i² = −1." } },
+
+  { id:33, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"方程 M dx + N dy = 0 為恰當方程的條件為何？",
+      options:["∂M/∂y = ∂N/∂x","∂M/∂x = ∂N/∂y","∂M/∂y = −∂N/∂x","M 恆等於 N"],
+      explanation:"恰當條件：∂M/∂y = ∂N/∂x。" },
+    en:{ question:"What is the condition for M dx + N dy = 0 to be exact?",
+      options:["∂M/∂y = ∂N/∂x","∂M/∂x = ∂N/∂y","∂M/∂y = −∂N/∂x","M is identically equal to N"],
+      explanation:"Exactness condition: ∂M/∂y = ∂N/∂x." } },
+
+  { id:34, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"下列哪個方程為橢圓型（elliptic）偏微分方程？",
+      options:["u_t = u_xx","u_tt = u_xx","u_xx + u_yy = 0","u_t = u_x"],
+      explanation:"拉普拉斯方程 u_xx + u_yy = 0 為橢圓型。" },
+    en:{ question:"Which of the following is an elliptic PDE?",
+      options:["u_t = u_xx","u_tt = u_xx","u_xx + u_yy = 0","u_t = u_x"],
+      explanation:"Laplace's equation u_xx + u_yy = 0 is elliptic." } },
+
+  { id:35, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"複數 z = 3 + 4i 的模長 |z| 為何？",
+      options:["3","4","7","5"],
+      explanation:"|z| = √(3²+4²) = 5。" },
+    en:{ question:"What is the modulus |z| of the complex number z = 3 + 4i?",
+      options:["3","4","7","5"],
+      explanation:"|z| = √(3²+4²) = 5." } },
+
+  { id:36, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"1/(s²+ω²) 的拉普拉斯逆轉換為何？",
+      options:["cos ωt","(1/ω)sin ωt","sin ωt","(1/ω)cos ωt"],
+      explanation:"L⁻¹{1/(s²+ω²)} = (1/ω)sin ωt。" },
+    en:{ question:"What is the inverse Laplace transform of 1/(s²+ω²)?",
+      options:["cos ωt","(1/ω)sin ωt","sin ωt","(1/ω)cos ωt"],
+      explanation:"L⁻¹{1/(s²+ω²)} = (1/ω)sin ωt." } },
+
+  { id:37, difficulty:"trap", points:19, answer:2,
+    zh:{ question:"上三角矩陣的特徵值為下列何者？",
+      options:["其行列式的值","各列元素之和","主對角線上的元素","跡除以階數 n"],
+      explanation:"三角矩陣的特徵值即對角線元素。" },
+    en:{ question:"What are the eigenvalues of an upper-triangular matrix?",
+      options:["The value of its determinant","The sum of each row's entries","The entries on the main diagonal","The trace divided by the order n"],
+      explanation:"A triangular matrix's eigenvalues are its diagonal entries." } },
+
+  { id:38, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"冪級數 Σ x^n / n! 的收斂半徑為何？",
+      options:["∞（無限大）","0","1","e"],
+      explanation:"由比值法，收斂半徑為無限大。" },
+    en:{ question:"What is the radius of convergence of the power series Σ x^n / n!?",
+      options:["∞ (infinite)","0","1","e"],
+      explanation:"By the ratio test, the radius is infinite." } },
+
+  { id:39, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"非齊次線性微分方程的通解等於下列何者？",
+      options:["僅特解本身","齊次解加上特解","僅齊次解本身","齊次解乘以特解"],
+      explanation:"通解 = 齊次通解 + 一個特解。" },
+    en:{ question:"The general solution of a nonhomogeneous linear ODE equals which of the following?",
+      options:["The particular solution only","The homogeneous solution plus a particular solution","The homogeneous solution only","The homogeneous solution times a particular solution"],
+      explanation:"General = homogeneous solution + one particular solution." } },
+
+  { id:40, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"方向導數在哪個方向上達到最大值？",
+      options:["與梯度互相垂直的方向","與梯度相反的方向","任意方向皆相同","與梯度相同的方向"],
+      explanation:"方向導數在梯度方向達到最大。" },
+    en:{ question:"In which direction does the directional derivative attain its maximum?",
+      options:["The direction perpendicular to the gradient","The direction opposite to the gradient","It is the same in every direction","The direction along the gradient"],
+      explanation:"The directional derivative is maximal along the gradient." } },
+];
+
+const TOTAL_POINTS = 670;
+const ui = {
+  zh: { appTitle:"工程數學測驗", lang:"English", prev:"← 上一題", submit:"提交測驗",
+    prog:(c,t)=>`第 ${c} / ${t} 題`,
+    rTitle:"測驗結果", rScore:"總分", rCorrect:"正確題數", rWrong:"錯誤題數",
+    rDiff:"各難度正確率", easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱",
+    rPct:p=>`你的成績超越了約 ${p}% 的測試者`,
+    rReview:"錯題回顧", yourAns:"你的答案", correctAns:"正確答案",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！", allCorrect:"太厲害了，全部答對！",
+    grades:["📕 需要加強","📗 基礎尚可","📘 中等水準","⭐ 進階掌握","🏆 頂尖專家"] },
+  en: { appTitle:"Engineering Mathematics Quiz", lang:"中文", prev:"← Previous", submit:"Submit Quiz",
+    prog:(c,t)=>`Question ${c} / ${t}`,
+    rTitle:"Your Results", rScore:"Total Score", rCorrect:"Correct", rWrong:"Incorrect",
+    rDiff:"Accuracy by Difficulty", easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap",
+    rPct:p=>`You scored higher than about ${p}% of test takers`,
+    rReview:"Review of Wrong Answers", yourAns:"Your answer", correctAns:"Correct answer",
+    retry:"Retry Quiz", copy:"Copy Result", copied:"Copied!", allCorrect:"Excellent — all correct!",
+    grades:["📕 Needs Improvement","📗 Basic","📘 Intermediate","⭐ Advanced","🏆 Top Expert"] },
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+let locked = false;
+
+const $ = id => document.getElementById(id);
+
+// Theme
+function initTheme() {
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark" : "light");
+}
+function setTheme(t) {
+  document.documentElement.setAttribute("data-theme", t);
+  $("themeBtn").textContent = t === "dark" ? "☀️" : "🌙";
+}
+$("themeBtn").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur === "dark" ? "light" : "dark");
+};
+
+$("langBtn").onclick = () => {
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.lang = lang === "zh" ? "zh-Hant" : "en";
+  applyStaticText();
+  if (!$("resultScreen").classList.contains("hidden")) renderResult();
+  else renderQuestion();
+};
+
+function applyStaticText() {
+  const t = ui[lang];
+  $("appTitle").textContent = t.appTitle;
+  $("langBtn").textContent = t.lang;
+  $("prevBtn").textContent = t.prev;
+  $("submitBtn").textContent = t.submit;
+}
+
+function renderQuestion() {
+  const t = ui[lang];
+  const q = questions[current];
+  const data = q[lang];
+  $("progText").textContent = t.prog(current + 1, questions.length);
+  $("progTop").textContent = `${current + 1}/${questions.length}`;
+  $("questionText").textContent = data.question;
+  const box = $("optionsBox");
+  box.innerHTML = "";
+  const labels = ["A","B","C","D"];
+  data.options.forEach((opt, i) => {
+    const div = document.createElement("div");
+    div.className = "option" + (answers[current] === i ? " selected" : "");
+    div.innerHTML = `<span class="option-label">${labels[i]}</span><span>${opt}</span>`;
+    div.onclick = () => selectOption(i);
+    box.appendChild(div);
+  });
+  $("prevBtn").style.visibility = current === 0 ? "hidden" : "visible";
+  // Submit button only on last question
+  const isLast = current === questions.length - 1;
+  $("submitBtn").classList.toggle("hidden", !(isLast && answers[current] !== null));
+  updateProgressBar();
+}
+
+function selectOption(i) {
+  if (locked) return;
+  answers[current] = i;
+  // show selected state
+  const opts = document.querySelectorAll(".option");
+  opts.forEach((o, idx) => o.classList.toggle("selected", idx === i));
+  const isLast = current === questions.length - 1;
+  if (isLast) {
+    $("submitBtn").classList.remove("hidden");
+    updateProgressBar();
+    return;
+  }
+  // brief delay then advance
+  locked = true;
+  setTimeout(() => {
+    const area = $("quizArea");
+    area.classList.add("fade");
+    setTimeout(() => {
+      current++;
+      renderQuestion();
+      area.classList.remove("fade");
+      locked = false;
+    }, 250);
+  }, 400);
+}
+
+$("prevBtn").onclick = () => {
+  if (current === 0 || locked) return;
+  const area = $("quizArea");
+  area.classList.add("fade");
+  setTimeout(() => {
+    current--;
+    renderQuestion();
+    area.classList.remove("fade");
+  }, 250);
+};
+
+$("submitBtn").onclick = () => renderResult();
+
+function updateProgressBar() {
+  const answered = answers.filter(a => a !== null).length;
+  $("progBar").style.width = (answered / questions.length * 100) + "%";
+}
+
+// Normal CDF via erf approximation
+function normalCdf(x, mean, sd) {
+  const z = (x - mean) / (sd * Math.sqrt(2));
+  return 0.5 * (1 + erf(z));
+}
+function erf(x) {
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function renderResult() {
+  const t = ui[lang];
+  $("quizScreen").classList.add("hidden");
+  const res = $("resultScreen");
+  res.classList.remove("hidden");
+
+  let score = 0, correctCount = 0;
+  const diff = { easy:[0,0], medium:[0,0], hard:[0,0], trap:[0,0] };
+  const wrong = [];
+  questions.forEach((q, i) => {
+    diff[q.difficulty][1]++;
+    if (answers[i] === q.answer) {
+      score += q.points; correctCount++; diff[q.difficulty][0]++;
+    } else {
+      wrong.push({ q, picked: answers[i] });
+    }
+  });
+  const wrongCount = questions.length - correctCount;
+
+  const pct = Math.round(normalCdf(score, TOTAL_POINTS*0.45, TOTAL_POINTS*0.15) * 100);
+  let gradeIdx;
+  if (score >= 600) gradeIdx = 4;
+  else if (score >= 500) gradeIdx = 3;
+  else if (score >= 380) gradeIdx = 2;
+  else if (score >= 250) gradeIdx = 1;
+  else gradeIdx = 0;
+
+  const labels = ["A","B","C","D"];
+  let reviewHtml = "";
+  if (wrong.length === 0) {
+    reviewHtml = `<p style="color:var(--text-secondary)">${t.allCorrect}</p>`;
+  } else {
+    wrong.forEach(({q, picked}) => {
+      const d = q[lang];
+      const pickedText = picked === null ? "—" : `${labels[picked]}. ${d.options[picked]}`;
+      reviewHtml += `<div class="review-item">
+        <div class="review-q">${d.question}</div>
+        <div class="review-line mark-wrong">✗ ${t.yourAns}：${pickedText}</div>
+        <div class="review-line mark-correct">✓ ${t.correctAns}：${labels[q.answer]}. ${d.options[q.answer]}</div>
+        <div class="review-exp">${d.explanation}</div>
+      </div>`;
+    });
+  }
+
+  res.innerHTML = `
+    <h2>${t.rTitle}</h2>
+    <div class="score-big">${score} / ${TOTAL_POINTS}</div>
+    <div class="grade">${t.grades[gradeIdx]}</div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">${t.rCorrect}</div><div class="val">${correctCount} / ${questions.length}</div></div>
+      <div class="stat-card"><div class="label">${t.rWrong}</div><div class="val">${wrongCount} / ${questions.length}</div></div>
+    </div>
+    <div class="percentile">${t.rPct(pct)}</div>
+    <h3 style="margin-top:20px;">${t.rDiff}</h3>
+    <table class="diff-table">
+      <tr><td>${t.easy}</td><td>${diff.easy[0]} / ${diff.easy[1]}</td></tr>
+      <tr><td>${t.medium}</td><td>${diff.medium[0]} / ${diff.medium[1]}</td></tr>
+      <tr><td>${t.hard}</td><td>${diff.hard[0]} / ${diff.hard[1]}</td></tr>
+      <tr><td>${t.trap}</td><td>${diff.trap[0]} / ${diff.trap[1]}</td></tr>
+    </table>
+    <div class="review"><h3>${t.rReview}</h3>${reviewHtml}</div>
+    <div class="result-actions">
+      <button class="btn btn-primary" id="retryBtn">${t.retry}</button>
+      <button class="btn" id="copyBtn">${t.copy}</button>
+    </div>`;
+
+  $("retryBtn").onclick = () => {
+    current = 0;
+    answers.fill(null);
+    locked = false;
+    res.classList.add("hidden");
+    $("quizScreen").classList.remove("hidden");
+    renderQuestion();
+    window.scrollTo(0,0);
+  };
+  $("copyBtn").onclick = () => {
+    const summary = lang === "zh"
+      ? `工程數學測驗結果\n總分：${score} / ${TOTAL_POINTS}\n正確：${correctCount} / ${questions.length}\n等級：${t.grades[gradeIdx]}\n${t.rPct(pct)}`
+      : `Engineering Math Quiz Result\nScore: ${score} / ${TOTAL_POINTS}\nCorrect: ${correctCount} / ${questions.length}\nGrade: ${t.grades[gradeIdx]}\n${t.rPct(pct)}`;
+    navigator.clipboard.writeText(summary).then(() => {
+      $("copyBtn").textContent = t.copied;
+      setTimeout(() => { $("copyBtn").textContent = t.copy; }, 1500);
+    });
+  };
+  $("progBar").style.width = "100%";
+  window.scrollTo(0,0);
+}
+
+// init
+initTheme();
+applyStaticText();
+renderQuestion();
+</script>
+</body>
+</html>

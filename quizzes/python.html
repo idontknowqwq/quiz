@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Python 程式語言 互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-sub: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --track: #E5E7EB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-sub: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --track: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    transition: background 0.2s, color 0.2s;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+    padding-bottom: 14px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
+  }
+  .title { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; }
+  .ctrl-btn {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .ctrl-btn:hover { background: var(--border); }
+  .progress-text { font-size: 13px; color: var(--text-sub); margin-bottom: 8px; }
+  .qcard { flex: 1; opacity: 1; transition: opacity 0.25s; }
+  .qcard.fade { opacity: 0; }
+  .question { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .opt {
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; cursor: pointer; font-size: 15px;
+    background: var(--bg); color: var(--text);
+    transition: background 0.15s, border-color 0.15s;
+    display: flex; gap: 10px; align-items: flex-start; text-align: left; width: 100%;
+  }
+  .opt:hover { background: var(--border); }
+  .opt.selected { border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+  .opt .letter { font-weight: 700; flex-shrink: 0; }
+  .nav { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; gap: 12px; }
+  .nav-btn {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 18px; font-size: 14px; cursor: pointer;
+    transition: background 0.15s;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--border); }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .submit-btn {
+    background: var(--accent); color: var(--accent-text); border: 1px solid var(--accent);
+    border-radius: 6px; padding: 10px 22px; font-size: 14px; font-weight: 700; cursor: pointer;
+  }
+  .progress-bar { height: 6px; background: var(--track); border-radius: 3px; margin-top: 28px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.25s; }
+  /* Results */
+  .results h2 { font-size: 22px; margin-bottom: 16px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); }
+  .score-sub { color: var(--text-sub); font-size: 14px; margin-bottom: 20px; }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat {
+    border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
+  }
+  .stat .label { font-size: 12px; color: var(--text-sub); }
+  .stat .val { font-size: 18px; font-weight: 700; }
+  .grade { font-size: 20px; font-weight: 700; margin: 16px 0; padding: 14px; border: 1px solid var(--border); border-radius: 8px; text-align: center; }
+  .percentile { font-size: 15px; margin-bottom: 24px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px; }
+  .review-title { font-size: 16px; font-weight: 700; margin: 20px 0 12px; }
+  .rev-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+  .rev-q { font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+  .rev-line { font-size: 13px; margin: 3px 0; }
+  .rev-wrong { color: var(--wrong); }
+  .rev-correct { color: var(--correct); }
+  .rev-exp { font-size: 13px; color: var(--text-sub); margin-top: 6px; }
+  .result-actions { display: flex; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
+  .hidden { display: none !important; }
+  @media (max-width: 480px) {
+    .stat-grid { grid-template-columns: 1fr; }
+    .title { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="title" id="appTitle">Python 程式語言 互動測驗</div>
+    <div class="controls">
+      <button class="ctrl-btn" id="langBtn">English</button>
+      <button class="ctrl-btn" id="themeBtn">🌙</button>
+    </div>
+  </header>
+
+  <!-- QUIZ -->
+  <div id="quizView">
+    <div class="progress-text" id="progressText">第 1 / 40 題</div>
+    <div class="qcard" id="qcard">
+      <div class="question" id="questionText"></div>
+      <div class="options" id="optionsBox"></div>
+    </div>
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn">上一題</button>
+      <button class="submit-btn hidden" id="submitBtn">提交測驗</button>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="resultView" class="results hidden">
+    <h2 id="resTitle">測驗結果</h2>
+    <div class="score-big" id="resScore"></div>
+    <div class="score-sub" id="resScoreSub"></div>
+    <div class="stat-grid">
+      <div class="stat"><div class="label" id="lbCorrect">正確題數</div><div class="val" id="resCorrect"></div></div>
+      <div class="stat"><div class="label" id="lbWrong">錯誤題數</div><div class="val" id="resWrong"></div></div>
+      <div class="stat"><div class="label" id="lbEasy">簡單</div><div class="val" id="resEasy"></div></div>
+      <div class="stat"><div class="label" id="lbMed">中等</div><div class="val" id="resMed"></div></div>
+      <div class="stat"><div class="label" id="lbHard">困難</div><div class="val" id="resHard"></div></div>
+      <div class="stat"><div class="label" id="lbTrap">陷阱</div><div class="val" id="resTrap"></div></div>
+    </div>
+    <div class="grade" id="resGrade"></div>
+    <div class="percentile" id="resPercentile"></div>
+    <div class="review-title" id="reviewTitle">錯題回顧</div>
+    <div id="reviewBox"></div>
+    <div class="result-actions">
+      <button class="submit-btn" id="retryBtn">重新測驗</button>
+      <button class="nav-btn" id="copyBtn">複製結果</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{question:"在 Python 中，要將整數 5 轉換為字串，應使用哪個函式？",options:["str(5)","int(5)","float(5)","chr(5)"],explanation:"str() 將物件轉換為字串型別。"},
+    en:{question:"In Python, which function converts the integer 5 into a string?",options:["str(5)","int(5)","float(5)","chr(5)"],explanation:"str() converts an object to a string type."}},
+  { id:2, difficulty:"medium", points:15, answer:1,
+    zh:{question:"執行 x = [1,2,3]; y = x; y.append(4) 後，x 的值為何？",options:["[1, 2, 3]","[1, 2, 3, 4]","[4, 1, 2, 3]","[1, 2, 3, 4, 4]"],explanation:"串列是可變物件，y 與 x 指向同一物件。"},
+    en:{question:"After x = [1,2,3]; y = x; y.append(4), what is the value of x?",options:["[1, 2, 3]","[1, 2, 3, 4]","[4, 1, 2, 3]","[1, 2, 3, 4, 4]"],explanation:"Lists are mutable; y and x refer to the same object."}},
+  { id:3, difficulty:"hard", points:25, answer:2,
+    zh:{question:"下列關於 Python 全域直譯器鎖（GIL）的敘述，何者正確？",options:["它讓多執行緒能真正平行運算數值","它只影響多行程而不影響多執行緒","它使同一時間僅一條執行緒執行位元組碼","它能完全避免所有競爭條件的問題"],explanation:"GIL 限制同一時間只有一條執行緒執行位元組碼。"},
+    en:{question:"Which statement about Python's Global Interpreter Lock (GIL) is correct?",options:["It lets threads truly run numeric work in parallel","It affects only processes, not threads at all","It allows only one thread to run bytecode at a time","It fully prevents every possible race condition"],explanation:"The GIL allows only one thread to execute bytecode at a time."}},
+  { id:4, difficulty:"trap", points:19, answer:3,
+    zh:{question:"運算式 0.1 + 0.2 == 0.3 在 Python 中的結果是？",options:["True，浮點運算精確無誤","True，直譯器會自動四捨五入","拋出 ValueError 例外錯誤","False，浮點數有精度誤差"],explanation:"浮點數以二進位儲存會產生微小誤差。"},
+    en:{question:"What is the result of 0.1 + 0.2 == 0.3 in Python?",options:["True, float math is always exact","True, the interpreter auto-rounds it","Raises a ValueError exception","False, floats have precision error"],explanation:"Binary floating point storage introduces a tiny error."}},
+  { id:5, difficulty:"easy", points:10, answer:1,
+    zh:{question:"下列哪個運算子用來表示「不等於」？",options:["=!","!=","<>","=/="],explanation:"!= 是 Python 的不等於運算子。"},
+    en:{question:"Which operator represents 'not equal to' in Python?",options:["=!","!=","<>","=/="],explanation:"!= is Python's not-equal operator."}},
+  { id:6, difficulty:"medium", points:15, answer:2,
+    zh:{question:"len(range(0, 10, 2)) 的計算結果是？",options:["10","4","5","6"],explanation:"range 產生 0,2,4,6,8 共 5 個值。"},
+    en:{question:"What does len(range(0, 10, 2)) evaluate to?",options:["10","4","5","6"],explanation:"The range yields 0,2,4,6,8 — five values."}},
+  { id:7, difficulty:"hard", points:25, answer:3,
+    zh:{question:"關於淺拷貝（shallow copy）與深拷貝（deep copy），何者正確？",options:["兩者對巢狀物件的行為完全相同","淺拷貝會遞迴複製所有層級物件","深拷貝僅複製最外層的參考位址","淺拷貝的巢狀物件仍共用同一參考"],explanation:"淺拷貝不會複製內層巢狀物件，仍為共用參考。"},
+    en:{question:"Which statement about shallow copy versus deep copy is correct?",options:["Both behave identically for nested objects","Shallow copy recursively copies every level","Deep copy only copies the outer reference","Shallow copy shares nested object references"],explanation:"A shallow copy does not duplicate inner nested objects."}},
+  { id:8, difficulty:"easy", points:10, answer:0,
+    zh:{question:"下列哪一個是 Python 合法的布林值（boolean）？",options:["True","true","TRUE","Yes"],explanation:"Python 布林值首字母大寫，為 True / False。"},
+    en:{question:"Which of the following is a valid Python boolean value?",options:["True","true","TRUE","Yes"],explanation:"Python booleans are capitalized: True / False."}},
+  { id:9, difficulty:"medium", points:15, answer:3,
+    zh:{question:"字典 d = {'a':1, 'b':2}，執行 d.get('c', 0) 會回傳什麼？",options:["拋出 KeyError 例外","None 空值物件","字串 'c' 本身","0"],explanation:"get 找不到鍵時回傳指定的預設值。"},
+    en:{question:"With d = {'a':1, 'b':2}, what does d.get('c', 0) return?",options:["Raises a KeyError exception","The None empty value","The string 'c' itself","0"],explanation:"get returns the supplied default when the key is missing."}},
+  { id:10, difficulty:"hard", points:25, answer:0,
+    zh:{question:"下列關於 Python 產生器（generator）的敘述，何者正確？",options:["它惰性求值，逐次產生值以節省記憶體","它會一次將所有值載入記憶體串列","它無法在 for 迴圈中被迭代使用","它每次呼叫都會重置內部狀態歸零"],explanation:"產生器惰性求值，逐次產生元素以節省記憶體。"},
+    en:{question:"Which statement about Python generators is correct?",options:["It lazily yields values one by one to save memory","It loads all values into a list at once","It cannot be iterated inside a for loop","It resets its internal state on every call"],explanation:"Generators are lazy, yielding items one at a time."}},
+  { id:11, difficulty:"trap", points:19, answer:1,
+    zh:{question:"a = [[0]*3]*3 建立後執行 a[0][0]=1，結果為何？",options:["只有 a[0][0] 會變成數值 1","三個子串列的第一個元素都變 1","程式會拋出索引超界的錯誤","整個串列維持全部為 0 不變"],explanation:"*3 複製的是同一個子串列參考，故同步改變。"},
+    en:{question:"With a = [[0]*3]*3, after a[0][0]=1, what happens?",options:["Only a[0][0] becomes the value 1","First item of all three sublists is 1","It raises an index-out-of-range error","The whole list stays all zeros unchanged"],explanation:"*3 copies the same sublist reference, so all change."}},
+  { id:12, difficulty:"easy", points:10, answer:2,
+    zh:{question:"下列哪個關鍵字用來定義一個函式？",options:["func","function","def","define"],explanation:"def 是 Python 定義函式的關鍵字。"},
+    en:{question:"Which keyword is used to define a function in Python?",options:["func","function","def","define"],explanation:"def is the keyword to define a Python function."}},
+  { id:13, difficulty:"medium", points:15, answer:0,
+    zh:{question:"字串切片 'abc'[::-1] 的結果是？",options:["'cba'","'abc'","'acb'","拋出例外錯誤"],explanation:"[::-1] 會反轉序列的順序。"},
+    en:{question:"What is the result of the slice 'abc'[::-1]?",options:["'cba'","'abc'","'acb'","Raises an exception error"],explanation:"[::-1] reverses the order of the sequence."}},
+  { id:14, difficulty:"hard", points:25, answer:1,
+    zh:{question:"關於 Python 裝飾器（decorator）的敘述，何者正確？",options:["它只能套用於類別而不能用於函式","它本質是接收函式並回傳函式的函式","它會在程式結束時才執行被包裝函式","它無法存取被裝飾函式的參數內容"],explanation:"裝飾器是接收函式並回傳函式的高階函式。"},
+    en:{question:"Which statement about Python decorators is correct?",options:["It can wrap classes only, never functions","It is a function taking and returning a function","It runs the wrapped function only at program end","It cannot access the wrapped function's arguments"],explanation:"A decorator is a higher-order function returning a function."}},
+  { id:15, difficulty:"easy", points:10, answer:3,
+    zh:{question:"下列哪個資料型別是「不可變的」（immutable）？",options:["list 串列","dict 字典","set 集合","tuple 元組"],explanation:"tuple 建立後不可修改，屬於不可變型別。"},
+    en:{question:"Which of the following data types is immutable?",options:["list","dict","set","tuple"],explanation:"A tuple cannot be modified after creation."}},
+  { id:16, difficulty:"medium", points:15, answer:2,
+    zh:{question:"bool('') 與 bool('0') 的結果分別是？",options:["True、True","True、False","False、True","False、False"],explanation:"空字串為假，非空字串（含 '0'）為真。"},
+    en:{question:"What do bool('') and bool('0') return respectively?",options:["True, True","True, False","False, True","False, False"],explanation:"Empty string is falsy; any non-empty string is truthy."}},
+  { id:17, difficulty:"trap", points:19, answer:0,
+    zh:{question:"def f(x, lst=[]): lst.append(x); return lst，連續呼叫 f(1) 再 f(2)，第二次回傳？",options:["[1, 2]","[2]","[1]","[2, 1]"],explanation:"可變預設參數在多次呼叫之間會被共用。"},
+    en:{question:"def f(x, lst=[]): lst.append(x); return lst — calling f(1) then f(2), the second call returns?",options:["[1, 2]","[2]","[1]","[2, 1]"],explanation:"A mutable default argument is shared across calls."}},
+  { id:18, difficulty:"hard", points:25, answer:2,
+    zh:{question:"關於 is 與 == 兩個運算子的差異，何者正確？",options:["兩者都只比較物件的記憶體位址","兩者都只比較物件的數值內容","is 比較身分，== 比較值的相等性","== 比較身分，is 比較值的相等性"],explanation:"is 比較物件身分，== 比較值是否相等。"},
+    en:{question:"Which statement about the is and == operators is correct?",options:["Both compare only the memory address","Both compare only the numeric value","is checks identity, == checks value equality","== checks identity, is checks value equality"],explanation:"is compares identity; == compares value equality."}},
+  { id:19, difficulty:"easy", points:10, answer:1,
+    zh:{question:"下列哪個函式可取得串列中元素的數量？",options:["size()","len()","count()","length()"],explanation:"len() 回傳序列或集合的長度。"},
+    en:{question:"Which function returns the number of items in a list?",options:["size()","len()","count()","length()"],explanation:"len() returns the length of a sequence or collection."}},
+  { id:20, difficulty:"medium", points:15, answer:3,
+    zh:{question:"串列推導式 [x*x for x in range(5) if x%2==0] 的結果是？",options:["[1, 9, 25]","[0, 1, 4, 9, 16]","[0, 2, 4]","[0, 4, 16]"],explanation:"取偶數 0,2,4 各自平方得 0,4,16。"},
+    en:{question:"What is the result of [x*x for x in range(5) if x%2==0]?",options:["[1, 9, 25]","[0, 1, 4, 9, 16]","[0, 2, 4]","[0, 4, 16]"],explanation:"Squares of the even numbers 0,2,4 are 0,4,16."}},
+  { id:21, difficulty:"hard", points:25, answer:0,
+    zh:{question:"關於 try/except/else/finally 的執行行為，何者正確？",options:["finally 區塊無論是否發生例外都會執行","else 區塊僅在發生例外時才會被執行","finally 區塊只在沒有例外時才會執行","except 區塊在沒有例外時也會執行一次"],explanation:"finally 區塊無論是否發生例外都一定會執行。"},
+    en:{question:"Which statement about try/except/else/finally execution is correct?",options:["finally always runs whether or not an error occurs","else runs only when an exception is raised","finally runs only when no exception occurs","except also runs once when no error occurs"],explanation:"The finally block always runs regardless of exceptions."}},
+  { id:22, difficulty:"easy", points:10, answer:2,
+    zh:{question:"下列哪個運算子用於計算「次方」（指數）？",options:["^ 符號","% 符號","** 符號","// 符號"],explanation:"** 是次方運算子，例如 2**3 等於 8。"},
+    en:{question:"Which operator is used for exponentiation (power)?",options:["the ^ symbol","the % symbol","the ** symbol","the // symbol"],explanation:"** is the power operator, e.g. 2**3 equals 8."}},
+  { id:23, difficulty:"medium", points:15, answer:1,
+    zh:{question:"sorted([3,1,2], reverse=True) 的結果是？",options:["[1, 2, 3]","[3, 2, 1]","[2, 1, 3]","[3, 1, 2]"],explanation:"reverse=True 會由大到小排序。"},
+    en:{question:"What is the result of sorted([3,1,2], reverse=True)?",options:["[1, 2, 3]","[3, 2, 1]","[2, 1, 3]","[3, 1, 2]"],explanation:"reverse=True sorts in descending order."}},
+  { id:24, difficulty:"trap", points:19, answer:3,
+    zh:{question:"執行 for i in range(3): pass 結束後，變數 i 的值是？",options:["變數 i 已被刪除無法存取","0，迴圈結束後會自動重置","3，等於 range 的上限數值","2，停留在最後一次迭代值"],explanation:"迴圈結束後 i 保留最後一次迭代的值 2。"},
+    en:{question:"After running for i in range(3): pass, what is the value of i?",options:["Variable i is deleted and unreachable","0, it auto-resets after the loop ends","3, equal to the range upper bound","2, it holds the last iterated value"],explanation:"After the loop, i keeps its last iterated value, 2."}},
+  { id:25, difficulty:"hard", points:25, answer:1,
+    zh:{question:"關於 *args 與 **kwargs 的敘述，何者正確？",options:["*args 收集關鍵字參數成為字典","*args 收集位置參數成為元組","**kwargs 收集位置參數成為串列","**kwargs 收集位置參數成為元組"],explanation:"*args 收集位置參數為元組，**kwargs 收集關鍵字參數為字典。"},
+    en:{question:"Which statement about *args and **kwargs is correct?",options:["*args collects keyword arguments as a dict","*args collects positional arguments as a tuple","**kwargs collects positional arguments as a list","**kwargs collects positional arguments as a tuple"],explanation:"*args gathers positional args into a tuple; **kwargs a dict."}},
+  { id:26, difficulty:"easy", points:10, answer:0,
+    zh:{question:"下列哪個方法可將字串全部轉為大寫？",options:["upper()","toUpper()","capital()","uppercase()"],explanation:"str.upper() 會將字串轉成全大寫。"},
+    en:{question:"Which method converts a string entirely to uppercase?",options:["upper()","toUpper()","capital()","uppercase()"],explanation:"str.upper() returns the string in all uppercase."}},
+  { id:27, difficulty:"medium", points:15, answer:2,
+    zh:{question:"運算式 '5' + 3 在 Python 中會發生什麼？",options:["結果為整數 8 的數值","結果為字串 '53' 的內容","拋出 TypeError 型別例外","結果為整數 53 的數值"],explanation:"字串與整數不能直接相加，會引發 TypeError。"},
+    en:{question:"What happens when you evaluate '5' + 3 in Python?",options:["It yields the integer value 8","It yields the string content '53'","It raises a TypeError type error","It yields the integer value 53"],explanation:"A string and an integer cannot be added, raising TypeError."}},
+  { id:28, difficulty:"hard", points:25, answer:3,
+    zh:{question:"關於 if __name__ == '__main__' 慣用法，何者正確？",options:["它使模組永遠無法被其他檔案匯入","它會在模組被匯入時自動執行區塊","它是定義類別建構子的標準語法","它讓區塊僅在檔案被直接執行時運行"],explanation:"檔案被直接執行時 __name__ 為 '__main__'，匯入時則否。"},
+    en:{question:"Which statement about the if __name__ == '__main__' idiom is correct?",options:["It stops the module from ever being imported","It auto-runs the block when imported elsewhere","It is the standard syntax for a constructor","It runs the block only when run directly"],explanation:"__name__ equals '__main__' only when the file is run directly."}},
+  { id:29, difficulty:"easy", points:10, answer:3,
+    zh:{question:"下列哪個語法用來建立一個空字典？",options:["[ ] 中括號","( ) 小括號","set() 函式","{ } 大括號"],explanation:"{} 建立空字典；空集合須用 set()。"},
+    en:{question:"Which syntax creates an empty dictionary?",options:["[ ] square brackets","( ) parentheses","the set() call","{ } curly braces"],explanation:"{} makes an empty dict; an empty set needs set()."}},
+  { id:30, difficulty:"medium", points:15, answer:0,
+    zh:{question:"list('abc') 的結果是？",options:["['a', 'b', 'c']","['abc']","'abc'","[a, b, c]"],explanation:"list() 會將字串拆成單一字元的串列。"},
+    en:{question:"What is the result of list('abc')?",options:["['a', 'b', 'c']","['abc']","'abc'","[a, b, c]"],explanation:"list() splits the string into individual characters."}},
+  { id:31, difficulty:"hard", points:25, answer:2,
+    zh:{question:"關於 Python 閉包（closure）的敘述，何者正確？",options:["內部函式無法存取外層的區域變數","閉包會在外層函式返回後立即被銷毀","內部函式可記住並存取外層的變數","閉包必須使用 global 關鍵字才能運作"],explanation:"閉包讓內部函式記住並存取外層作用域的變數。"},
+    en:{question:"Which statement about Python closures is correct?",options:["The inner function cannot read outer locals","The closure is destroyed once the outer returns","The inner function remembers outer variables","A closure needs the global keyword to work"],explanation:"A closure lets the inner function capture outer variables."}},
+  { id:32, difficulty:"trap", points:19, answer:1,
+    zh:{question:"type([]) == list 與 isinstance([], list) 兩個檢查的輸出分別是？",options:["兩者皆為 False 假值","兩者皆為 True 真值","先 True 後 False 值","先 False 後 True 值"],explanation:"對空串列兩種型別檢查皆回傳 True。"},
+    en:{question:"What do type([]) == list and isinstance([], list) output respectively?",options:["Both evaluate to False","Both evaluate to True","First True then False","First False then True"],explanation:"For an empty list both type checks return True."}},
+  { id:33, difficulty:"easy", points:10, answer:2,
+    zh:{question:"下列哪個關鍵字用來「跳出」整個迴圈？",options:["pass 關鍵字","continue 關鍵字","break 關鍵字","return 關鍵字"],explanation:"break 會立即終止並跳出整個迴圈。"},
+    en:{question:"Which keyword is used to break out of an entire loop?",options:["the pass keyword","the continue keyword","the break keyword","the return keyword"],explanation:"break immediately terminates and exits the loop."}},
+  { id:34, difficulty:"medium", points:15, answer:0,
+    zh:{question:"集合運算 {1,2,3} & {2,3,4} 的結果是？",options:["{2, 3}","{1, 4}","{1, 2, 3, 4}","{2, 3, 4}"],explanation:"& 運算子取兩個集合的交集。"},
+    en:{question:"What is the result of the set operation {1,2,3} & {2,3,4}?",options:["{2, 3}","{1, 4}","{1, 2, 3, 4}","{2, 3, 4}"],explanation:"The & operator returns the intersection of two sets."}},
+  { id:35, difficulty:"hard", points:25, answer:3,
+    zh:{question:"關於多重繼承的方法解析順序（MRO），何者正確？",options:["多重繼承時不允許定義同名的方法","MRO 採用由右至左的深度優先搜尋","同名方法一定呼叫最後繼承的父類別","Python 使用 C3 線性化演算法決定順序"],explanation:"CPython 以 C3 線性化演算法決定方法解析順序。"},
+    en:{question:"Which statement about the Method Resolution Order (MRO) is correct?",options:["Same-named methods are banned in inheritance","MRO uses a right-to-left depth-first search","It always calls the last inherited parent class","Python uses the C3 linearization algorithm"],explanation:"CPython determines the MRO via C3 linearization."}},
+  { id:36, difficulty:"medium", points:15, answer:1,
+    zh:{question:"\"{:.2f}\".format(3.14159) 的輸出是？",options:["'3.14159'","'3.14'","'3.142'","'3'"],explanation:".2f 表示保留兩位小數並四捨五入。"},
+    en:{question:"What is the output of \"{:.2f}\".format(3.14159)?",options:["'3.14159'","'3.14'","'3.142'","'3'"],explanation:".2f keeps two decimal places with rounding."}},
+  { id:37, difficulty:"medium", points:15, answer:0,
+    zh:{question:"dict(zip(['a','b'], [1,2])) 的結果是？",options:["{'a': 1, 'b': 2}","{1: 'a', 2: 'b'}","[('a', 1), ('b', 2)]","('a', 1, 'b', 2)"],explanation:"zip 將兩串列配對，dict 再轉成鍵值對。"},
+    en:{question:"What is the result of dict(zip(['a','b'], [1,2]))?",options:["{'a': 1, 'b': 2}","{1: 'a', 2: 'b'}","[('a', 1), ('b', 2)]","('a', 1, 'b', 2)"],explanation:"zip pairs the lists; dict turns them into key-value pairs."}},
+  { id:38, difficulty:"medium", points:15, answer:1,
+    zh:{question:"5 // 2 與 5 % 2 的結果分別是？",options:["2.5 與 1","2 與 1","2 與 0","3 與 1"],explanation:"// 是整除得 2，% 是取餘數得 1。"},
+    en:{question:"What do 5 // 2 and 5 % 2 evaluate to respectively?",options:["2.5 and 1","2 and 1","2 and 0","3 and 1"],explanation:"// floor-divides to 2; % gives the remainder 1."}},
+  { id:39, difficulty:"medium", points:15, answer:2,
+    zh:{question:"關於 enumerate(['a','b','c']) 的用途，何者正確？",options:["它會回傳整個串列的長度數值","它會將串列元素排序後再回傳","它同時產生索引與元素的配對","它會移除串列中的重複元素值"],explanation:"enumerate 會同時產生索引與對應的元素。"},
+    en:{question:"Which statement about enumerate(['a','b','c']) is correct?",options:["It returns the length of the whole list","It sorts the list elements then returns","It yields index and element pairs together","It removes duplicate values from the list"],explanation:"enumerate yields (index, value) pairs together."}},
+  { id:40, difficulty:"medium", points:15, answer:3,
+    zh:{question:"格式化字串 f\"{2+3}\" 的輸出是？",options:["'{2+3}'","'2+3'","'f5'","'5'"],explanation:"f-string 會運算大括號內的表達式得 5。"},
+    en:{question:"What is the output of the f-string f\"{2+3}\"?",options:["'{2+3}'","'2+3'","'f5'","'5'"],explanation:"An f-string evaluates the braced expression to 5."}}
+];
+
+const ui = {
+  zh: { title:"Python 程式語言 互動測驗", lang:"English", prev:"上一題", submit:"提交測驗",
+    prog:(c,t)=>`第 ${c} / ${t} 題`, resTitle:"測驗結果",
+    correct:"正確題數", wrong:"錯誤題數", easy:"簡單", med:"中等", hard:"困難", trap:"陷阱",
+    scoreSub:"總分", reviewTitle:"錯題回顧", allCorrect:"太棒了！全部答對，沒有錯題。",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製！",
+    yourAns:"你的選擇", correctAns:"正確答案",
+    pct:(p)=>`你的成績超越了約 ${p}% 的測試者`,
+    grades:[ {min:600,t:"🏆 頂尖專家（Top Expert）"},{min:500,t:"⭐ 進階掌握（Advanced）"},
+      {min:380,t:"📘 中等水準（Intermediate）"},{min:250,t:"📗 基礎尚可（Basic）"},{min:0,t:"📕 需要加強（Needs Improvement）"} ] },
+  en: { title:"Python Programming Interactive Quiz", lang:"中文", prev:"Previous", submit:"Submit Quiz",
+    prog:(c,t)=>`Question ${c} / ${t}`, resTitle:"Quiz Results",
+    correct:"Correct", wrong:"Incorrect", easy:"Easy", med:"Medium", hard:"Hard", trap:"Trap",
+    scoreSub:"Total Score", reviewTitle:"Review of Wrong Answers", allCorrect:"Excellent! All correct, no mistakes.",
+    retry:"Retake Quiz", copy:"Copy Result", copied:"Copied!",
+    yourAns:"Your answer", correctAns:"Correct answer",
+    pct:(p)=>`You scored higher than about ${p}% of test takers`,
+    grades:[ {min:600,t:"🏆 Top Expert"},{min:500,t:"⭐ Advanced"},
+      {min:380,t:"📘 Intermediate"},{min:250,t:"📗 Basic"},{min:0,t:"📕 Needs Improvement"} ] }
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const TOTAL = 670;
+const letters = ["A","B","C","D"];
+
+// theme
+function initTheme(){
+  const saved = null; // no storage; follow system
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  setTheme(prefersDark ? "dark":"light");
+}
+function setTheme(t){
+  document.documentElement.setAttribute("data-theme", t);
+  document.getElementById("themeBtn").textContent = t==="dark" ? "☀️":"🌙";
+}
+document.getElementById("themeBtn").onclick = ()=>{
+  const cur = document.documentElement.getAttribute("data-theme");
+  setTheme(cur==="dark" ? "light":"dark");
+};
+document.getElementById("langBtn").onclick = ()=>{
+  lang = lang==="zh" ? "en":"zh";
+  document.documentElement.setAttribute("lang", lang==="zh" ? "zh-Hant":"en");
+  applyStaticText();
+  if(!document.getElementById("resultView").classList.contains("hidden")) renderResults();
+  else renderQuestion();
+};
+
+function applyStaticText(){
+  const t = ui[lang];
+  document.getElementById("appTitle").textContent = t.title;
+  document.getElementById("langBtn").textContent = t.lang;
+  document.getElementById("prevBtn").textContent = t.prev;
+  document.getElementById("submitBtn").textContent = t.submit;
+}
+
+function renderQuestion(){
+  const t = ui[lang];
+  const q = questions[current];
+  const data = q[lang];
+  document.getElementById("progressText").textContent = t.prog(current+1, questions.length);
+  document.getElementById("questionText").textContent = data.question;
+  const box = document.getElementById("optionsBox");
+  box.innerHTML = "";
+  data.options.forEach((opt,i)=>{
+    const btn = document.createElement("button");
+    btn.className = "opt" + (answers[current]===i ? " selected":"");
+    btn.innerHTML = `<span class="letter">${letters[i]}.</span><span>${opt}</span>`;
+    btn.onclick = ()=>selectOption(i);
+    box.appendChild(btn);
+  });
+  document.getElementById("prevBtn").disabled = current===0;
+  // submit button only on last question after it is answered
+  const submitBtn = document.getElementById("submitBtn");
+  if(current===questions.length-1 && answers[current]!==null){
+    submitBtn.classList.remove("hidden");
+  } else {
+    submitBtn.classList.add("hidden");
+  }
+  const pct = ((current)/(questions.length))*100;
+  document.getElementById("progressFill").style.width = pct + "%";
+}
+
+function selectOption(i){
+  answers[current] = i;
+  // show selected state
+  const opts = document.querySelectorAll("#optionsBox .opt");
+  opts.forEach((o,idx)=>o.classList.toggle("selected", idx===i));
+  const isLast = current===questions.length-1;
+  if(isLast){
+    document.getElementById("submitBtn").classList.remove("hidden");
+    document.getElementById("progressFill").style.width = "100%";
+  } else {
+    // auto-advance after 0.4s
+    setTimeout(()=>{
+      const card = document.getElementById("qcard");
+      card.classList.add("fade");
+      setTimeout(()=>{
+        current++;
+        renderQuestion();
+        card.classList.remove("fade");
+      },250);
+    },400);
+  }
+}
+
+document.getElementById("prevBtn").onclick = ()=>{
+  if(current>0){
+    const card = document.getElementById("qcard");
+    card.classList.add("fade");
+    setTimeout(()=>{
+      current--;
+      renderQuestion();
+      card.classList.remove("fade");
+    },250);
+  }
+};
+
+document.getElementById("submitBtn").onclick = ()=>showResults();
+
+// normal CDF using erf approximation
+function normalCdf(x, mean, sd){
+  const z = (x-mean)/(sd*Math.sqrt(2));
+  return 0.5*(1+erf(z));
+}
+function erf(x){
+  const sign = x<0 ? -1:1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function computeResults(){
+  let score=0, correct=0;
+  const byDiff = {easy:{c:0,n:0},medium:{c:0,n:0},hard:{c:0,n:0},trap:{c:0,n:0}};
+  const wrong = [];
+  questions.forEach((q,idx)=>{
+    byDiff[q.difficulty].n++;
+    if(answers[idx]===q.answer){
+      score+=q.points; correct++; byDiff[q.difficulty].c++;
+    } else {
+      wrong.push({q, chosen:answers[idx]});
+    }
+  });
+  return {score, correct, wrong, byDiff};
+}
+
+function renderResults(){
+  const t = ui[lang];
+  const r = computeResults();
+  document.getElementById("resTitle").textContent = t.resTitle;
+  document.getElementById("resScore").textContent = `${r.score} / ${TOTAL}`;
+  document.getElementById("resScoreSub").textContent = t.scoreSub;
+  document.getElementById("lbCorrect").textContent = t.correct;
+  document.getElementById("lbWrong").textContent = t.wrong;
+  document.getElementById("lbEasy").textContent = t.easy;
+  document.getElementById("lbMed").textContent = t.med;
+  document.getElementById("lbHard").textContent = t.hard;
+  document.getElementById("lbTrap").textContent = t.trap;
+  document.getElementById("resCorrect").textContent = `${r.correct} / ${questions.length}`;
+  document.getElementById("resWrong").textContent = `${questions.length-r.correct} / ${questions.length}`;
+  document.getElementById("resEasy").textContent = `${r.byDiff.easy.c} / ${r.byDiff.easy.n}`;
+  document.getElementById("resMed").textContent = `${r.byDiff.medium.c} / ${r.byDiff.medium.n}`;
+  document.getElementById("resHard").textContent = `${r.byDiff.hard.c} / ${r.byDiff.hard.n}`;
+  document.getElementById("resTrap").textContent = `${r.byDiff.trap.c} / ${r.byDiff.trap.n}`;
+  // grade
+  const grade = t.grades.find(g=>r.score>=g.min);
+  document.getElementById("resGrade").textContent = grade.t;
+  // percentile
+  const mean = TOTAL*0.45, sd = TOTAL*0.15;
+  let pctile = normalCdf(r.score, mean, sd)*100;
+  pctile = Math.max(0, Math.min(99.9, pctile));
+  document.getElementById("resPercentile").textContent = t.pct(pctile.toFixed(1));
+  // review
+  document.getElementById("reviewTitle").textContent = t.reviewTitle;
+  const box = document.getElementById("reviewBox");
+  box.innerHTML = "";
+  if(r.wrong.length===0){
+    const d = document.createElement("div");
+    d.className = "rev-item"; d.textContent = t.allCorrect;
+    box.appendChild(d);
+  } else {
+    r.wrong.forEach(w=>{
+      const data = w.q[lang];
+      const div = document.createElement("div");
+      div.className = "rev-item";
+      const chosenTxt = w.chosen===null ? "—" : `${letters[w.chosen]}. ${data.options[w.chosen]}`;
+      const correctTxt = `${letters[w.q.answer]}. ${data.options[w.q.answer]}`;
+      div.innerHTML =
+        `<div class="rev-q">${data.question}</div>`+
+        `<div class="rev-line rev-wrong">✗ ${t.yourAns}: ${chosenTxt}</div>`+
+        `<div class="rev-line rev-correct">✓ ${t.correctAns}: ${correctTxt}</div>`+
+        `<div class="rev-exp">${data.explanation}</div>`;
+      box.appendChild(div);
+    });
+  }
+  // buttons
+  document.getElementById("retryBtn").textContent = t.retry;
+  document.getElementById("copyBtn").textContent = t.copy;
+}
+
+function showResults(){
+  document.getElementById("quizView").classList.add("hidden");
+  document.getElementById("resultView").classList.remove("hidden");
+  renderResults();
+  window.scrollTo(0,0);
+}
+
+document.getElementById("retryBtn").onclick = ()=>{
+  for(let i=0;i<answers.length;i++) answers[i]=null;
+  current=0;
+  document.getElementById("resultView").classList.add("hidden");
+  document.getElementById("quizView").classList.remove("hidden");
+  renderQuestion();
+  window.scrollTo(0,0);
+};
+
+document.getElementById("copyBtn").onclick = ()=>{
+  const t = ui[lang];
+  const r = computeResults();
+  const grade = t.grades.find(g=>r.score>=g.min);
+  const mean = TOTAL*0.45, sd = TOTAL*0.15;
+  let pctile = Math.max(0, Math.min(99.9, normalCdf(r.score, mean, sd)*100));
+  const summary =
+    `${t.title}\n`+
+    `${t.scoreSub}: ${r.score} / ${TOTAL}\n`+
+    `${t.correct}: ${r.correct} / ${questions.length}\n`+
+    `${grade.t}\n`+
+    `${t.pct(pctile.toFixed(1))}`;
+  navigator.clipboard.writeText(summary).then(()=>{
+    const btn = document.getElementById("copyBtn");
+    const orig = btn.textContent;
+    btn.textContent = t.copied;
+    setTimeout(()=>btn.textContent=orig,1500);
+  }).catch(()=>{
+    const ta = document.createElement("textarea");
+    ta.value = summary; document.body.appendChild(ta); ta.select();
+    try{document.execCommand("copy");}catch(e){}
+    document.body.removeChild(ta);
+    const btn = document.getElementById("copyBtn");
+    btn.textContent = t.copied; setTimeout(()=>btn.textContent=t.copy,1500);
+  });
+};
+
+// init
+initTheme();
+applyStaticText();
+renderQuestion();
+</script>
+</body>
+</html>

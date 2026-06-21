@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>機率學互動測驗</title>
+<style>
+  :root {
+    --bg: #FFFFFF;
+    --text: #1A1A1A;
+    --text-sub: #6B7280;
+    --border: #E5E7EB;
+    --accent: #2563EB;
+    --accent-text: #FFFFFF;
+    --hover: #F3F4F6;
+    --correct: #16A34A;
+    --wrong: #DC2626;
+    --track: #E5E7EB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111;
+    --text: #E5E7EB;
+    --text-sub: #9CA3AF;
+    --border: #374151;
+    --accent: #60A5FA;
+    --accent-text: #111111;
+    --hover: #1F2937;
+    --correct: #4ADE80;
+    --wrong: #F87171;
+    --track: #374151;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, "Segoe UI", "Microsoft JhengHei", "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 16px; }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 { font-size: 18px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; }
+  .ctrl-btn {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .ctrl-btn:hover { background: var(--hover); }
+
+  .progress-info {
+    font-size: 14px;
+    color: var(--text-sub);
+    margin: 18px 0 6px;
+  }
+
+  .qtext {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 14px 0 20px;
+  }
+  .options { display: flex; flex-direction: column; gap: 12px; }
+  .opt {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    cursor: pointer;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 16px;
+    font-family: inherit;
+    text-align: left;
+    width: 100%;
+    transition: background-color 0.15s ease;
+  }
+  .opt:hover { background: var(--hover); }
+  .opt .label {
+    font-weight: 700;
+    color: var(--accent);
+    flex-shrink: 0;
+  }
+  .opt.selected {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+  }
+  .opt.selected .label { color: var(--accent-text); }
+
+  .quiz-view { transition: opacity 0.25s ease; }
+  .fade-out { opacity: 0; }
+
+  .nav { display: flex; justify-content: space-between; margin-top: 24px; gap: 10px; }
+  .nav-btn {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 15px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--hover); }
+  .nav-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .nav-btn.primary {
+    background: var(--accent);
+    color: var(--accent-text);
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .nav-btn.primary:hover { background: var(--accent); }
+
+  .progress-bar-track {
+    height: 6px;
+    background: var(--track);
+    border-radius: 3px;
+    margin-top: 28px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+
+  /* Results */
+  .result h2 { font-size: 22px; margin-bottom: 6px; }
+  .score-big { font-size: 40px; font-weight: 800; color: var(--accent); margin: 8px 0; }
+  .grade { font-size: 22px; font-weight: 700; margin: 10px 0; }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 20px 0;
+  }
+  .stat-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .stat-card .k { font-size: 13px; color: var(--text-sub); }
+  .stat-card .v { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .percentile {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin: 16px 0;
+    font-size: 16px;
+  }
+  .diff-rows { margin: 16px 0; }
+  .diff-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 15px;
+  }
+  .review-title { font-size: 18px; font-weight: 700; margin: 26px 0 12px; }
+  .review-item {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  .review-q { font-weight: 600; margin-bottom: 8px; }
+  .review-line { font-size: 14px; margin: 4px 0; }
+  .review-line.user { color: var(--wrong); }
+  .review-line.correct { color: var(--correct); }
+  .review-exp { font-size: 14px; color: var(--text-sub); margin-top: 6px; }
+  .result-actions { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+  .hidden { display: none; }
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1 id="title">機率學互動測驗</h1>
+    <div class="controls">
+      <button class="ctrl-btn" id="langBtn">English</button>
+      <button class="ctrl-btn" id="themeBtn">深色</button>
+    </div>
+  </header>
+
+  <!-- Quiz -->
+  <div id="quizSection">
+    <div class="progress-info" id="progressInfo"></div>
+    <div class="quiz-view" id="quizView">
+      <div class="qtext" id="qText"></div>
+      <div class="options" id="options"></div>
+    </div>
+    <div class="nav">
+      <button class="nav-btn" id="prevBtn"></button>
+      <button class="nav-btn primary hidden" id="submitBtn"></button>
+    </div>
+    <div class="progress-bar-track"><div class="progress-bar-fill" id="barFill"></div></div>
+  </div>
+
+  <!-- Results -->
+  <div id="resultSection" class="result hidden"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const questions = [
+  { id:1, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"擲一顆公正的六面骰子，出現偶數點的機率是多少？", options:["1/2","1/3","1/6","2/3"], explanation:"偶數有 2、4、6 共三面，3/6 = 1/2。" },
+    en:{ question:"A fair six-sided die is rolled. What is the probability of an even number?", options:["1/2","1/3","1/6","2/3"], explanation:"Three even faces out of six, 3/6 = 1/2." } },
+
+  { id:2, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"同時擲兩顆公正骰子，點數和為 7 的機率是多少？", options:["1/9","5/36","1/6","1/12"], explanation:"和為 7 共有 6 種組合，6/36 = 1/6。" },
+    en:{ question:"Two fair dice are rolled. What is the probability that the sum equals 7?", options:["1/9","5/36","1/6","1/12"], explanation:"Six combinations give 7, so 6/36 = 1/6." } },
+
+  { id:3, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"設 X 服從二項分布 B(n=10, p=0.3)，其變異數為何？", options:["3.0","2.1","0.21","1.45"], explanation:"變異數 = np(1−p) = 10×0.3×0.7 = 2.1。" },
+    en:{ question:"Let X follow a Binomial(n=10, p=0.3). What is its variance?", options:["3.0","2.1","0.21","1.45"], explanation:"Variance = np(1−p) = 10×0.3×0.7 = 2.1." } },
+
+  { id:4, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"從一副標準 52 張撲克牌中抽一張，抽到紅心的機率是多少？", options:["1/13","1/52","1/2","1/4"], explanation:"13 張紅心 / 52 張 = 1/4。" },
+    en:{ question:"One card is drawn from a standard 52-card deck. What is the probability it is a heart?", options:["1/13","1/52","1/2","1/4"], explanation:"13 hearts out of 52 cards = 1/4." } },
+
+  { id:5, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"P(A)=0.5、P(B)=0.4，且 A、B 互相獨立，則 P(A∪B) 為何？", options:["0.70","0.90","0.60","0.20"], explanation:"P(A∪B)=0.5+0.4−0.5×0.4=0.7。" },
+    en:{ question:"P(A)=0.5, P(B)=0.4, and A, B are independent. What is P(A∪B)?", options:["0.70","0.90","0.60","0.20"], explanation:"P(A∪B)=0.5+0.4−0.5×0.4=0.7." } },
+
+  { id:6, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"連續隨機變數 X 在 [0,4] 上均勻分布，求 P(X>3 | X>1)。", options:["1/4","1/3","1/2","2/3"], explanation:"= P(X>3)/P(X>1) = (1/4)/(3/4) = 1/3。" },
+    en:{ question:"X is uniform on [0,4]. Find P(X>3 | X>1).", options:["1/4","1/3","1/2","2/3"], explanation:"= P(X>3)/P(X>1) = (1/4)/(3/4) = 1/3." } },
+
+  { id:7, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"X 服從幾何分布（首次成功所需試驗次數），p=0.2，求 E[X]。", options:["0.2","4","5","25"], explanation:"幾何分布期望值 = 1/p = 1/0.2 = 5。" },
+    en:{ question:"X follows a Geometric distribution (trials until first success) with p=0.2. Find E[X].", options:["0.2","4","5","25"], explanation:"Mean of geometric = 1/p = 1/0.2 = 5." } },
+
+  { id:8, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"投擲兩枚公正硬幣，恰好出現一個正面的機率是多少？", options:["1/4","1/3","3/4","1/2"], explanation:"{正反, 反正} 共 2 種，2/4 = 1/2。" },
+    en:{ question:"Two fair coins are flipped. What is the probability of exactly one head?", options:["1/4","1/3","3/4","1/2"], explanation:"{HT, TH} = two of four outcomes = 1/2." } },
+
+  { id:9, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"X、Y 互相獨立，Var(X)=2、Var(Y)=3，求 Var(2X−Y)。", options:["7","11","5","1"], explanation:"Var(2X−Y)=4Var(X)+Var(Y)=8+3=11。" },
+    en:{ question:"X and Y are independent, Var(X)=2, Var(Y)=3. Find Var(2X−Y).", options:["7","11","5","1"], explanation:"Var(2X−Y)=4Var(X)+Var(Y)=8+3=11." } },
+
+  { id:10, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"某疾病盛行率 1%，檢驗敏感度 99%、特異度 95%。檢驗陽性者實際患病的機率約為？", options:["約 0.17","約 0.99","約 0.50","約 0.95"], explanation:"由貝氏定理：0.0099/(0.0099+0.0495) ≈ 0.17。" },
+    en:{ question:"Disease prevalence 1%, test sensitivity 99%, specificity 95%. The probability that a positive case is truly sick is about?", options:["≈ 0.17","≈ 0.99","≈ 0.50","≈ 0.95"], explanation:"By Bayes: 0.0099/(0.0099+0.0495) ≈ 0.17." } },
+
+  { id:11, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"若事件 A、B 互斥（互不相容）且機率皆大於 0，則兩者必定？", options:["彼此獨立","機率必相等","互為補集","必不獨立"], explanation:"互斥事件（機率>0）相交為 0，無法獨立，故必不獨立。" },
+    en:{ question:"If events A and B are mutually exclusive with positive probabilities, they must be?", options:["Independent","Equal in probability","Complements","Not independent"], explanation:"Mutually exclusive events with positive prob cannot be independent." } },
+
+  { id:12, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"X 服從卜瓦松分布，λ=2，求 P(X=0)。", options:["e⁻¹","1−e⁻²","e⁻²","2e⁻²"], explanation:"P(X=0)=e^(−λ)=e⁻²≈0.135。" },
+    en:{ question:"X follows a Poisson distribution with λ=2. Find P(X=0).", options:["e⁻¹","1−e⁻²","e⁻²","2e⁻²"], explanation:"P(X=0)=e^(−λ)=e⁻²≈0.135." } },
+
+  { id:13, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"任何一個機率值的合理範圍是什麼？", options:["介於 0 與 1 之間","介於 −1 與 1 之間","介於 0 與無限大","介於 −1 與 0 之間"], explanation:"機率必滿足 0 ≤ P ≤ 1。" },
+    en:{ question:"What is the valid range of any probability value?", options:["Between 0 and 1","Between −1 and 1","Between 0 and infinity","Between −1 and 0"], explanation:"Probability must satisfy 0 ≤ P ≤ 1." } },
+
+  { id:14, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"若 Cov(X,Y)=0，下列敘述何者正確？", options:["X、Y 必為獨立","不相關但未必獨立","X、Y 必為相同分布","X、Y 必為互斥"], explanation:"共變異數為 0 僅表示不相關，不保證獨立。" },
+    en:{ question:"If Cov(X,Y)=0, which statement is correct?", options:["X, Y must be independent","Uncorrelated but maybe dependent","X, Y are identically distributed","X, Y are mutually exclusive"], explanation:"Zero covariance means uncorrelated, not necessarily independent." } },
+
+  { id:15, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"袋中有 3 紅 2 藍，不放回連抽兩球，兩球皆紅的機率是多少？", options:["9/25","2/5","3/10","1/2"], explanation:"(3/5)×(2/4)=6/20=3/10。" },
+    en:{ question:"A bag has 3 red and 2 blue balls. Drawing two without replacement, probability both are red?", options:["9/25","2/5","3/10","1/2"], explanation:"(3/5)×(2/4)=6/20=3/10." } },
+
+  { id:16, difficulty:"trap", points:19, answer:3,
+    zh:{ question:"一枚公正硬幣連續出現 5 次正面，下一次出現正面的機率是多少？", options:["小於 1/2","大於 1/2","接近 0","仍為 1/2"], explanation:"每次投擲互相獨立，仍為 1/2（賭徒謬誤）。" },
+    en:{ question:"A fair coin landed heads 5 times in a row. Probability the next flip is heads?", options:["Less than 1/2","Greater than 1/2","Close to 0","Still 1/2"], explanation:"Each flip is independent, so still 1/2 (gambler's fallacy)." } },
+
+  { id:17, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"樣本空間中所有結果的機率總和等於多少？", options:["等於 1","等於 0","視情況而定","趨近無限大"], explanation:"所有互斥且窮盡的結果機率和為 1。" },
+    en:{ question:"What is the sum of probabilities of all outcomes in the sample space?", options:["Equals 1","Equals 0","It depends","Approaches infinity"], explanation:"Probabilities of all outcomes sum to 1." } },
+
+  { id:18, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"連續機率密度函數 f(x)=cx（0≤x≤2，其餘為 0），求常數 c。", options:["1","1/2","2","1/4"], explanation:"∫₀² cx dx = 2c = 1，故 c=1/2。" },
+    en:{ question:"For the pdf f(x)=cx on 0≤x≤2 (and 0 elsewhere), find constant c.", options:["1","1/2","2","1/4"], explanation:"∫₀² cx dx = 2c = 1, so c = 1/2." } },
+
+  { id:19, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"連續均勻分布在 [2, 8] 上，其期望值為何？", options:["3","6","8","5"], explanation:"連續均勻分布期望值 = (a+b)/2 = (2+8)/2 = 5。" },
+    en:{ question:"For a continuous uniform distribution on [2, 8], what is the expected value?", options:["3","6","8","5"], explanation:"Mean of uniform = (a+b)/2 = (2+8)/2 = 5." } },
+
+  { id:20, difficulty:"trap", points:19, answer:2,
+    zh:{ question:"已知 P(陽性|患病)=0.99，是否代表 P(患病|陽性)=0.99？", options:["是，兩者相等","僅當盛行率高時相等","否，兩者通常不同","否，必互為倒數"], explanation:"條件機率方向不同，須以貝氏定理換算，通常不相等。" },
+    en:{ question:"Given P(positive|disease)=0.99, does it mean P(disease|positive)=0.99?", options:["Yes, they are equal","Equal only if prevalence is high","No, generally different","No, always reciprocals"], explanation:"The two conditionals differ in direction; use Bayes to convert." } },
+
+  { id:21, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"擲一顆公正六面骰子，點數的期望值是多少？", options:["3","3.5","4","6"], explanation:"(1+2+3+4+5+6)/6 = 21/6 = 3.5。" },
+    en:{ question:"What is the expected value of a single fair six-sided die roll?", options:["3","3.5","4","6"], explanation:"(1+2+3+4+5+6)/6 = 21/6 = 3.5." } },
+
+  { id:22, difficulty:"easy", points:10, answer:0,
+    zh:{ question:"若 P(A)=0.3，則 A 的補集機率 P(Aᶜ) 是多少？", options:["0.7","0.3","0","1.3"], explanation:"P(Aᶜ) = 1 − P(A) = 1 − 0.3 = 0.7。" },
+    en:{ question:"If P(A)=0.3, what is the probability of the complement P(Aᶜ)?", options:["0.7","0.3","0","1.3"], explanation:"P(Aᶜ) = 1 − P(A) = 1 − 0.3 = 0.7." } },
+
+  { id:23, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"X~N(1,4)、Y~N(2,9) 互相獨立，則 X+Y 的分布為？", options:["N(3, 5)","N(1.5, 6.5)","N(3, 6.5)","N(3, 13)"], explanation:"獨立常態相加：均值 1+2=3，變異數 4+9=13。" },
+    en:{ question:"X~N(1,4) and Y~N(2,9) are independent. What is the distribution of X+Y?", options:["N(3, 5)","N(1.5, 6.5)","N(3, 6.5)","N(3, 13)"], explanation:"Sum of independent normals: mean 1+2=3, variance 4+9=13." } },
+
+  { id:24, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"X 服從二項分布 B(n=5, p=0.5)，求 P(X=5)。", options:["1/16","1/10","1/32","1/64"], explanation:"P(X=5)=(1/2)⁵=1/32。" },
+    en:{ question:"X follows Binomial(n=5, p=0.5). Find P(X=5).", options:["1/16","1/10","1/32","1/64"], explanation:"P(X=5)=(1/2)⁵=1/32." } },
+
+  { id:25, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"關於期望值，下列敘述何者正確？", options:["期望值不一定是可實現的值","期望值必為某個可能結果","期望值必等於眾數","期望值必為整數"], explanation:"例如骰子期望值 3.5 並非任何可能點數。" },
+    en:{ question:"Which statement about expected value is correct?", options:["Need not be an attainable value","Must be a possible outcome","Always equals the mode","Must be an integer"], explanation:"E.g. a die's expectation 3.5 is not an attainable face." } },
+
+  { id:26, difficulty:"easy", points:10, answer:1,
+    zh:{ question:"若 A、B 為互相獨立事件，則 P(A∩B) 等於下列何者？", options:["P(A) + P(B)","P(A) × P(B)","P(A) − P(B)","P(A) / P(B)"], explanation:"獨立事件的交集機率 = P(A)×P(B)。" },
+    en:{ question:"If A and B are independent events, P(A∩B) equals which of the following?", options:["P(A) + P(B)","P(A) × P(B)","P(A) − P(B)","P(A) / P(B)"], explanation:"For independent events, P(A∩B)=P(A)×P(B)." } },
+
+  { id:27, difficulty:"medium", points:15, answer:3,
+    zh:{ question:"從 5 個相異物件中選出 3 個（不計順序），共有幾種選法？", options:["15","60","20","10"], explanation:"C(5,3) = 10。" },
+    en:{ question:"How many ways to choose 3 from 5 distinct objects (order doesn't matter)?", options:["15","60","20","10"], explanation:"C(5,3) = 10." } },
+
+  { id:28, difficulty:"hard", points:25, answer:2,
+    zh:{ question:"箱一機率 0.5（紅球比例 0.2），箱二機率 0.5（紅球比例 0.6），抽到紅球的總機率為？", options:["0.8","0.3","0.4","0.5"], explanation:"全機率：0.5×0.2 + 0.5×0.6 = 0.4。" },
+    en:{ question:"Box 1 chosen with prob 0.5 (red fraction 0.2), Box 2 with prob 0.5 (red fraction 0.6). Total probability of red?", options:["0.8","0.3","0.4","0.5"], explanation:"Total probability: 0.5×0.2 + 0.5×0.6 = 0.4." } },
+
+  { id:29, difficulty:"trap", points:19, answer:0,
+    zh:{ question:"兩事件 P(A)=P(B)=0.6，下列關於互斥的敘述何者正確？", options:["正確，因機率和超過 1","錯誤，仍可能互斥","僅當兩者獨立時成立","無法判斷是否互斥"], explanation:"若互斥則 P(A∪B)=1.2>1，矛盾，故不可能互斥。" },
+    en:{ question:"For two events with P(A)=P(B)=0.6, which claim about mutual exclusivity holds?", options:["True, their sum exceeds 1","False, still possible","Only if they are independent","Cannot be determined"], explanation:"If mutually exclusive, P(A∪B)=1.2>1, impossible." } },
+
+  { id:30, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"白努利分布 Bernoulli(p=0.5) 的變異數是多少？", options:["0.50","0.25","0.75","1.00"], explanation:"變異數 = p(1−p) = 0.5×0.5 = 0.25。" },
+    en:{ question:"What is the variance of a Bernoulli(p=0.5) distribution?", options:["0.50","0.25","0.75","1.00"], explanation:"Variance = p(1−p) = 0.5×0.5 = 0.25." } },
+
+  { id:31, difficulty:"easy", points:10, answer:2,
+    zh:{ question:"一個不可能事件（empty event）的機率是多少？", options:["1","0.5","0","−1"], explanation:"不可能事件的機率為 0。" },
+    en:{ question:"What is the probability of an impossible (empty) event?", options:["1","0.5","0","−1"], explanation:"The probability of an impossible event is 0." } },
+
+  { id:32, difficulty:"hard", points:25, answer:3,
+    zh:{ question:"X 服從指數分布，依無記憶性，P(X>s+t | X>s) 等於？", options:["P(X > s)","P(X > s+t)","P(X > s)P(X > t)","P(X > t)"], explanation:"指數分布具無記憶性，等於 P(X>t)。" },
+    en:{ question:"X is exponential. By the memoryless property, P(X>s+t | X>s) equals?", options:["P(X > s)","P(X > s+t)","P(X > s)P(X > t)","P(X > t)"], explanation:"Exponential is memoryless, so it equals P(X>t)." } },
+
+  { id:33, difficulty:"medium", points:15, answer:1,
+    zh:{ question:"共變異數 Cov(X, X) 等於下列何者？", options:["E[X]","Var(X)","0","SD(X)"], explanation:"Cov(X,X) = Var(X)。" },
+    en:{ question:"The covariance Cov(X, X) equals which of the following?", options:["E[X]","Var(X)","0","SD(X)"], explanation:"Cov(X,X) = Var(X)." } },
+
+  { id:34, difficulty:"hard", points:25, answer:0,
+    zh:{ question:"Z 為標準常態分布，P(Z < 0) 是多少？", options:["0.50","0.68","0.00","1.00"], explanation:"標準常態對稱於 0，故 P(Z<0)=0.5。" },
+    en:{ question:"Z is a standard normal variable. What is P(Z < 0)?", options:["0.50","0.68","0.00","1.00"], explanation:"Standard normal is symmetric about 0, so P(Z<0)=0.5." } },
+
+  { id:35, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"擲一顆標準六面骰子，出現 7 點的機率是多少？", options:["1/6","1/7","1/36","0"], explanation:"骰子沒有 7 點，機率為 0。" },
+    en:{ question:"Rolling a standard six-sided die, what is the probability of getting a 7?", options:["1/6","1/7","1/36","0"], explanation:"A die has no 7, so the probability is 0." } },
+
+  { id:36, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"將 3 本相異的書排成一列，共有幾種排法？", options:["9","3","6","27"], explanation:"3! = 3×2×1 = 6。" },
+    en:{ question:"In how many ways can 3 distinct books be arranged in a row?", options:["9","3","6","27"], explanation:"3! = 3×2×1 = 6." } },
+
+  { id:37, difficulty:"hard", points:25, answer:1,
+    zh:{ question:"已知 E[XY]=5、E[X]=2、E[Y]=2，求 Cov(X,Y)。", options:["5","1","9","0"], explanation:"Cov = E[XY] − E[X]E[Y] = 5 − 4 = 1。" },
+    en:{ question:"Given E[XY]=5, E[X]=2, E[Y]=2, find Cov(X,Y).", options:["5","1","9","0"], explanation:"Cov = E[XY] − E[X]E[Y] = 5 − 4 = 1." } },
+
+  { id:38, difficulty:"medium", points:15, answer:0,
+    zh:{ question:"中央極限定理指出，樣本平均的分布會趨近於下列何者？", options:["常態分布","均勻分布","卜瓦松分布","指數分布"], explanation:"中央極限定理：樣本平均趨近常態分布。" },
+    en:{ question:"The Central Limit Theorem states that the distribution of the sample mean approaches which of the following?", options:["Normal distribution","Uniform distribution","Poisson distribution","Exponential distribution"], explanation:"By the CLT, the sample mean approaches a normal distribution." } },
+
+  { id:39, difficulty:"easy", points:10, answer:3,
+    zh:{ question:"投擲一枚公正硬幣，出現反面的機率是多少？", options:["1","1/4","1/3","1/2"], explanation:"公正硬幣 P(反面) = 1/2。" },
+    en:{ question:"Flipping a fair coin, what is the probability of tails?", options:["1","1/4","1/3","1/2"], explanation:"For a fair coin, P(tails) = 1/2." } },
+
+  { id:40, difficulty:"medium", points:15, answer:2,
+    zh:{ question:"若 P(A∩B)=0.2、P(B)=0.5，則條件機率 P(A|B) 是多少？", options:["0.10","0.70","0.40","0.25"], explanation:"P(A|B)=P(A∩B)/P(B)=0.2/0.5=0.4。" },
+    en:{ question:"If P(A∩B)=0.2 and P(B)=0.5, what is the conditional probability P(A|B)?", options:["0.10","0.70","0.40","0.25"], explanation:"P(A|B)=P(A∩B)/P(B)=0.2/0.5=0.4." } },
+];
+
+const T = {
+  zh: {
+    title:"機率學互動測驗", lang:"English", dark:"深色", light:"淺色",
+    progress:(c,t)=>`第 ${c} / ${t} 題`, prev:"上一題", submit:"提交測驗",
+    resultTitle:"測驗結果", totalScore:"總分", correctCount:"正確題數", wrongCount:"錯誤題數",
+    byDiff:"各難度正確率", easy:"簡單", medium:"中等", hard:"困難", trap:"陷阱",
+    percentile:(p)=>`你的成績超越了約 ${p}% 的測試者`,
+    grade:"等級評定", review:"錯題回顧", yourAns:"你的選擇", correctAns:"正確答案",
+    retry:"重新測驗", copy:"複製結果", copied:"已複製結果！", allCorrect:"太棒了，全部答對！",
+    summary:(s,c)=>`機率學測驗結果\n總分：${s} / 670\n正確：${c} / 40`
+  },
+  en: {
+    title:"Probability Interactive Quiz", lang:"中文", dark:"Dark", light:"Light",
+    progress:(c,t)=>`Question ${c} / ${t}`, prev:"Previous", submit:"Submit Quiz",
+    resultTitle:"Quiz Results", totalScore:"Total Score", correctCount:"Correct", wrongCount:"Incorrect",
+    byDiff:"Accuracy by Difficulty", easy:"Easy", medium:"Medium", hard:"Hard", trap:"Trap",
+    percentile:(p)=>`You scored higher than about ${p}% of test takers`,
+    grade:"Grade", review:"Review of Mistakes", yourAns:"Your choice", correctAns:"Correct answer",
+    retry:"Retake Quiz", copy:"Copy Result", copied:"Result copied!", allCorrect:"Excellent — all correct!",
+    summary:(s,c)=>`Probability Quiz Result\nScore: ${s} / 670\nCorrect: ${c} / 40`
+  }
+};
+
+let lang = "zh";
+let current = 0;
+const answers = new Array(questions.length).fill(null);
+const LETTERS = ["A","B","C","D"];
+
+// theme init
+(function(){
+  const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+})();
+
+const $ = id => document.getElementById(id);
+
+function applyStaticText(){
+  const t = T[lang];
+  $("title").textContent = t.title;
+  $("langBtn").textContent = t.lang;
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  $("themeBtn").textContent = isDark ? t.light : t.dark;
+  $("prevBtn").textContent = t.prev;
+  $("submitBtn").textContent = t.submit;
+}
+
+function renderQuestion(){
+  const t = T[lang];
+  const q = questions[current];
+  const data = q[lang];
+  $("progressInfo").textContent = t.progress(current+1, questions.length);
+  $("qText").textContent = data.question;
+
+  const optsEl = $("options");
+  optsEl.innerHTML = "";
+  data.options.forEach((opt, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opt" + (answers[current] === i ? " selected" : "");
+    btn.innerHTML = `<span class="label">${LETTERS[i]}</span><span>${opt}</span>`;
+    btn.onclick = () => selectOption(i);
+    optsEl.appendChild(btn);
+  });
+
+  $("prevBtn").disabled = current === 0;
+  const onLast = current === questions.length - 1;
+  $("submitBtn").classList.toggle("hidden", !(onLast && answers[current] !== null));
+
+  $("barFill").style.width = ((current) / questions.length * 100) + "%";
+}
+
+function selectOption(i){
+  answers[current] = i;
+  // show selected state
+  const opts = document.querySelectorAll(".opt");
+  opts.forEach((o, idx) => o.classList.toggle("selected", idx === i));
+
+  const onLast = current === questions.length - 1;
+  if (onLast) {
+    $("submitBtn").classList.remove("hidden");
+    $("barFill").style.width = "100%";
+    return;
+  }
+  // brief highlight then auto-advance
+  setTimeout(() => {
+    const view = $("quizView");
+    view.classList.add("fade-out");
+    setTimeout(() => {
+      current++;
+      renderQuestion();
+      view.classList.remove("fade-out");
+    }, 250);
+  }, 400);
+}
+
+$("prevBtn").onclick = () => {
+  if (current > 0) {
+    const view = $("quizView");
+    view.classList.add("fade-out");
+    setTimeout(() => {
+      current--;
+      renderQuestion();
+      view.classList.remove("fade-out");
+    }, 250);
+  }
+};
+
+$("submitBtn").onclick = showResults;
+
+$("langBtn").onclick = () => {
+  lang = lang === "zh" ? "en" : "zh";
+  document.documentElement.setAttribute("lang", lang === "zh" ? "zh-Hant" : "en");
+  applyStaticText();
+  if ($("resultSection").classList.contains("hidden")) renderQuestion();
+  else showResults();
+};
+
+$("themeBtn").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  document.documentElement.setAttribute("data-theme", cur === "dark" ? "light" : "dark");
+  applyStaticText();
+};
+
+// Normal CDF via erf approximation
+function normalCdf(x, mu, sigma){
+  const z = (x - mu) / (sigma * Math.SQRT2);
+  return 0.5 * (1 + erf(z));
+}
+function erf(x){
+  const sign = x < 0 ? -1 : 1;
+  x = Math.abs(x);
+  const a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+  const t = 1/(1+p*x);
+  const y = 1 - (((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-x*x);
+  return sign*y;
+}
+
+function gradeFor(score){
+  if (score >= 600) return {zh:"🏆 頂尖專家", en:"🏆 Top Expert"};
+  if (score >= 500) return {zh:"⭐ 進階掌握", en:"⭐ Advanced"};
+  if (score >= 380) return {zh:"📘 中等水準", en:"📘 Intermediate"};
+  if (score >= 250) return {zh:"📗 基礎尚可", en:"📗 Basic"};
+  return {zh:"📕 需要加強", en:"📕 Needs Improvement"};
+}
+
+function showResults(){
+  const t = T[lang];
+  let score = 0, correct = 0;
+  const diff = { easy:{c:0,n:0}, medium:{c:0,n:0}, hard:{c:0,n:0}, trap:{c:0,n:0} };
+  const wrongs = [];
+
+  questions.forEach((q, i) => {
+    diff[q.difficulty].n++;
+    if (answers[i] === q.answer) { score += q.points; correct++; diff[q.difficulty].c++; }
+    else wrongs.push({q, chosen: answers[i]});
+  });
+
+  const wrongCount = questions.length - correct;
+  const pct = Math.round(normalCdf(score, 301.5, 100.5) * 100);
+  const g = gradeFor(score);
+
+  $("quizSection").classList.add("hidden");
+  const r = $("resultSection");
+  r.classList.remove("hidden");
+
+  let html = `<h2>${t.resultTitle}</h2>`;
+  html += `<div class="score-big">${score} / 670</div>`;
+  html += `<div class="grade">${g[lang]}</div>`;
+  html += `<div class="stat-grid">
+      <div class="stat-card"><div class="k">${t.correctCount}</div><div class="v">${correct} / 40</div></div>
+      <div class="stat-card"><div class="k">${t.wrongCount}</div><div class="v">${wrongCount} / 40</div></div>
+    </div>`;
+  html += `<div class="percentile">${t.percentile(pct)}</div>`;
+
+  html += `<div class="review-title">${t.byDiff}</div><div class="diff-rows">`;
+  html += `<div class="diff-row"><span>${t.easy}</span><span>${diff.easy.c} / ${diff.easy.n}</span></div>`;
+  html += `<div class="diff-row"><span>${t.medium}</span><span>${diff.medium.c} / ${diff.medium.n}</span></div>`;
+  html += `<div class="diff-row"><span>${t.hard}</span><span>${diff.hard.c} / ${diff.hard.n}</span></div>`;
+  html += `<div class="diff-row"><span>${t.trap}</span><span>${diff.trap.c} / ${diff.trap.n}</span></div></div>`;
+
+  if (wrongs.length){
+    html += `<div class="review-title">${t.review}</div>`;
+    wrongs.forEach(({q, chosen}) => {
+      const d = q[lang];
+      const chosenText = chosen === null ? "—" : `${LETTERS[chosen]}. ${d.options[chosen]}`;
+      const correctText = `${LETTERS[q.answer]}. ${d.options[q.answer]}`;
+      html += `<div class="review-item">
+        <div class="review-q">${d.question}</div>
+        <div class="review-line user">✗ ${t.yourAns}: ${chosenText}</div>
+        <div class="review-line correct">✓ ${t.correctAns}: ${correctText}</div>
+        <div class="review-exp">${d.explanation}</div>
+      </div>`;
+    });
+  } else {
+    html += `<div class="percentile">${t.allCorrect}</div>`;
+  }
+
+  html += `<div class="result-actions">
+      <button class="nav-btn primary" id="retryBtn">${t.retry}</button>
+      <button class="nav-btn" id="copyBtn">${t.copy}</button>
+    </div>`;
+
+  r.innerHTML = html;
+
+  $("retryBtn").onclick = () => {
+    current = 0;
+    answers.fill(null);
+    r.classList.add("hidden");
+    $("quizSection").classList.remove("hidden");
+    renderQuestion();
+  };
+  $("copyBtn").onclick = () => {
+    const text = t.summary(score, correct);
+    navigator.clipboard.writeText(text).then(showToast, () => {
+      const ta = document.createElement("textarea");
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch(e){}
+      document.body.removeChild(ta); showToast();
+    });
+  };
+}
+
+function showToast(){
+  const el = $("toast");
+  el.textContent = T[lang].copied;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 1600);
+}
+
+// init
+applyStaticText();
+renderQuestion();
+</script>
+</body>
+</html>

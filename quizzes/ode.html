@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微分方程互動測驗 | Differential Equations Quiz</title>
+<style>
+  :root {
+    --bg: #FFFFFF; --text: #1A1A1A; --text-sec: #6B7280; --border: #E5E7EB;
+    --accent: #2563EB; --option-bg: #FFFFFF; --option-hover: #EFF6FF;
+    --selected-bg: #DBEAFE; --selected-border: #2563EB;
+    --progress-bg: #E5E7EB; --progress-fill: #2563EB;
+    --correct: #16A34A; --correct-bg: #DCFCE7;
+    --wrong: #DC2626; --wrong-bg: #FEE2E2;
+    --btn-bg: #2563EB; --btn-text: #FFFFFF; --btn-hover: #1D4ED8;
+    --card-bg: #F9FAFB;
+  }
+  [data-theme="dark"] {
+    --bg: #111111; --text: #E5E7EB; --text-sec: #9CA3AF; --border: #374151;
+    --accent: #60A5FA; --option-bg: #1F2937; --option-hover: #1E3A5F;
+    --selected-bg: #1E3A5F; --selected-border: #60A5FA;
+    --progress-bg: #374151; --progress-fill: #60A5FA;
+    --correct: #4ADE80; --correct-bg: #14532D;
+    --wrong: #F87171; --wrong-bg: #450A0A;
+    --btn-bg: #60A5FA; --btn-text: #111111; --btn-hover: #93C5FD;
+    --card-bg: #1F2937;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang TC', 'Microsoft JhengHei', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.2s, color 0.2s; }
+  .header { position: sticky; top: 0; background: var(--bg); border-bottom: 1px solid var(--border); padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; z-index: 100; }
+  .header-title { font-size: 16px; font-weight: 700; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .progress-text { font-size: 13px; color: var(--text-sec); }
+  .btn-small { font-size: 12px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--option-bg); color: var(--text); cursor: pointer; }
+  .btn-small:hover { background: var(--option-hover); }
+  .main { max-width: 720px; margin: 0 auto; padding: 24px 20px 60px; }
+  .question-card { background: var(--option-bg); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 16px; opacity: 1; transition: opacity 0.2s; }
+  .question-card.fade { opacity: 0; }
+  .question-num { font-size: 12px; color: var(--text-sec); margin-bottom: 10px; }
+  .question-text { font-size: 17px; line-height: 1.65; font-weight: 500; }
+  .options { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .option { display: flex; align-items: flex-start; gap: 12px; padding: 13px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--option-bg); cursor: pointer; transition: background 0.12s, border-color 0.12s; }
+  .option:hover { background: var(--option-hover); }
+  .option.selected { background: var(--selected-bg); border-color: var(--selected-border); }
+  .option-label { font-size: 13px; font-weight: 700; color: var(--accent); min-width: 20px; padding-top: 1px; }
+  .option-text { font-size: 15px; line-height: 1.55; }
+  .nav-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; }
+  .btn { padding: 10px 22px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .btn-primary { background: var(--btn-bg); color: var(--btn-text); }
+  .btn-primary:hover { background: var(--btn-hover); }
+  .btn-secondary { background: transparent; color: var(--text-sec); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--option-hover); color: var(--text); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .progress-bar-wrap { position: fixed; bottom: 0; left: 0; right: 0; height: 5px; background: var(--progress-bg); z-index: 99; }
+  .progress-bar-fill { height: 100%; background: var(--progress-fill); transition: width 0.3s; }
+  .result-page { display: none; }
+  .result-page.show { display: block; }
+  .quiz-page.hide { display: none; }
+  .score-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 28px; margin-bottom: 20px; text-align: center; }
+  .score-big { font-size: 52px; font-weight: 800; color: var(--accent); line-height: 1; }
+  .score-label { font-size: 14px; color: var(--text-sec); margin-top: 6px; }
+  .score-grade { font-size: 22px; font-weight: 700; margin-top: 14px; }
+  .score-percentile { font-size: 14px; color: var(--text-sec); margin-top: 6px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-box { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+  .stat-val { font-size: 26px; font-weight: 700; }
+  .stat-lbl { font-size: 12px; color: var(--text-sec); margin-top: 3px; }
+  .diff-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px; }
+  .diff-table th, .diff-table td { border: 1px solid var(--border); padding: 9px 12px; text-align: center; }
+  .diff-table th { background: var(--card-bg); font-weight: 600; }
+  .review-section { margin-bottom: 20px; }
+  .review-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
+  .review-item { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; }
+  .review-q { font-size: 14px; font-weight: 500; margin-bottom: 10px; line-height: 1.55; }
+  .review-opt { font-size: 13px; padding: 6px 10px; border-radius: 6px; margin-bottom: 5px; }
+  .review-opt.wrong { background: var(--wrong-bg); color: var(--wrong); }
+  .review-opt.correct { background: var(--correct-bg); color: var(--correct); }
+  .review-exp { font-size: 12px; color: var(--text-sec); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .result-btns { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+  @media (max-width: 520px) { .header-title { font-size: 13px; } .question-text { font-size: 15px; } .score-big { font-size: 40px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-title" id="headerTitle">微分方程 測驗</div>
+  <div class="header-right">
+    <span class="progress-text" id="progressText">第 1 / 40 題</span>
+    <button class="btn-small" id="langBtn" onclick="toggleLang()">English</button>
+    <button class="btn-small" id="themeBtn" onclick="toggleTheme()">🌙 深色</button>
+  </div>
+</div>
+
+<div class="main quiz-page" id="quizPage">
+  <div class="question-card" id="questionCard">
+    <div class="question-num" id="questionNum"></div>
+    <div class="question-text" id="questionText"></div>
+    <div class="options" id="optionsContainer"></div>
+  </div>
+  <div class="nav-row">
+    <button class="btn btn-secondary" id="prevBtn" onclick="prevQuestion()">&#8592; <span id="prevLabel">上一題</span></button>
+    <button class="btn btn-primary" id="submitBtn" onclick="submitQuiz()" style="display:none">
+      <span id="submitLabel">提交測驗</span>
+    </button>
+  </div>
+</div>
+
+<div class="main result-page" id="resultPage">
+  <div class="score-card">
+    <div class="score-big" id="scoreBig"></div>
+    <div class="score-label" id="scoreLabel">/ 670 分</div>
+    <div class="score-grade" id="scoreGrade"></div>
+    <div class="score-percentile" id="scorePercentile"></div>
+  </div>
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-val" id="statCorrect"></div><div class="stat-lbl" id="statCorrectLbl">答對題數</div></div>
+    <div class="stat-box"><div class="stat-val" id="statWrong"></div><div class="stat-lbl" id="statWrongLbl">答錯題數</div></div>
+  </div>
+  <table class="diff-table">
+    <thead><tr><th id="dh1">難度</th><th id="dh2">答對</th><th id="dh3">總題數</th><th id="dh4">得分</th></tr></thead>
+    <tbody id="diffBody"></tbody>
+  </table>
+  <div class="result-btns">
+    <button class="btn btn-primary" onclick="restartQuiz()"><span id="restartLabel">重新測驗</span></button>
+    <button class="btn btn-secondary" onclick="copyResult()"><span id="copyLabel">複製結果</span></button>
+  </div>
+  <div class="review-section">
+    <div class="review-title" id="reviewTitle">錯題回顧</div>
+    <div id="reviewContainer"></div>
+  </div>
+</div>
+
+<div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+
+<script>
+// ── Language & Theme ──────────────────────────────────────────────
+let lang = 'zh';
+let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+document.documentElement.setAttribute('data-theme', theme);
+
+function toggleLang() {
+  lang = lang === 'zh' ? 'en' : 'zh';
+  document.getElementById('langBtn').textContent = lang === 'zh' ? 'English' : '中文';
+  document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
+  if (resultShown) renderResult(); else renderQuestion();
+  updateStaticUI();
+}
+function toggleTheme() {
+  theme = theme === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', theme);
+  document.getElementById('themeBtn').textContent = theme === 'dark' ? '☀️ 淺色' : '🌙 深色';
+}
+
+// ── Questions (40 題) ─────────────────────────────────────────────
+// 答案分布：A=10, B=10, C=10, D=10
+// 難度：easy×10, medium×15, hard×10, trap×5
+// 分數：easy=10, medium=15, hard=25, trap=19 → 總計 670
+const questions = [
+  // ── EASY (10 題, 每題 10 分) ──────────────────────────────────
+  {
+    id:1, difficulty:"easy", points:10,
+    zh:{
+      question:"以下哪個方程式為一階常微分方程（ODE）？",
+      options:["dy/dx + 3y = x²","∂²u/∂x² + ∂²u/∂y² = 0","d²y/dx² − 5y = sin x","y''' + y' = e^x"],
+      explanation:"一階ODE只含一階導數。dy/dx + 3y = x² 最高階為一階。"
+    },
+    en:{
+      question:"Which of the following is a first-order ordinary differential equation (ODE)?",
+      options:["dy/dx + 3y = x²","∂²u/∂x² + ∂²u/∂y² = 0","d²y/dx² − 5y = sin x","y''' + y' = eˣ"],
+      explanation:"A first-order ODE contains only a first-order derivative. dy/dx + 3y = x² has highest order one."
+    },
+    answer:0  // A
+  },
+  {
+    id:2, difficulty:"easy", points:10,
+    zh:{
+      question:"微分方程 dy/dx = ky（k 為常數）的通解為何？",
+      options:["y = kx + C","y = Ce^(kx)","y = C·sin(kx)","y = Ce^(−kx)"],
+      explanation:"分離變數後積分得 y = Ce^(kx)，k > 0 為指數成長，k < 0 為衰退。"
+    },
+    en:{
+      question:"What is the general solution of dy/dx = ky (k is a constant)?",
+      options:["y = kx + C","y = Ce^(kx)","y = C·sin(kx)","y = Ce^(−kx)"],
+      explanation:"Separating variables and integrating gives y = Ce^(kx). This models exponential growth or decay."
+    },
+    answer:1  // B
+  },
+  {
+    id:3, difficulty:"easy", points:10,
+    zh:{
+      question:"方程式 y'' + 4y = 0 的特徵方程式（characteristic equation）為何？",
+      options:["r² + 4 = 0","r² + 4r = 0","r + 4 = 0","r² − 4 = 0"],
+      explanation:"將 y = e^(rx) 代入得 r²e^(rx) + 4e^(rx) = 0，除去 e^(rx) 得特徵方程式 r² + 4 = 0。"
+    },
+    en:{
+      question:"What is the characteristic equation of y'' + 4y = 0?",
+      options:["r² + 4 = 0","r² + 4r = 0","r + 4 = 0","r² − 4 = 0"],
+      explanation:"Substituting y = e^(rx) and dividing by e^(rx) gives the characteristic equation r² + 4 = 0."
+    },
+    answer:0  // A
+  },
+  {
+    id:4, difficulty:"easy", points:10,
+    zh:{
+      question:"以下哪個敘述正確描述了「線性微分方程」的定義？",
+      options:["方程中的係數必須全為常數","方程中所有導數項及未知函數均以一次冪出現且不相乘","方程的解必須能用初等函數表示","方程只能有一個因變數與一個自變數"],
+      explanation:"線性ODE要求未知函數及其各階導數均為一次冪且不相乘，係數可以是自變數的函數。"
+    },
+    en:{
+      question:"Which statement correctly defines a 'linear differential equation'?",
+      options:["The coefficients must all be constants","All derivative terms and the unknown function appear to the first power and are not multiplied together","The solution must be expressible in elementary functions","The equation can only have one dependent and one independent variable"],
+      explanation:"A linear ODE requires the unknown and its derivatives to appear to the first power without being multiplied together; coefficients may be functions of the independent variable."
+    },
+    answer:1  // B
+  },
+  {
+    id:5, difficulty:"easy", points:10,
+    zh:{
+      question:"微分方程 dy/dx = (x + 1)/(y + 2) 最適合用哪種方法求解？",
+      options:["可分離變數法，將 (y+2)dy = (x+1)dx 後積分","齊次代換法，令 v = y/x","積分因子法，求積分因子後乘以整式","恰當方程法，直接求位函數 F(x,y)"],
+      explanation:"dy/dx = (x+1)/(y+2) 可改寫為 (y+2)dy = (x+1)dx，屬可分離變數，直接積分即可。"
+    },
+    en:{
+      question:"dy/dx = (x + 1)/(y + 2): which method is best suited to solve it?",
+      options:["Separation of variables: write (y+2)dy = (x+1)dx and integrate","Homogeneous substitution, let v = y/x","Integrating factor method, find an integrating factor","Exact equation method, find potential function F(x,y) directly"],
+      explanation:"Rewriting as (y+2)dy = (x+1)dx shows it is separable — integrate each side directly."
+    },
+    answer:0  // A
+  },
+  {
+    id:6, difficulty:"easy", points:10,
+    zh:{
+      question:"初始值問題（IVP）中，初始條件的主要作用是？",
+      options:["決定微分方程的型態（線性或非線性）","從通解中確定任意常數的值","使方程從偏微分方程轉為常微分方程","消除方程中的奇異解"],
+      explanation:"通解含任意常數，初始條件提供特定點的函數值，從而唯一確定這些常數。"
+    },
+    en:{
+      question:"In an initial value problem (IVP), what is the primary role of the initial condition?",
+      options:["Determine whether the ODE is linear or nonlinear","Determine the values of arbitrary constants in the general solution","Convert a PDE into an ODE","Eliminate singular solutions from the equation"],
+      explanation:"The general solution contains arbitrary constants; initial conditions specify values at a particular point to uniquely determine those constants."
+    },
+    answer:1  // B
+  },
+  {
+    id:7, difficulty:"easy", points:10,
+    zh:{
+      question:"Laplace 轉換 L{1} = ？（s > 0）",
+      options:["1/s","1","1/s²","s"],
+      explanation:"L{1} = ∫₀^∞ e^(−st)·1 dt = [−e^(−st)/s]₀^∞ = 1/s，s > 0。"
+    },
+    en:{
+      question:"What is the Laplace transform L{1} for s > 0?",
+      options:["1/s","1","1/s²","s"],
+      explanation:"L{1} = ∫₀^∞ e^(−st) dt = 1/s for s > 0."
+    },
+    answer:0  // A
+  },
+  {
+    id:8, difficulty:"easy", points:10,
+    zh:{
+      question:"方程式 y'' − y' − 6y = 0 的特徵根為？",
+      options:["r = −3, r = 2","r = 3, r = −2","r = 3, r = 2","r = −3, r = −2"],
+      explanation:"特徵方程 r² − r − 6 = (r−3)(r+2) = 0，故根為 r = 3 與 r = −2。"
+    },
+    en:{
+      question:"What are the characteristic roots of y'' − y' − 6y = 0?",
+      options:["r = −3, r = 2","r = 3, r = −2","r = 3, r = 2","r = −3, r = −2"],
+      explanation:"Characteristic equation: r² − r − 6 = (r−3)(r+2) = 0, giving r = 3 and r = −2."
+    },
+    answer:1  // B
+  },
+  {
+    id:9, difficulty:"easy", points:10,
+    zh:{
+      question:"微分方程 dy/dx = x，初始條件 y(0) = 3，其特解為？",
+      options:["y = x²/2 + 3","y = x² + 3","y = x²/2","y = x²/2 − 3"],
+      explanation:"積分得通解 y = x²/2 + C，代入 y(0) = 3 得 C = 3，故特解為 y = x²/2 + 3。"
+    },
+    en:{
+      question:"What is the particular solution of dy/dx = x with initial condition y(0) = 3?",
+      options:["y = x²/2 + 3","y = x² + 3","y = x²/2","y = x²/2 − 3"],
+      explanation:"Integrating gives y = x²/2 + C; applying y(0) = 3 gives C = 3, so y = x²/2 + 3."
+    },
+    answer:0  // A
+  },
+  {
+    id:10, difficulty:"easy", points:10,
+    zh:{
+      question:"「齊次線性微分方程」（homogeneous linear ODE）的特徵是？",
+      options:["所有係數均相同","方程可用代換 y = vx 化簡","方程右側（非齊次項）等於零","特徵根全為實數"],
+      explanation:"齊次線性ODE是指 Ly = 0 形式，即方程右端的強迫函數為零。"
+    },
+    en:{
+      question:"What characterizes a 'homogeneous linear ODE'?",
+      options:["All coefficients are equal","The equation can be simplified by substitution y = vx","The right-hand side (forcing term) is zero","All characteristic roots are real"],
+      explanation:"A homogeneous linear ODE has the form Ly = 0, meaning the forcing function on the right-hand side is zero."
+    },
+    answer:2  // C
+  },
+
+  // ── MEDIUM (15 題, 每題 15 分) ────────────────────────────────
+  {
+    id:11, difficulty:"medium", points:15,
+    zh:{
+      question:"求 y' + (2/x)y = x³（x > 0）的通解。積分因子為何？通解為何？",
+      options:["積分因子 x，通解 y = x⁴/6 + C/x","積分因子 x²，通解 y = x³/5 + C/x²","積分因子 e^x，通解含 e^x 項","積分因子 1/x²，通解 y = x³/5 + Cx²"],
+      explanation:"積分因子 μ = e^∫(2/x)dx = x²；兩側乘以 x² 積分得 x²y = x⁵/5 + C，故 y = x³/5 + C/x²。"
+    },
+    en:{
+      question:"Find the general solution of y' + (2/x)y = x³ (x > 0). What is the integrating factor and the general solution?",
+      options:["Integrating factor x, general solution y = x⁴/6 + C/x","Integrating factor x², general solution y = x³/5 + C/x²","Integrating factor e^x, solution involves e^x","Integrating factor 1/x², general solution y = x³/5 + Cx²"],
+      explanation:"Integrating factor μ = e^∫(2/x)dx = x². Multiplying and integrating gives x²y = x⁵/5 + C, so y = x³/5 + C/x²."
+    },
+    answer:1  // B
+  },
+  {
+    id:12, difficulty:"medium", points:15,
+    zh:{
+      question:"方程 y'' + 2y' + 5y = 0 的通解包含哪種函數形式？",
+      options:["純指數函數：C₁e^(r₁x) + C₂e^(r₂x)","多項式乘指數：(C₁ + C₂x)e^(−x)","指數乘三角：e^(−x)(C₁cos2x + C₂sin2x)","雙曲函數：C₁cosh(2x) + C₂sinh(2x)"],
+      explanation:"特徵方程 r² + 2r + 5 = 0，根 r = −1 ± 2i（複數根），通解為 e^(−x)(C₁cos2x + C₂sin2x)。"
+    },
+    en:{
+      question:"The general solution of y'' + 2y' + 5y = 0 contains which type of functions?",
+      options:["Pure exponentials: C₁e^(r₁x) + C₂e^(r₂x)","Polynomial times exponential: (C₁ + C₂x)e^(−x)","Exponential times trig: e^(−x)(C₁cos2x + C₂sin2x)","Hyperbolic functions: C₁cosh(2x) + C₂sinh(2x)"],
+      explanation:"Characteristic equation r² + 2r + 5 = 0 gives r = −1 ± 2i (complex roots), so the solution is e^(−x)(C₁cos2x + C₂sin2x)."
+    },
+    answer:2  // C
+  },
+  {
+    id:13, difficulty:"medium", points:15,
+    zh:{
+      question:"方程 y'' − 4y' + 4y = 0 的通解為何？（注意特徵根的重數）",
+      options:["y = C₁e^(2x) + C₂e^(−2x)","y = C₁cos(2x) + C₂sin(2x)","y = (C₁ + C₂x)e^(2x)","y = C₁e^(4x) + C₂xe^(4x)"],
+      explanation:"特徵方程 r² − 4r + 4 = (r−2)² = 0，重根 r = 2，通解為 (C₁ + C₂x)e^(2x)。"
+    },
+    en:{
+      question:"What is the general solution of y'' − 4y' + 4y = 0? (Note the multiplicity of the characteristic root.)",
+      options:["y = C₁e^(2x) + C₂e^(−2x)","y = C₁cos(2x) + C₂sin(2x)","y = (C₁ + C₂x)e^(2x)","y = C₁e^(4x) + C₂xe^(4x)"],
+      explanation:"Characteristic equation (r−2)² = 0 gives repeated root r = 2, so the general solution is (C₁ + C₂x)e^(2x)."
+    },
+    answer:2  // C
+  },
+  {
+    id:14, difficulty:"medium", points:15,
+    zh:{
+      question:"用未定係數法求 y'' + y = cos x 的特解時，應假設的特解形式為？",
+      options:["yₚ = A cos x + B sin x","yₚ = x(A cos x + B sin x)","yₚ = Ax cos x + B","yₚ = A + Bx cos x + Cx sin x"],
+      explanation:"cos x 對應特徵根 ±i，已是齊次解，需乘以 x 修正：yₚ = x(A cos x + B sin x)。"
+    },
+    en:{
+      question:"Using undetermined coefficients to find a particular solution of y'' + y = cos x, what trial form should be assumed?",
+      options:["yₚ = A cos x + B sin x","yₚ = x(A cos x + B sin x)","yₚ = Ax cos x + B","yₚ = A + Bx cos x + Cx sin x"],
+      explanation:"cos x corresponds to characteristic root ±i, which is already a homogeneous solution, so multiply by x: yₚ = x(A cos x + B sin x)."
+    },
+    answer:1  // B
+  },
+  {
+    id:15, difficulty:"medium", points:15,
+    zh:{
+      question:"Laplace 轉換法求解 y' + 2y = 4，y(0) = 1。y(t) = ？",
+      options:["y(t) = 2 + e^(−2t)","y(t) = 2 − 2e^(−2t)","y(t) = 2 − e^(−2t)","y(t) = e^(−2t) + 4"],
+      explanation:"(s+2)Y − 1 = 4/s → Y = (s+4)/[s(s+2)]。部分分式：2/s − 1/(s+2)。故 y(t) = 2 − e^(−2t)。"
+    },
+    en:{
+      question:"Solve y' + 2y = 4, y(0) = 1 using Laplace transforms. What is y(t)?",
+      options:["y(t) = 2 + e^(−2t)","y(t) = 2 − 2e^(−2t)","y(t) = 2 − e^(−2t)","y(t) = e^(−2t) + 4"],
+      explanation:"(s+2)Y − 1 = 4/s → Y = (s+4)/[s(s+2)]. Partial fractions: 2/s − 1/(s+2). Hence y(t) = 2 − e^(−2t)."
+    },
+    answer:2  // C
+  },
+  {
+    id:16, difficulty:"medium", points:15,
+    zh:{
+      question:"恰當方程（exact equation）M dx + N dy = 0 的判別條件是？",
+      options:["M + N = 0","∂M/∂y = ∂N/∂x","dM/dx = dN/dy","∂M/∂x + ∂N/∂y = 1"],
+      explanation:"恰當方程的充要條件是混合偏導數相等：∂M/∂y = ∂N/∂x（即 F 的混合二階偏導相等）。"
+    },
+    en:{
+      question:"What is the exactness condition for M dx + N dy = 0?",
+      options:["M + N = 0","∂M/∂y = ∂N/∂x","dM/dx = dN/dy","∂M/∂x + ∂N/∂y = 1"],
+      explanation:"The exactness condition requires equal mixed partial derivatives: ∂M/∂y = ∂N/∂x."
+    },
+    answer:1  // B
+  },
+  {
+    id:17, difficulty:"medium", points:15,
+    zh:{
+      question:"Bernoulli 方程 y' + P(x)y = Q(x)yⁿ（n≠0,1）的標準代換為？代換後方程成為？",
+      options:["令 v = yⁿ，成為非線性方程","令 v = 1/y，成為可分離方程","令 v = ln y，成為恰當方程","令 v = y^(1−n)，成為關於 v 的線性方程"],
+      explanation:"令 v = y^(1−n)，dv/dx = (1−n)y^(−n)dy/dx，代入後得 v 的一階線性ODE。"
+    },
+    en:{
+      question:"For the Bernoulli equation y' + P(x)y = Q(x)yⁿ (n≠0,1), what substitution is used and what does it yield?",
+      options:["Let v = yⁿ, gives a nonlinear equation","Let v = 1/y, gives a separable equation","Let v = ln y, gives an exact equation","Let v = y^(1−n), gives a linear equation in v"],
+      explanation:"Setting v = y^(1−n) gives dv/dx = (1−n)y^(−n)dy/dx, converting the equation into a first-order linear ODE in v."
+    },
+    answer:3  // D
+  },
+  {
+    id:18, difficulty:"medium", points:15,
+    zh:{
+      question:"週期 2π 的函數 f(x) = x（−π < x ≤ π）的 Fourier 級數中，哪部分為零？",
+      options:["所有餘弦係數 aₙ（含 a₀）","所有正弦係數 bₙ","所有偶數項係數","所有奇數階導數項"],
+      explanation:"f(x) = x 是奇函數，Fourier 級數只含正弦項，故所有餘弦係數（含常數項 a₀）均為零。"
+    },
+    en:{
+      question:"For f(x) = x (−π < x ≤ π) with period 2π, which part of its Fourier series is zero?",
+      options:["All cosine coefficients aₙ (including a₀)","All sine coefficients bₙ","All even-indexed coefficients","All odd-order derivative terms"],
+      explanation:"f(x) = x is an odd function, so its Fourier series contains only sine terms; all cosine coefficients (including a₀) are zero."
+    },
+    answer:0  // A
+  },
+  {
+    id:19, difficulty:"medium", points:15,
+    zh:{
+      question:"方程 y'' + 4y = 8 的完整解（齊次解 + 特解）為？",
+      options:["y = C₁e^(2x) + C₂e^(−2x) + 2","y = C₁cos(2x) + C₂sin(2x) − 2","y = C₁cos(2x) + C₂sin(2x) + 2","y = (C₁ + C₂x)cos(2x) + 2"],
+      explanation:"齊次解 y_h = C₁cos2x + C₂sin2x；特解令 yₚ = A，代入 4A = 8，A = 2；完整解 y = C₁cos2x + C₂sin2x + 2。"
+    },
+    en:{
+      question:"What is the complete solution (homogeneous + particular) of y'' + 4y = 8?",
+      options:["y = C₁e^(2x) + C₂e^(−2x) + 2","y = C₁cos(2x) + C₂sin(2x) − 2","y = C₁cos(2x) + C₂sin(2x) + 2","y = (C₁ + C₂x)cos(2x) + 2"],
+      explanation:"Homogeneous: y_h = C₁cos2x + C₂sin2x. Particular: yₚ = A → 4A = 8 → A = 2. Full solution: y = C₁cos2x + C₂sin2x + 2."
+    },
+    answer:2  // C
+  },
+  {
+    id:20, difficulty:"medium", points:15,
+    zh:{
+      question:"參數變換法（variation of parameters）中，Wronskian W(y₁,y₂) 的定義為？",
+      options:["y₁y₂' + y₂y₁'","y₁'y₂' − y₁y₂","y₁²y₂' − y₁y₂²","y₁y₂' − y₂y₁'"],
+      explanation:"Wronskian 定義為行列式 W = y₁y₂' − y₂y₁'，W ≠ 0 表示兩解線性獨立。"
+    },
+    en:{
+      question:"In the variation of parameters method, how is the Wronskian W(y₁, y₂) defined?",
+      options:["y₁y₂' + y₂y₁'","y₁'y₂' − y₁y₂","y₁²y₂' − y₁y₂²","y₁y₂' − y₂y₁'"],
+      explanation:"The Wronskian is the determinant W = y₁y₂' − y₂y₁'. W ≠ 0 means the two solutions are linearly independent."
+    },
+    answer:3  // D
+  },
+  {
+    id:21, difficulty:"medium", points:15,
+    zh:{
+      question:"Laplace 轉換第一位移定理：L{e^(at)f(t)} = ？",
+      options:["F(s − a)","F(s) + a","F(s + a)","e^(as)F(s)"],
+      explanation:"第一移位定理：L{e^(at)f(t)} = F(s−a)，其中 F(s) = L{f(t)}，是 s 平面向右平移 a 單位。"
+    },
+    en:{
+      question:"First shifting theorem: L{e^(at)f(t)} = ?",
+      options:["F(s − a)","F(s) + a","F(s + a)","e^(as)F(s)"],
+      explanation:"First shifting theorem: L{e^(at)f(t)} = F(s−a), where F(s) = L{f(t)}. This shifts the s-domain by a."
+    },
+    answer:0  // A
+  },
+  {
+    id:22, difficulty:"medium", points:15,
+    zh:{
+      question:"Picard–Lindelöf 定理保證 IVP y' = f(x,y)，y(x₀) = y₀ 局部唯一解存在的最精確條件是？",
+      options:["f 在整個平面上連續","f 是解析函數（可展開為冪級數）","f 在 (x₀,y₀) 鄰域內連續且 f 對 y 滿足 Lipschitz 條件","f 為多項式函數"],
+      explanation:"Picard–Lindelöf：f 在包含 (x₀,y₀) 的矩形上連續 + 對 y 的 Lipschitz 條件 → 局部唯一解存在。"
+    },
+    en:{
+      question:"The Picard–Lindelöf theorem guarantees local existence and uniqueness. Which condition is the most precise?",
+      options:["f is continuous on the entire plane","f is analytic (expandable as a power series)","f is continuous near (x₀,y₀) and satisfies a Lipschitz condition in y","f is a polynomial function"],
+      explanation:"Picard–Lindelöf: f continuous on a rectangle containing (x₀,y₀) plus a Lipschitz condition in y → local unique solution exists."
+    },
+    answer:2  // C
+  },
+  {
+    id:23, difficulty:"medium", points:15,
+    zh:{
+      question:"設 L{f(t)} = F(s)，則 L{f'(t)} = ？（f(0) 為初始值）",
+      options:["sF(s) − f(0)","sF(s) + f(0)","F(s)/s","F'(s) − f(0)"],
+      explanation:"Laplace 微分定理：L{f'(t)} = sF(s) − f(0)，此公式是用 Laplace 法解ODE的核心。"
+    },
+    en:{
+      question:"Given L{f(t)} = F(s), what is L{f'(t)}? (f(0) is the initial value.)",
+      options:["sF(s) − f(0)","sF(s) + f(0)","F(s)/s","F'(s) − f(0)"],
+      explanation:"Laplace differentiation theorem: L{f'(t)} = sF(s) − f(0). This is the core formula for solving ODEs with Laplace transforms."
+    },
+    answer:0  // A
+  },
+  {
+    id:24, difficulty:"medium", points:15,
+    zh:{
+      question:"方程 xy' − 2y = x³（除以 x 化為標準形式），積分因子為何？",
+      options:["積分因子 x²，通解 y = x³ + Cx²","恰當方程，無需積分因子","線性方程，積分因子 1/x²","Bernoulli 方程，積分因子為 xe^x"],
+      explanation:"標準形 y' − (2/x)y = x²，積分因子 μ = e^∫(−2/x)dx = x^(−2) = 1/x²，乘以後積分得通解。"
+    },
+    en:{
+      question:"For xy' − 2y = x³ rewritten in standard form (divide by x), what is the integrating factor?",
+      options:["Integrating factor x², general solution y = x³ + Cx²","Exact equation, no integrating factor needed","Linear equation, integrating factor 1/x²","Bernoulli equation, integrating factor xe^x"],
+      explanation:"Standard form: y' − (2/x)y = x². Integrating factor: μ = e^∫(−2/x)dx = x^(−2) = 1/x². Multiply and integrate to get the solution."
+    },
+    answer:2  // C
+  },
+  {
+    id:25, difficulty:"medium", points:15,
+    zh:{
+      question:"使用向前 Euler 法求解 y' = y，y(0) = 1，步長 h = 0.1，y(0.1) 的近似值為？",
+      options:["1.105","1.100","1.010","1.050"],
+      explanation:"向前 Euler：y₁ = y₀ + h·f(0,1) = 1 + 0.1×1 = 1.1。精確值 e^0.1 ≈ 1.10517，Euler 法略有低估。"
+    },
+    en:{
+      question:"Using the forward Euler method for y' = y, y(0) = 1 with step h = 0.1, what is the approximate y(0.1)?",
+      options:["1.105","1.100","1.010","1.050"],
+      explanation:"Forward Euler: y₁ = y₀ + h·f(0,y₀) = 1 + 0.1×1 = 1.1. Exact value e^0.1 ≈ 1.10517; Euler slightly underestimates."
+    },
+    answer:1  // B
+  },
+
+  // ── HARD (10 題, 每題 25 分) ──────────────────────────────────
+  {
+    id:26, difficulty:"hard", points:25,
+    zh:{
+      question:"參數變換法求 y'' + y = sec x 的特解（y₁ = cos x，y₂ = sin x，W = 1）。特解為？",
+      options:["yₚ = x cos x − sin x·ln|cos x|","yₚ = sin x·ln|sec x + tan x|","yₚ = x sin x + cos x·ln|cos x|","yₚ = cos x·ln|cos x| − x sin x"],
+      explanation:"u₁' = −sin x·sec x = −tan x → u₁ = ln|cos x|；u₂' = cos x·sec x = 1 → u₂ = x。yₚ = cos x·ln|cos x| + x·sin x。"
+    },
+    en:{
+      question:"Using variation of parameters for y'' + y = sec x (y₁ = cos x, y₂ = sin x, W = 1), what is the particular solution?",
+      options:["yₚ = x cos x − sin x·ln|cos x|","yₚ = sin x·ln|sec x + tan x|","yₚ = x sin x + cos x·ln|cos x|","yₚ = cos x·ln|cos x| − x sin x"],
+      explanation:"u₁' = −sin x·sec x = −tan x → u₁ = ln|cos x|; u₂' = cos x·sec x = 1 → u₂ = x. So yₚ = cos x·ln|cos x| + x·sin x."
+    },
+    answer:2  // C
+  },
+  {
+    id:27, difficulty:"hard", points:25,
+    zh:{
+      question:"Cauchy–Euler 方程 x²y'' − 3xy' + 4y = 0（x > 0）的通解為？",
+      options:["y = C₁x² + C₂x^(−2)","y = C₁x⁴ + C₂x^(−1)","y = x²(C₁cos(ln x) + C₂sin(ln x))","y = (C₁ + C₂ ln x)x²"],
+      explanation:"試解 y = x^r，特徵方程 r²−4r+4 = (r−2)²= 0，重根 r = 2。通解：y = (C₁ + C₂ ln x)x²。"
+    },
+    en:{
+      question:"What is the general solution of the Cauchy–Euler equation x²y'' − 3xy' + 4y = 0 (x > 0)?",
+      options:["y = C₁x² + C₂x^(−2)","y = C₁x⁴ + C₂x^(−1)","y = x²(C₁cos(ln x) + C₂sin(ln x))","y = (C₁ + C₂ ln x)x²"],
+      explanation:"Substituting y = x^r gives r² − 4r + 4 = (r−2)² = 0, repeated root r = 2. General solution: y = (C₁ + C₂ ln x)x²."
+    },
+    answer:3  // D
+  },
+  {
+    id:28, difficulty:"hard", points:25,
+    zh:{
+      question:"求逆 Laplace 轉換 L⁻¹{1/[(s+1)(s+3)]}。",
+      options:["(e^t − e^(3t))/2","e^(−t) + e^(−3t)","(e^(−3t) − e^(−t))/2","(e^(−t) − e^(−3t))/2"],
+      explanation:"部分分式：1/[(s+1)(s+3)] = (1/2)/(s+1) − (1/2)/(s+3)。逆轉換：(e^(−t) − e^(−3t))/2。"
+    },
+    en:{
+      question:"Find the inverse Laplace transform L⁻¹{1/[(s+1)(s+3)]}.",
+      options:["(e^t − e^(3t))/2","e^(−t) + e^(−3t)","(e^(−3t) − e^(−t))/2","(e^(−t) − e^(−3t))/2"],
+      explanation:"Partial fractions: 1/[(s+1)(s+3)] = (1/2)/(s+1) − (1/2)/(s+3). Inverse: (e^(−t) − e^(−3t))/2."
+    },
+    answer:3  // D
+  },
+  {
+    id:29, difficulty:"hard", points:25,
+    zh:{
+      question:"自律系統 dx/dt = f(x)，若平衡點 x* 處 Jacobian 的所有特徵值均有負實部，則 x* 為？",
+      options:["不穩定結點（unstable node）","漸近穩定（asymptotically stable）","中心（neutrally stable center）","鞍點（saddle point）"],
+      explanation:"依 Hartman–Grobman 定理：所有特徵值具負實部 → 線性化穩定 → 非線性系統在 x* 漸近穩定。"
+    },
+    en:{
+      question:"For autonomous system dx/dt = f(x), if all eigenvalues of the Jacobian at equilibrium x* have negative real parts, then x* is:",
+      options:["An unstable node","Asymptotically stable","A center (neutrally stable)","A saddle point"],
+      explanation:"By the Hartman–Grobman theorem, all eigenvalues with negative real parts imply asymptotic stability of x*."
+    },
+    answer:1  // B
+  },
+  {
+    id:30, difficulty:"hard", points:25,
+    zh:{
+      question:"方程組 dx/dt = x + y，dy/dt = 4x − 2y 的特徵值與原點平衡點類型為？",
+      options:["特徵值 −1 ± 2i；螺旋點（spiral point）","特徵值 3, −4；鞍點（saddle）","特徵值 1 ± 2i；不穩定螺旋點","特徵值 2, −3；鞍點（saddle point）"],
+      explanation:"係數矩陣 [[1,1],[4,−2]]，tr = −1，det = −6 < 0。特徵方程 λ²+λ−6=(λ−2)(λ+3)=0，λ=2,−3（一正一負）→ 鞍點。"
+    },
+    en:{
+      question:"For the system dx/dt = x + y, dy/dt = 4x − 2y, what are the eigenvalues and the type of equilibrium at the origin?",
+      options:["Eigenvalues −1 ± 2i; spiral point","Eigenvalues 3, −4; saddle point","Eigenvalues 1 ± 2i; unstable spiral","Eigenvalues 2, −3; saddle point"],
+      explanation:"Matrix [[1,1],[4,−2]]: tr = −1, det = −6 < 0. Characteristic equation (λ−2)(λ+3) = 0, eigenvalues 2 and −3 (opposite signs) → saddle point."
+    },
+    answer:3  // D
+  },
+  {
+    id:31, difficulty:"hard", points:25,
+    zh:{
+      question:"熱方程 ∂u/∂t = k∂²u/∂x²（0<x<L，t>0），BC: u(0,t)=u(L,t)=0，分離變數後時間部分 T(t) 的形式為？",
+      options:["T(t) = C·cos(kλ²t)","T(t) = C·e^(kλt)","T(t) = C·t^(−k)","T(t) = C·e^(−kλ²t)"],
+      explanation:"設 u = X(x)T(t)，T'/kT = X''/X = −λ²（負值確保解隨時間衰退）。時間部分：T(t) = Ce^(−kλ²t)。"
+    },
+    en:{
+      question:"For heat equation ∂u/∂t = k∂²u/∂x² (0<x<L, t>0) with BCs u(0,t)=u(L,t)=0, what is the form of T(t) after separation of variables?",
+      options:["T(t) = C·cos(kλ²t)","T(t) = C·e^(kλt)","T(t) = C·t^(−k)","T(t) = C·e^(−kλ²t)"],
+      explanation:"Setting u = X(x)T(t) gives T'/kT = X''/X = −λ² (negative to ensure decay in time). Time part: T(t) = Ce^(−kλ²t)."
+    },
+    answer:3  // D
+  },
+  {
+    id:32, difficulty:"hard", points:25,
+    zh:{
+      question:"Bessel 方程 x²y'' + xy' + (x²−n²)y = 0，第一類 Bessel 函數 Jₙ(x)，J₀(0) = ？",
+      options:["0","∞","不存在","1"],
+      explanation:"J₀(x) = Σ(−1)^m(x/2)^(2m)/(m!)²，代入 x=0 得 m=0 項為 1，其餘項為 0，故 J₀(0) = 1。"
+    },
+    en:{
+      question:"For the Bessel equation x²y'' + xy' + (x²−n²)y = 0, what is J₀(0) for the first-kind Bessel function?",
+      options:["0","∞","Does not exist","1"],
+      explanation:"J₀(x) = Σ(−1)^m(x/2)^(2m)/(m!)². At x = 0 only the m = 0 term survives, giving J₀(0) = 1."
+    },
+    answer:3  // D
+  },
+  {
+    id:33, difficulty:"hard", points:25,
+    zh:{
+      question:"Sturm–Liouville 問題中，對應不同本徵值的本徵函數 φₘ 與 φₙ 滿足何種關係？",
+      options:["φₘ·φₙ = 0 處處成立","∫φₘφₙ dx = 0（不帶權正交）","∫φₘφₙw dx = 0（帶權函數 w(x) 正交）","φₘ + φₙ = 常數"],
+      explanation:"Sturm–Liouville 理論核心：不同本徵值的本徵函數對帶權函數 w(x) 正交：∫φₘφₙw dx = 0。"
+    },
+    en:{
+      question:"In a Sturm–Liouville problem, if φₘ and φₙ correspond to different eigenvalues, what relationship do they satisfy?",
+      options:["φₘ·φₙ = 0 everywhere","∫φₘφₙ dx = 0 (unweighted orthogonality)","∫φₘφₙw dx = 0 (weighted orthogonality with weight w(x))","φₘ + φₙ = constant"],
+      explanation:"Key result of Sturm–Liouville theory: eigenfunctions for different eigenvalues are orthogonal with respect to the weight function w(x): ∫φₘφₙw dx = 0."
+    },
+    answer:2  // C
+  },
+  {
+    id:34, difficulty:"hard", points:25,
+    zh:{
+      question:"冪級數法求解 Airy 方程 y'' + xy = 0，設 y = Σaₙxⁿ，遞推關係為？",
+      options:["aₙ₊₂ = −aₙ₋₁/[(n+2)(n+1)]","aₙ₊₃ = −aₙ/[(n+3)(n+2)]","aₙ₊₂ = aₙ/[(n+2)(n+1)]","aₙ₊₁ = −naₙ/(n+1)"],
+      explanation:"y'' = Σ(n+2)(n+1)aₙ₊₂xⁿ，xy = Σaₙ₋₁xⁿ。係數比較：(n+2)(n+1)aₙ₊₂ + aₙ₋₁ = 0，即 aₙ₊₂ = −aₙ₋₁/[(n+2)(n+1)]。"
+    },
+    en:{
+      question:"Solving the Airy equation y'' + xy = 0 by power series y = Σaₙxⁿ, what is the recurrence relation?",
+      options:["aₙ₊₂ = −aₙ₋₁/[(n+2)(n+1)]","aₙ₊₃ = −aₙ/[(n+3)(n+2)]","aₙ₊₂ = aₙ/[(n+2)(n+1)]","aₙ₊₁ = −naₙ/(n+1)"],
+      explanation:"y'' = Σ(n+2)(n+1)aₙ₊₂xⁿ, xy = Σaₙ₋₁xⁿ. Matching coefficients: (n+2)(n+1)aₙ₊₂ + aₙ₋₁ = 0, so aₙ₊₂ = −aₙ₋₁/[(n+2)(n+1)]."
+    },
+    answer:0  // A
+  },
+  {
+    id:35, difficulty:"hard", points:25,
+    zh:{
+      question:"Lyapunov 直接法：若存在 V(x) 使 V(0)=0，V(x)>0（x≠0），且沿軌跡 dV/dt < 0，可得何結論？",
+      options:["平衡點為 Lyapunov 穩定（但不一定漸近穩定）","系統存在至少一條週期軌道","系統的解在整個時間軸上存在","平衡點為漸近穩定（asymptotically stable）"],
+      explanation:"V 正定且 dV/dt 嚴格負定，由 Lyapunov 穩定定理，原點平衡點為漸近穩定。"
+    },
+    en:{
+      question:"Lyapunov's direct method: if V(x) with V(0)=0, V(x)>0 for x≠0, and dV/dt < 0 along trajectories exists, what can be concluded?",
+      options:["The equilibrium is Lyapunov stable (not necessarily asymptotically stable)","The system has at least one periodic orbit","The solution exists for all time","The equilibrium is asymptotically stable"],
+      explanation:"With V positive definite and dV/dt strictly negative definite, Lyapunov's theorem guarantees asymptotic stability of the origin."
+    },
+    answer:3  // D
+  },
+
+  // ── TRAP (5 題, 每題 19 分) ───────────────────────────────────
+  {
+    id:36, difficulty:"trap", points:19,
+    zh:{
+      question:"(dy/dx)² + y = 0 是線性方程嗎？以下哪個選項正確分析此方程的性質？",
+      options:["是線性方程，因為只含 dy/dx 而非高階導數","是線性方程，但係數在某些點不連續","不是線性方程，因為含有 (dy/dx)² 這個非線性項","是非線性但可用代換 v = dy/dx 轉為一階線性"],
+      explanation:"線性要求各導數均為一次冪。(dy/dx)² 是一階導數的平方，使此方程成為非線性ODE。"
+    },
+    en:{
+      question:"Is (dy/dx)² + y = 0 a linear equation? Which option correctly analyzes its nature?",
+      options:["Yes, linear because it contains only dy/dx and not a higher-order derivative","Yes, linear but with a discontinuous coefficient at some points","No, nonlinear because it contains the term (dy/dx)²","Nonlinear but can be converted to first-order linear by v = dy/dx"],
+      explanation:"Linearity requires all derivatives to appear to the first power. (dy/dx)² squares the derivative, making this a nonlinear ODE."
+    },
+    answer:2  // C
+  },
+  {
+    id:37, difficulty:"trap", points:19,
+    zh:{
+      question:"對 y'' + y = 0，甲生說通解是 y = C sin(x+φ)，乙生說通解是 y = C₁cosx + C₂sinx。哪個正確？",
+      options:["兩者都正確，表示方式等價","只有乙生正確，甲生形式的任意常數個數不足","只有甲生正確，因為含振幅與相位兩個常數","兩者都不完整，漏掉了奇異解"],
+      explanation:"C sin(x+φ) = C cosφ sinx + C sinφ cosx，等價於 C₁sinx + C₂cosx，兩種形式均含兩個獨立任意常數，完全等價。"
+    },
+    en:{
+      question:"For y'' + y = 0, student A says general solution is y = C sin(x+φ); student B says y = C₁cosx + C₂sinx. Which is correct?",
+      options:["Both are correct and equivalent","Only student B is correct; student A's form has insufficient arbitrary constants","Only student A is correct, since it has amplitude and phase as two constants","Neither is complete; singular solutions are missing"],
+      explanation:"C sin(x+φ) = C cosφ sinx + C sinφ cosx, equivalent to C₁sinx + C₂cosx. Both forms contain two independent arbitrary constants and are fully equivalent."
+    },
+    answer:0  // A
+  },
+  {
+    id:38, difficulty:"trap", points:19,
+    zh:{
+      question:"以下關於 Laplace 轉換的敘述，哪一個是「錯誤」的？",
+      options:["L{f(t)+g(t)} = L{f(t)} + L{g(t)}（線性性）","L{f(t)·g(t)} = L{f(t)} · L{g(t)}（乘積對應乘積）","L{af(t)} = aL{f(t)}（純量倍數）","L{(f*g)(t)} = L{f(t)} · L{g(t)}（卷積對應乘積）"],
+      explanation:"Laplace 轉換不保留逐點乘積：L{f·g} ≠ F·G。正確是時域卷積對應 s 域乘積（D 選項）。B 是常見錯誤。"
+    },
+    en:{
+      question:"Which of the following statements about the Laplace transform is FALSE?",
+      options:["L{f(t)+g(t)} = L{f(t)} + L{g(t)} (linearity)","L{f(t)·g(t)} = L{f(t)} · L{g(t)} (product maps to product)","L{af(t)} = aL{f(t)} (scalar multiple)","L{(f*g)(t)} = L{f(t)} · L{g(t)} (convolution maps to product)"],
+      explanation:"The Laplace transform does NOT preserve pointwise products: L{f·g} ≠ F·G. The correct property is that time-domain convolution maps to s-domain multiplication. Option B is a common misconception."
+    },
+    answer:1  // B
+  },
+  {
+    id:39, difficulty:"trap", points:19,
+    zh:{
+      question:"某學生說：「若 f(x,y) 在 (x₀,y₀) 連續，則 IVP y'=f(x,y)，y(x₀)=y₀ 必有唯一解。」此說法？",
+      options:["正確，連續性保證存在且唯一","不正確，連續性既不保證存在也不保證唯一","不完全正確，連續性保證唯一但不保證存在","不完全正確，連續性只保證解存在，唯一性需額外的 Lipschitz 條件"],
+      explanation:"Peano 定理：f 連續 → 解存在（不一定唯一）。Picard–Lindelöf：連續 + Lipschitz → 存在且唯一。"
+    },
+    en:{
+      question:"A student claims: 'If f(x,y) is continuous at (x₀,y₀), then the IVP y'=f(x,y), y(x₀)=y₀ must have a unique solution.' Is this correct?",
+      options:["Correct — continuity guarantees both existence and uniqueness","Incorrect — continuity guarantees neither existence nor uniqueness","Not fully correct — continuity guarantees uniqueness but not existence","Not fully correct — continuity only guarantees existence; uniqueness requires an additional Lipschitz condition"],
+      explanation:"Peano's theorem: continuity of f → existence (not necessarily uniqueness). Picard–Lindelöf: continuity + Lipschitz → existence AND uniqueness."
+    },
+    answer:3  // D
+  },
+  {
+    id:40, difficulty:"trap", points:19,
+    zh:{
+      question:"y'' + p(x)y' + q(x)y = 0 的兩個解 y₁, y₂ 的 Wronskian W(x)，以下哪個敘述正確？",
+      options:["W(x) 可能在某些點為零但不在所有點為零","W(x) 一定處處不為零","W(x) 在端點可能不連續","W(x) 要麼處處為零，要麼處處不為零"],
+      explanation:"Abel 定理：W(x) = W(x₀)exp(−∫p dx)。因此 W 要麼處處為零（線性相關），要麼處處不為零（線性無關），不存在中間狀態。"
+    },
+    en:{
+      question:"For y'' + p(x)y' + q(x)y = 0 with two solutions y₁, y₂, which statement about the Wronskian W(x) is correct?",
+      options:["W(x) may be zero at some points but nonzero at others","W(x) must be nonzero everywhere","W(x) may be discontinuous at endpoints","W(x) is either identically zero or never zero"],
+      explanation:"Abel's theorem: W(x) = W(x₀)exp(−∫p dx). Therefore W is either identically zero (solutions dependent) or never zero (independent) — no intermediate case."
+    },
+    answer:3  // D
+  }
+];
+
+// ── 答案分布驗證（內部）: A=10, B=10, C=10, D=10 ────────────────
+// A(0): 1,3,5,7,9,18,21,23,34,37
+// B(1): 2,4,6,8,11,14,16,25,29,38
+// C(2): 10,12,13,15,19,22,24,26,33,36
+// D(3): 17,20,27,28,30,31,32,35,39,40
+
+// ── Shuffle ────────────────────────────────────────────────────────
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ── State ──────────────────────────────────────────────────────────
+let shuffledQuestions = shuffleArray(questions);
+let currentIdx = 0;
+let userAnswers = new Array(40).fill(-1);
+let resultShown = false;
+let transitioning = false;
+
+// ── UI ─────────────────────────────────────────────────────────────
+function updateStaticUI() {
+  const z = lang === 'zh';
+  document.getElementById('headerTitle').textContent = z ? '微分方程 測驗' : 'Differential Equations Quiz';
+  document.getElementById('prevLabel').textContent = z ? '上一題' : 'Previous';
+  document.getElementById('submitLabel').textContent = z ? '提交測驗' : 'Submit Quiz';
+  document.getElementById('restartLabel').textContent = z ? '重新測驗' : 'Restart Quiz';
+  document.getElementById('copyLabel').textContent = z ? '複製結果' : 'Copy Result';
+  document.getElementById('reviewTitle').textContent = z ? '錯題回顧' : 'Wrong Answer Review';
+  document.getElementById('statCorrectLbl').textContent = z ? '答對題數' : 'Correct';
+  document.getElementById('statWrongLbl').textContent = z ? '答錯題數' : 'Wrong';
+  document.getElementById('dh1').textContent = z ? '難度' : 'Difficulty';
+  document.getElementById('dh2').textContent = z ? '答對' : 'Correct';
+  document.getElementById('dh3').textContent = z ? '總題數' : 'Total';
+  document.getElementById('dh4').textContent = z ? '得分' : 'Score';
+  document.getElementById('progressText').textContent = z
+    ? `第 ${currentIdx + 1} / 40 題` : `Q ${currentIdx + 1} / 40`;
+}
+
+function renderQuestion() {
+  const q = shuffledQuestions[currentIdx];
+  const data = q[lang];
+  const z = lang === 'zh';
+  document.getElementById('questionNum').textContent =
+    z ? `第 ${currentIdx + 1} 題 / 共 40 題` : `Question ${currentIdx + 1} of 40`;
+  document.getElementById('questionText').textContent = data.question;
+
+  const container = document.getElementById('optionsContainer');
+  container.innerHTML = '';
+  ['A','B','C','D'].forEach((lbl, i) => {
+    const div = document.createElement('div');
+    div.className = 'option' + (userAnswers[currentIdx] === i ? ' selected' : '');
+    div.innerHTML = `<span class="option-label">${lbl}</span><span class="option-text">${data.options[i]}</span>`;
+    div.addEventListener('click', () => selectOption(i));
+    container.appendChild(div);
+  });
+
+  const submitBtn = document.getElementById('submitBtn');
+  submitBtn.style.display = (currentIdx === 39 && userAnswers[39] !== -1) ? 'inline-block' : 'none';
+  document.getElementById('prevBtn').disabled = currentIdx === 0;
+  updateProgress();
+  updateStaticUI();
+}
+
+function selectOption(idx) {
+  if (transitioning) return;
+  userAnswers[currentIdx] = idx;
+  document.querySelectorAll('.option').forEach((el, i) => el.classList.toggle('selected', i === idx));
+
+  if (currentIdx === 39) {
+    document.getElementById('submitBtn').style.display = 'inline-block';
+    updateProgress();
+    return;
+  }
+  transitioning = true;
+  setTimeout(() => {
+    const card = document.getElementById('questionCard');
+    card.classList.add('fade');
+    setTimeout(() => {
+      currentIdx++;
+      renderQuestion();
+      card.classList.remove('fade');
+      transitioning = false;
+    }, 200);
+  }, 400);
+}
+
+function prevQuestion() {
+  if (currentIdx === 0 || transitioning) return;
+  transitioning = true;
+  const card = document.getElementById('questionCard');
+  card.classList.add('fade');
+  setTimeout(() => {
+    currentIdx--;
+    renderQuestion();
+    card.classList.remove('fade');
+    transitioning = false;
+  }, 200);
+}
+
+function updateProgress() {
+  const answered = userAnswers.filter(a => a !== -1).length;
+  document.getElementById('progressFill').style.width = (answered / 40 * 100) + '%';
+  const z = lang === 'zh';
+  document.getElementById('progressText').textContent = z
+    ? `第 ${currentIdx + 1} / 40 題` : `Q ${currentIdx + 1} / 40`;
+}
+
+// ── Result ─────────────────────────────────────────────────────────
+function normalCDF(z) {
+  const t = 1 / (1 + 0.2316419 * Math.abs(z));
+  const d = 0.3989423 * Math.exp(-z * z / 2);
+  const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.7814779 + t * (-1.8212560 + t * 1.3302744))));
+  return z >= 0 ? 1 - p : p;
+}
+
+function submitQuiz() {
+  resultShown = true;
+  document.getElementById('quizPage').classList.add('hide');
+  document.getElementById('resultPage').classList.add('show');
+  renderResult();
+}
+
+function renderResult() {
+  const z = lang === 'zh';
+  let totalScore = 0, correct = 0;
+  const ds = { easy:{c:0,t:10,pts:0}, medium:{c:0,t:15,pts:0}, hard:{c:0,t:10,pts:0}, trap:{c:0,t:5,pts:0} };
+
+  shuffledQuestions.forEach((q, i) => {
+    const ok = userAnswers[i] === q.answer;
+    if (ok) { totalScore += q.points; correct++; ds[q.difficulty].c++; }
+    if (ok) ds[q.difficulty].pts += q.points;
+  });
+
+  document.getElementById('scoreBig').textContent = totalScore;
+  document.getElementById('scoreLabel').textContent = z ? '/ 670 分' : '/ 670 points';
+  document.getElementById('statCorrect').textContent = correct + '/40';
+  document.getElementById('statWrong').textContent = (40 - correct) + '/40';
+
+  let grade;
+  if (totalScore >= 600) grade = z ? '🏆 頂尖專家（Top Expert）' : '🏆 Top Expert';
+  else if (totalScore >= 500) grade = z ? '⭐ 進階掌握（Advanced）' : '⭐ Advanced';
+  else if (totalScore >= 380) grade = z ? '📘 中等水準（Intermediate）' : '📘 Intermediate';
+  else if (totalScore >= 250) grade = z ? '📗 基礎尚可（Basic）' : '📗 Basic';
+  else grade = z ? '📕 需要加強（Needs Improvement）' : '📕 Needs Improvement';
+  document.getElementById('scoreGrade').textContent = grade;
+
+  const pct = Math.round(normalCDF((totalScore - 301.5) / 100.5) * 100);
+  document.getElementById('scorePercentile').textContent = z
+    ? `你的成績超越了約 ${pct}% 的測試者`
+    : `Your score surpasses approximately ${pct}% of test takers`;
+
+  const dn = z
+    ? { easy:'簡單 Easy', medium:'中等 Med', hard:'困難 Hard', trap:'陷阱 Trap' }
+    : { easy:'Easy', medium:'Medium', hard:'Hard', trap:'Trap' };
+  const maxPts = { easy:100, medium:225, hard:250, trap:95 };
+  const tbody = document.getElementById('diffBody');
+  tbody.innerHTML = '';
+  ['easy','medium','hard','trap'].forEach(d => {
+    const s = ds[d];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${dn[d]}</td><td>${s.c}/${s.t}</td><td>${s.t}</td><td>${s.pts}/${maxPts[d]}</td>`;
+    tbody.appendChild(tr);
+  });
+
+  const container = document.getElementById('reviewContainer');
+  container.innerHTML = '';
+  const labels = ['A','B','C','D'];
+  let hasWrong = false;
+  shuffledQuestions.forEach((q, i) => {
+    if (userAnswers[i] !== q.answer) {
+      hasWrong = true;
+      const data = q[lang];
+      const ua = userAnswers[i];
+      const div = document.createElement('div');
+      div.className = 'review-item';
+      div.innerHTML = `
+        <div class="review-q">${i+1}. ${data.question}</div>
+        ${ua !== -1
+          ? `<div class="review-opt wrong">✗ ${z?'你的答案':'Your answer'}: ${labels[ua]}. ${data.options[ua]}</div>`
+          : `<div class="review-opt wrong">${z?'（未作答）':'(Not answered)'}</div>`}
+        <div class="review-opt correct">✓ ${z?'正確答案':'Correct answer'}: ${labels[q.answer]}. ${data.options[q.answer]}</div>
+        <div class="review-exp">${data.explanation}</div>
+      `;
+      container.appendChild(div);
+    }
+  });
+  if (!hasWrong) {
+    container.innerHTML = `<div style="color:var(--correct);font-size:15px;font-weight:600;">${z?'🎉 全部答對！':'🎉 All correct!'}</div>`;
+  }
+  document.getElementById('reviewTitle').textContent = z ? '錯題回顧' : 'Wrong Answer Review';
+  updateStaticUI();
+}
+
+function restartQuiz() {
+  shuffledQuestions = shuffleArray(questions);
+  currentIdx = 0;
+  userAnswers = new Array(40).fill(-1);
+  resultShown = false;
+  transitioning = false;
+  document.getElementById('quizPage').classList.remove('hide');
+  document.getElementById('resultPage').classList.remove('show');
+  document.getElementById('progressFill').style.width = '0%';
+  renderQuestion();
+}
+
+function copyResult() {
+  const z = lang === 'zh';
+  let total = 0, correct = 0;
+  shuffledQuestions.forEach((q, i) => { if (userAnswers[i] === q.answer) { total += q.points; correct++; } });
+  const pct = Math.round(normalCDF((total - 301.5) / 100.5) * 100);
+  const text = z
+    ? `【微分方程測驗成績】\n得分：${total}/670\n答對：${correct}/40 題\n超越約 ${pct}% 的測試者`
+    : `[Differential Equations Quiz]\nScore: ${total}/670\nCorrect: ${correct}/40\nSurpasses ~${pct}% of test takers`;
+  navigator.clipboard.writeText(text).then(() => {
+    const lbl = document.getElementById('copyLabel');
+    lbl.textContent = z ? '已複製！' : 'Copied!';
+    setTimeout(() => { lbl.textContent = z ? '複製結果' : 'Copy Result'; }, 2000);
+  });
+}
+
+// ── Init ───────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (theme === 'dark') document.getElementById('themeBtn').textContent = '☀️ 淺色';
+  renderQuestion();
+});
+</script>
+</body>
+</html>
